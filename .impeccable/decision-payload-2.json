@@ -1,0 +1,120 @@
+{
+  "title": "Pilih dunia visual — Suka Village (roll 2)",
+  "question": "Dadu jatuh di Potret Keluarga. Dua challenger kali ini menang satu sumbu. Pertahankan, ambil alternatif, atau roll ulang.",
+  "options": [
+    {
+      "id": "assigned-2",
+      "label": "Potret Keluarga",
+      "kicker": "THE ROLL",
+      "lineage": "studio foto keluarga Indonesia 70-an — latar lukis, tepi bergerigi, sudut album, warna tangan",
+      "thesis": "Yang disewa keluarga itu bukan kamar, tapi satu bingkai yang muat semua orang. Alasan kamu menyewa tempat untuk 25 orang adalah supaya ke-25 orang itu masuk dalam satu foto. Halaman ini dibangun sebagai album potret yang belum terisi — dan bingkai kosong itu justru janjinya. Menolak susunan bawaan kategori: hero kolam golden hour dan grid ikon fasilitas.",
+      "palette": ["#17191A", "#E9EBE7", "#0E4032", "#7FA6B8"],
+      "materials": ["cetak perak diwarnai tangan", "kertas album hitam", "sudut tempel kertas", "tepi bergerigi"],
+      "viewport": "Hijau latar-lukis studio memenuhi layar. SUKA VILLAGE diset sebagai stempel studio, bukan logo. Di tengah: satu cetakan terpasang di sudut-sudut kertas, bertepi gerigi — dan kosong. Kapsinya sudah ditulis tangan duluan: 'Suka Village · Sukalarang · 25 orang'. Bingkai kosong itu yang jadi kaitnya; keluarga Anda yang mengisinya. WhatsApp muncul sebagai pelat janji temu studio, satu-satunya elemen yang tidak ikut miring.",
+      "risk": "Nostalgia berwarna tangan cuma sejengkal dari filter sepia. Dan album berisi bingkai kosong bisa terbaca 'belum jadi' alih-alih 'undangan' kalau kapsinya tidak bekerja keras.",
+      "raised": [
+        {
+          "from": "Blast Manifesto",
+          "raise": "Halaman harus berdiri tanpa satu pun foto. Massa huruf dan kapsi yang memikul nilainya, bukan bingkai kosongnya."
+        },
+        {
+          "from": "Gravity Rain Garden",
+          "raise": "Satu elemen dipegang lurus sempurna sementara yang lain boleh miring di sudut tempelnya — dan elemen itu adalah tombol aksi."
+        },
+        {
+          "from": "Ikeda Datamatics",
+          "raise": "Sistem nada tidak menerima nilai antara. Setiap tone adalah langkah bernama di tangga album, tidak ada abu-abu karangan."
+        }
+      ]
+    },
+    {
+      "id": "model-pick-2",
+      "label": "Kalender Penanggalan",
+      "kicker": "IMPECCABLE'S PICK",
+      "lineage": "kalender dinding Indonesia — blok tanggal besar, tanggal merah, notasi kecil di bawah angka",
+      "thesis": "Memesan itu perdebatan tanggal, bukan perdebatan kamar. Serahkan kalendernya dengan tanggal-tanggal bagus sudah ditandai.",
+      "palette": ["#EDEAE0", "#B5161B", "#141414", "#1F5E3A"],
+      "materials": ["kertas koran", "tinta merah", "blok angka besar"],
+      "viewport": "Satu halaman bulan penuh. Tanggal merah menyala, akhir pekan panjang ditandai, tiap blok tanggal bisa diketuk.",
+      "risk": "Kandidat teratas saya sendiri — dan kalender mendahulukan penjadwalan di atas keinginan. Ini juga tempat mendarat yang khas ketika sebuah pengerjaan ingin terlihat pintar soal booking."
+    },
+    {
+      "id": "challenger-sewing",
+      "label": "Sewing Pattern Envelope",
+      "verdict": "competitive",
+      "lineage": "amplop pola jahit rumahan dan kertas tisunya — view A B C, tabel ukuran, denah potong",
+      "thesis": "Tiga unit sebagai tiga view, kapasitas sebagai tabel ukuran, kawasan sebagai denah potong.",
+      "palette": ["#D8C9A8", "#1A1A1A", "#C4333C", "#8FA2A8"],
+      "materials": ["kertas tisu manila", "tanda drafting hitam", "guas kering", "merah penjahit"],
+      "viewport": "Muka amplop mengindeks view A, B, C; belakangnya tabel ukuran; di dalamnya denah potong yang memetakan tiap potongan bernomor.",
+      "case": "Ini fuse terkuat yang keluar dari katalog. View A/B/C memetakan persis ke Main Villa, Family Cabin, Single Cabin. Tabel ukuran adalah kapasitas. Denah potong adalah tata letak kawasan. Dan mekanik aslinya — ukuran terpilih menggambar garis potongnya solid sementara ukuran lain tetap putus-putus — adalah pemilih unit yang sudah jadi. Menang telak di kejelasan produk.",
+      "risk": "Kalah di identifikasi: pola jahit itu kerajinan rumah tangga, bukan tindakan berlibur. Penyelenggara acara keluarga tidak sedang merasa seperti sedang menjahit, dan halaman yang terlalu pintar soal diagram bisa terasa seperti pekerjaan.",
+      "hero": "https://impeccable.style/worlds/cards/fashion-folded-worlds-sewing-pattern-envelope-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/fashion-folded-worlds-sewing-pattern-envelope.webp"
+    },
+    {
+      "id": "challenger-dongho",
+      "label": "Woodblock Shell Ground",
+      "verdict": "competitive",
+      "lineage": "cetak balok kayu rakyat di atas kertas berlapis kerang tumbuk",
+      "thesis": "Kawasan dibangun warna demi warna, tiap balok satu lapis, keyblock hitam dicetak terakhir.",
+      "palette": ["#E8DCC0", "#C0392B", "#E0A526", "#2D6A4F", "#1A1A1A"],
+      "materials": ["dasar kerang tumbuk", "pigmen mineral datar", "keyblock hitam"],
+      "viewport": "Satu subjek di tengah di atas dasar yang berkilau samar, warna datar tercetak berlapis di bawah garis hitam.",
+      "case": "Menang di kehangatan material: pigmen mineral merah, kuning, hijau, indigo terbaca sebagai festif-domestik, dan cetak balok kayu punya kerabat dekat di tradisi cap Indonesia. Warnanya juga tidak butuh foto asli sama sekali.",
+      "risk": "Dong Ho itu tradisi Vietnam, bukan Indonesia. Memakainya untuk properti di Sukabumi adalah ketidakcocokan budaya yang nyata — mungkin tidak disadari pengunjung, tapi tetap salah. Dan seperti ilustrasi datar mana pun, ia tidak bisa membuktikan 'tempatnya beneran sebagus itu'.",
+      "hero": "https://impeccable.style/worlds/cards/posters-covers-sleeves-dong-ho-shell-ground-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/posters-covers-sleeves-dong-ho-shell-ground.webp"
+    },
+    {
+      "id": "challenger-blast",
+      "label": "Blast Manifesto Page",
+      "verdict": "declined",
+      "lineage": "halaman manifesto 1914 seluruhnya berhuruf kayu",
+      "palette": ["#B08A94", "#111111"],
+      "materials": ["huruf kayu", "garis tebal", "kertas puce"],
+      "case": "Agresi manifesto bertentangan langsung dengan tempat berkumpul keluarga, dan tidak ada pijakan identifikasi sama sekali.",
+      "kept": "Massa huruf memikul seluruh nilai — tanpa satu gambar pun.",
+      "hero": "https://impeccable.style/worlds/cards/design-canon-blast-manifesto-page-hero.webp"
+    },
+    {
+      "id": "challenger-gravity",
+      "label": "Gravity Rain Garden",
+      "verdict": "declined",
+      "lineage": "taman hujan gravitasi — tiap awan menentukan arah jatuh",
+      "palette": ["#4A5A50", "#3A6EA5", "#B23A48", "#141414"],
+      "materials": ["gravitasi lokal", "hujan berwarna"],
+      "case": "Dunia surealis mengaburkan tempat yang nyata — persis kebalikan dari satu hal yang harus dipercaya pengunjung.",
+      "kept": "Satu legenda dipegang lurus sementara segalanya membengkok.",
+      "hero": "https://impeccable.style/worlds/cards/dream-surreal-impossible-worlds-gravity-rain-garden-hero.webp"
+    },
+    {
+      "id": "challenger-ikeda",
+      "label": "Datamatics",
+      "verdict": "declined",
+      "lineage": "medan data hitam-putih murni, kolom barcode dan kisi sinus",
+      "palette": ["#000000", "#FFFFFF"],
+      "materials": ["bar presisi piksel", "monospace padat"],
+      "case": "Tidak ada identifikasi dan tidak ada kejelasan produk bagi keluarga yang mencari tempat menginap.",
+      "kept": "Disiplin dua nilai — tanpa abu-abu, tanpa warna melayang.",
+      "hero": "https://impeccable.style/worlds/cards/ikeda-datamatics-hero.webp"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "code",
+    "toggle": false
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "Standar kategori",
+    "thesis": "Yang dikirim kategori ini, dikerjakan dengan sempurna: hero foto kolam full-bleed, serif tipis, grid ikon fasilitas, bar booking mengambang.",
+    "palette": ["#FFFFFF", "#2F3E36", "#C9A227"],
+    "materials": ["fotografi golden hour", "grid bersih"],
+    "viewport": "Susunan yang persis diharapkan pengunjung, dengan kualitas eksekusi penuh.",
+    "risk": "Secara desain tidak bisa dibedakan dari kompetitor — dan bertumpu penuh pada foto asli yang belum ada."
+  },
+  "steer": true
+}

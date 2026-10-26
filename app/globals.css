@@ -1,0 +1,1318 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Suka Village
+
+   Clean, square, and coloured from the owner's brand guideline (October 2026,
+   p. 13, palette A "Calm Garden", the default):
+
+     garden green  #1F5C44  the brand: calls to action, titles, the footer field
+     tea leaf      #7D9A72  small marks: the current tab, bullets, progress
+     misty sage    #C9D3BE  quiet fields: the location card, empty photo panels
+     rice cream    #F3EEE4  surfaces: cards, notes, photo placeholders
+     wood brown    #6E4B33  labels and the numbers that open each row
+
+   The page itself stays white, as the owner asked; the palette sits on it in
+   blocks, so nothing turns beige. Charcoal-green ink #1F2A24. Clay #9C4E2C is
+   kept for errors only.
+
+   No rounded corners (the radio dot is the one circle: a square one reads as
+   a checkbox). Motion is at the end of the file.
+--------------------------------------------------------------------------- */
+
+@theme {
+  --color-paper: #ffffff;
+  --color-ink: #1f2a24;
+  --color-ink-soft: #5a6359;
+  --color-forest: #1f5c44;
+  --color-forest-deep: #174634;
+  --color-tea: #7d9a72;
+  --color-sage: #c9d3be;
+  --color-cream: #f3eee4;
+  --color-wood: #6e4b33;
+  --color-clay: #9c4e2c;
+  --color-mist: #f3eee4;
+  --color-rule: #e6e1d6;
+  --color-paper-soft: #c9d3be;
+  --color-sand: #c9d3be;
+
+  /* Older names, kept so nothing that still says `green` breaks. */
+  --color-green: #1f5c44;
+  --color-green-deep: #174634;
+  --color-bone: #f3eee4;
+  --color-green-wash: #f3eee4;
+
+  /* Headings in Helvetica, everything else in Poppins (app/fonts.ts). */
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-head: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --gutter: clamp(1.25rem, 4.5vw, 5rem);
+    --head-h: 4rem;
+    --frame-inset: clamp(0.75rem, 1.6vw, 1.5rem);
+  }
+  /* A taller bar on a wide screen, so the full logo has room. */
+  @media (min-width: 900px) { :root { --head-h: 4.75rem; } }
+
+  /* Reserve the scrollbar's width so locking scroll for an overlay does not
+     shift the page sideways on desktop. */
+  html { -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; }
+
+  body {
+    --label-c: var(--color-wood);
+    --accent: var(--color-forest);
+    --rule-c: var(--color-rule);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.6;
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  ::selection { background: var(--color-forest); color: var(--color-paper); }
+
+  :root {
+    caret-color: var(--color-ink);
+    accent-color: var(--color-forest);
+    scrollbar-color: var(--color-rule) transparent;
+    scrollbar-width: thin;
+  }
+
+  :focus-visible { outline: 2px solid var(--color-ink); outline-offset: 3px; }
+
+  a { color: inherit; text-underline-offset: 0.24em; text-decoration-thickness: from-font; }
+  /* No grey flash on tap; every control has its own pressed and focus state. */
+  a, button, label, summary { -webkit-tap-highlight-color: transparent; }
+  img, video { display: block; max-width: 100%; }
+  button { font: inherit; color: inherit; }
+}
+
+/* --- Type ----------------------------------------------------------------
+   Two faces, as the owner set them: Helvetica for headings (--font-head),
+   Poppins for text, labels and buttons (--font-sans). Labels hold at 600;
+   running text sits at 300.
+-------------------------------------------------------------------------- */
+
+@layer components {
+  .sv-label {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--label-c, var(--color-forest));
+  }
+
+  .sv-statement {
+    font-family: var(--font-head);
+    font-size: clamp(1.75rem, 1.1rem + 2.6vw, 3.25rem);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+
+  .sv-lead {
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+    max-width: 44ch;
+    font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--color-ink-soft);
+    text-wrap: pretty;
+  }
+
+
+  /* The marked words: the same face, in the field's accent colour. */
+  .sv-accent {
+    color: var(--accent, var(--color-clay));
+  }
+
+  .tnum { font-variant-numeric: tabular-nums lining-nums; }
+
+  /* --- Buttons ------------------------------------------------------------ */
+
+  .sv-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 3.25rem;
+    padding-inline: 1.6rem;
+    border: 1px solid transparent;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 250ms var(--ease-soft), color 250ms var(--ease-soft), border-color 250ms var(--ease-soft);
+  }
+
+  .sv-btn--primary { background: var(--color-forest); color: var(--color-paper); }
+  .sv-btn--primary:hover { background: var(--color-forest-deep); }
+
+  /* Destructive, not a call to action: cancelling a booking. */
+  .sv-btn--clay { background: var(--color-clay); color: var(--color-paper); }
+  .sv-btn--clay:hover { background: #7f3e22; }
+
+  .sv-btn--ghost { border-color: currentColor; background: transparent; }
+  .sv-btn--ghost:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+
+  .sv-btn--sm { min-height: 2.75rem; padding-inline: 1.3rem; font-size: 0.875rem; }
+
+  .sv-btn[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed; }
+
+  .sv-textlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--label-c, var(--color-forest));
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 85%;
+    background-repeat: no-repeat;
+  }
+
+  .sv-textlink:hover { background-size: 100% 1px; }
+
+  .sv-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2.5rem; }
+}
+
+.sv-wrap { padding-inline: var(--gutter); }
+
+.sv-skip {
+  position: fixed; top: 0.5rem; left: 0.5rem; z-index: 90;
+  padding: 0.75rem 1rem;  background: var(--color-forest); color: var(--color-paper);
+  transform: translateY(-160%);
+}
+.sv-skip:focus-visible { transform: translateY(0); }
+
+/* --- Photography ---------------------------------------------------------- */
+
+.sv-photo { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.86) contrast(1.02); }
+
+/* A photograph uploaded in the admin fills its box like next/image `fill`. */
+.sv-upload-img { position: absolute; inset: 0; }
+.sv-upload-pending, .sv-upload-missing { position: absolute; inset: 0; display: grid; place-items: center; background: var(--color-mist); color: var(--color-ink-soft); }
+
+/* --- Inner pages ---------------------------------------------------------- */
+
+.sv-page { padding-top: calc(var(--head-h) + clamp(1.5rem, 4vh, 3rem)); padding-bottom: clamp(5rem, 12vh, 8rem); }
+
+.sv-backlink {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  min-height: 2.75rem; width: fit-content;
+  font-size: 0.875rem; text-decoration: none; color: var(--color-ink-soft);
+}
+.sv-backlink:hover { color: var(--color-ink); }
+
+.sv-note {
+  display: flex; gap: 0.9rem; align-items: flex-start;
+  max-width: 46rem;
+  margin-top: clamp(3rem, 8vh, 5rem);
+  padding: 1.25rem 1.4rem;
+  background: var(--color-mist);
+  color: var(--color-ink-soft);
+  font-weight: 300;
+}
+.sv-note svg { flex: none; margin-top: 0.2rem; color: var(--color-ink-soft); }
+.sv-note-title { margin-bottom: 0.25rem; font-weight: 500; color: var(--color-ink); }
+.sv-note--inline { margin-top: 1.75rem; }
+
+/* --- Slides: the photo slider -------------------------------------------
+   A native scroller with snap. Chevrons on either side, a counter in the
+   corner, dots along the foot, as in the brief's references.
+-------------------------------------------------------------------------- */
+
+.sv-slides { position: relative; height: 100%; overflow: hidden; background: var(--color-mist); isolation: isolate; }
+
+.sv-slides-track {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.sv-slides-track::-webkit-scrollbar { display: none; }
+.sv-slides-track:focus-visible { outline: 2px solid var(--color-ink); outline-offset: -6px; }
+
+.sv-slide { position: relative; flex: 0 0 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+
+.sv-slides-arrow {
+  position: absolute; top: 50%; z-index: 2;
+  display: grid; place-items: center;
+  width: 2.75rem; height: 2.75rem;
+  translate: 0 -50%;
+  border: 0;  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.sv-slides-prev { left: clamp(0.6rem, 1.4vw, 1rem); }
+.sv-slides-next { right: clamp(0.6rem, 1.4vw, 1rem); }
+.sv-slides-arrow:hover { background: var(--color-paper); }
+
+.sv-slides-count {
+  position: absolute; top: clamp(0.6rem, 1.4vw, 1rem); right: clamp(0.6rem, 1.4vw, 1rem); z-index: 2;
+  padding: 0.3rem 0.7rem;
+  /* Opaque enough that small text holds 4.5:1 even over a white wall. */
+  background: rgba(17, 17, 17, 0.72);
+  color: var(--color-paper);
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em;
+}
+.sv-slides-count span { font-weight: 400; }
+
+.sv-slides-dots {
+  position: absolute; left: 50%; bottom: 0.65rem; z-index: 2;
+  display: flex;
+  max-width: calc(100% - 2rem);
+  translate: -50% 0;
+  padding-inline: 0.25rem;
+  background: rgba(17, 17, 17, 0.45);
+}
+.sv-slides-dots button { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; background: none; cursor: pointer; }
+.sv-slides-dots button > span { width: 6px; height: 6px; background: rgba(255, 255, 255, 0.62); }
+.sv-slides-dots button:hover > span { background: var(--color-paper); }
+.sv-slides-dots button[aria-current="true"] > span { transform: scale(1.5); background: var(--color-paper); }
+
+/* --- Rows: one layout for Rooms, Facilities, Experience, Event, Explore ----
+   The picture takes seven parts and the words five; rows alternate sides.
+   Each row is its own view timeline (--row), which the motion at the end of
+   the file reads.
+-------------------------------------------------------------------------- */
+
+.sv-rows { display: grid; gap: clamp(4.5rem, 12vh, 8.5rem); }
+
+.sv-row { display: grid; gap: clamp(1.75rem, 4vw, 5rem); align-items: center; scroll-margin-top: calc(var(--head-h) + 1.5rem); view-timeline: --row block; }
+@media (min-width: 900px) {
+  .sv-row { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .sv-row[data-flip="true"] { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+  .sv-row[data-flip="true"] .sv-row-media { order: 2; }
+}
+
+.sv-row-media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--color-cream); }
+@media (max-width: 899px) { .sv-row-media { margin-inline: calc(-1 * var(--gutter)); } }
+
+.sv-row-body { max-width: 32rem; }
+.sv-row-index { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.16em; color: var(--color-wood); }
+.sv-row-title {
+  margin-top: 0.85rem;
+  font-family: var(--font-head);
+  font-size: clamp(1.875rem, 1.3rem + 1.7vw, 2.75rem);
+  font-weight: 400; line-height: 1.08; letter-spacing: -0.025em;
+  color: var(--color-forest);
+  text-wrap: balance;
+}
+.sv-row-copy { display: grid; gap: 0.9rem; margin-top: 1.1rem; font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem); font-weight: 300; line-height: 1.7; color: var(--color-ink-soft); text-wrap: pretty; }
+.sv-row-copy p:first-child:not(:only-child) { color: var(--color-ink); }
+
+.sv-specs { display: grid; gap: 0 2.25rem; margin-top: 1.5rem; padding: 0; list-style: none; font-size: 0.9375rem; font-weight: 300; }
+.sv-specs li { position: relative; padding-left: 1.3rem; line-height: 1.8; }
+.sv-specs li::before {
+  content: "";
+  position: absolute; left: 0.1rem; top: 0.66em;
+  width: 0.45rem; height: 0.45rem;
+  border: 1px solid var(--color-tea);
+}
+@media (min-width: 1200px) { .sv-row-body .sv-specs { display: block; columns: 2; column-gap: 2rem; } .sv-row-body .sv-specs li { break-inside: avoid; } }
+@media (max-width: 899px) {
+  .sv-rows { gap: 4rem; }
+  .sv-row { gap: 1.5rem; }
+  .sv-row-title { margin-top: 0.6rem; }
+  .sv-row-body .sv-specs { display: block; columns: 2; column-gap: 1.25rem; font-size: 0.875rem; }
+  .sv-row-body .sv-specs li { break-inside: avoid; line-height: 1.55; padding-block: 0.15rem; }
+  .sv-show-actions { margin-top: 1.5rem; }
+}
+
+.sv-show-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.75rem; margin-top: 2rem; }
+
+.sv-credits { display: grid; gap: 0.25rem; margin-top: 1.25rem; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-credits a { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.sv-credits a:hover { color: var(--color-ink); }
+
+/* No photographs yet: misty sage, a drawn icon and one word. */
+.sv-panel { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.9rem; padding: 2rem; text-align: center; background: var(--color-sage); }
+.sv-panel-icon { color: var(--color-forest); }
+.sv-panel-word { font-family: var(--font-head); font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.75rem); line-height: 1; letter-spacing: -0.03em; color: var(--color-forest); }
+.sv-panel-note { max-width: 24ch; color: var(--color-ink); }
+
+/* --- Demo note ------------------------------------------------------------ */
+
+.sv-demo {
+  display: flex; gap: 0.7rem; align-items: flex-start;
+  margin-top: 1.5rem; padding: 1rem 1.15rem;
+  background: color-mix(in srgb, var(--color-clay) 9%, var(--color-paper));
+  border: 1px solid color-mix(in srgb, var(--color-clay) 26%, transparent);
+  font-size: 0.9375rem; line-height: 1.55;
+  color: #6e3a21;
+}
+.sv-demo svg { flex: none; margin-top: 0.15rem; color: var(--color-clay); }
+
+/* --- Calendar (react-day-picker, fully restyled) -------------------------- */
+
+.sv-cal { --cell: 2.75rem; position: relative; font-size: 0.9375rem; }
+/* Holds the calendar's place for the moment it takes to load. */
+.sv-cal--loading { min-height: 19rem; }
+
+
+/* A full night that is still a valid check out: hatched, but clickable. */
+.sv-cal .sv-day-full:not(.rdp-disabled) .rdp-day_button {
+  background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(156, 78, 44, 0.12) 4px 5px);
+}
+
+.sv-cal .rdp-months { display: flex; flex-wrap: wrap; gap: 2.5rem; }
+.sv-cal .rdp-month { position: relative; }
+
+.sv-cal .rdp-month_caption { display: flex; align-items: center; height: 2.75rem; padding-inline: 0.25rem; }
+.sv-cal .rdp-caption_label { font-size: 1.125rem; font-weight: 400; letter-spacing: -0.01em; text-transform: capitalize; }
+
+.sv-cal .rdp-nav { position: absolute; top: 0; right: 0; z-index: 1; display: flex; gap: 0.35rem; }
+
+.sv-cal .rdp-button_previous,
+.sv-cal .rdp-button_next {
+  display: grid; place-items: center;
+  width: 2.75rem; height: 2.75rem;
+  border: 1px solid var(--color-rule);
+  background: var(--color-paper);
+  cursor: pointer;
+}
+
+.sv-cal .rdp-button_previous:hover:not(:disabled),
+.sv-cal .rdp-button_next:hover:not(:disabled) { background: var(--color-mist); }
+
+.sv-cal .rdp-button_previous:disabled,
+.sv-cal .rdp-button_next:disabled { opacity: 0.3; cursor: default; }
+
+.sv-cal .rdp-chevron { width: 14px; height: 14px; fill: var(--color-ink); }
+
+.sv-cal .rdp-month_grid { border-collapse: collapse; margin-top: 0.5rem; }
+
+.sv-cal .rdp-weekday {
+  width: var(--cell); height: 2.25rem;
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.sv-cal .rdp-day { width: var(--cell); height: var(--cell); padding: 0; text-align: center; }
+
+.sv-cal .rdp-day_button {
+  width: var(--cell); height: var(--cell);
+  border: 0;  background: transparent;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.sv-cal .rdp-day_button:hover:not(:disabled) { background: var(--color-mist); }
+
+.sv-cal .rdp-today .rdp-day_button { box-shadow: inset 0 0 0 1px var(--color-ink); font-weight: 600; }
+
+.sv-cal .rdp-outside { opacity: 0.35; }
+
+/* Days from the neighbouring month are hidden, but they still receive the range
+   classes, so a stay that starts on 2 October painted an empty sand bar after
+   30 September. They carry no range fill of their own. */
+.sv-cal .rdp-outside,
+.sv-cal .rdp-hidden { background: none !important; }
+
+.sv-cal .rdp-disabled .rdp-day_button { color: #a19c90; text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.2); cursor: not-allowed; }
+.sv-cal .rdp-disabled.sv-day-full .rdp-day_button { background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(156, 78, 44, 0.12) 4px 5px); }
+
+.sv-cal .rdp-range_middle { background: var(--color-mist); }
+.sv-cal .rdp-range_middle .rdp-day_button { color: var(--color-ink); }
+
+.sv-cal .rdp-range_start { background: linear-gradient(to right, transparent 50%, var(--color-mist) 50%); }
+.sv-cal .rdp-range_end { background: linear-gradient(to left, transparent 50%, var(--color-mist) 50%); }
+.sv-cal .rdp-range_start.rdp-range_end { background: none; }
+
+.sv-cal .rdp-range_start .rdp-day_button,
+.sv-cal .rdp-range_end .rdp-day_button,
+.sv-cal .rdp-selected:not(.rdp-range_middle) .rdp-day_button {
+  background: var(--color-forest); color: var(--color-paper); font-weight: 600;
+}
+
+/* --- Stepper (dock and availability page) ------------------------------ */
+
+.sv-stepper { display: flex; align-items: center; gap: 0.75rem; }
+.sv-stepper-label { display: inline-flex; align-items: center; gap: 0.5rem; margin-right: auto; font-weight: 500; }
+.sv-stepper button {
+  display: grid; place-items: center;
+  width: 2.75rem; height: 2.75rem;
+  border: 1px solid var(--color-rule);
+  background: var(--color-paper);
+  cursor: pointer;
+}
+.sv-stepper button:hover:not(:disabled) { background: var(--color-mist); }
+.sv-stepper button:disabled { opacity: 0.35; cursor: default; }
+.sv-stepper output { min-width: 2ch; text-align: center; font-size: 1.25rem; font-weight: 400; }
+
+/* --- Booking flow ---------------------------------------------------------
+   Four steps, a summary that follows on a wide screen, a bar along the
+   bottom on a phone. White cards on paper: inputs and choices read as
+   things to touch, the page around them stays quiet.
+-------------------------------------------------------------------------- */
+
+
+.sv-cal--wide { overflow-x: auto; }
+
+.sv-bk { margin-top: clamp(2.5rem, 6vh, 4rem); scroll-margin-top: calc(var(--head-h) + 1rem); }
+
+.sv-bk-steps {
+  display: flex; gap: 0.25rem;
+  margin: 0 0 clamp(1.75rem, 4vh, 2.5rem); padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--color-rule);
+}
+.sv-bk-steps li { flex: 1 1 0; min-width: 0; }
+
+.sv-bk-steps button {
+  position: relative;
+  display: flex; align-items: center; gap: 0.6rem;
+  width: 100%; min-height: 3rem;
+  padding: 0 0.25rem 0.85rem;
+  border: 0; background: none;
+  font-size: 0.9375rem; text-align: left; white-space: nowrap;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+.sv-bk-steps button:disabled { cursor: default; }
+.sv-bk-steps button::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--color-forest);
+  transform: scaleX(0); transform-origin: left;
+}
+.sv-bk-steps li[data-state="current"] button { color: var(--color-ink); font-weight: 500; }
+.sv-bk-steps li[data-state="current"] button::after { transform: scaleX(1); }
+.sv-bk-steps li[data-state="done"] button { color: var(--color-forest); }
+
+.sv-bk-steps-num {
+  display: grid; place-items: center; flex: none;
+  width: 1.75rem; height: 1.75rem; border: 1px solid currentColor;
+  font-size: 0.75rem; font-weight: 600;
+}
+.sv-bk-steps li[data-state="current"] .sv-bk-steps-num { background: var(--color-forest); border-color: var(--color-forest); color: var(--color-paper); }
+.sv-bk-steps li[data-state="done"] .sv-bk-steps-num { background: color-mix(in srgb, var(--color-forest) 12%, transparent); border-color: transparent; }
+
+/* On a phone only the current step shows its name. The others keep theirs for
+   screen readers: hidden from sight, not from the button's accessible name. */
+@media (max-width: 599px) {
+  .sv-bk-steps li { flex: 0 0 auto; }
+  .sv-bk-steps li[data-state="current"] { flex: 1 1 auto; }
+  .sv-bk-steps li:not([data-state="current"]) button > span:last-child {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+}
+
+.sv-bk-grid { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: start; }
+@media (min-width: 1024px) { .sv-bk-grid { grid-template-columns: minmax(0, 1fr) 22.5rem; } }
+.sv-bk-main { min-width: 0; }
+
+.sv-bk-title { font-family: var(--font-head); font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.125rem); font-weight: 400; line-height: 1.15; letter-spacing: -0.025em; }
+.sv-bk-lead { max-width: 52ch; margin-top: 0.5rem; font-weight: 300; color: var(--color-ink-soft); }
+.sv-bk-demo { margin-top: 0.85rem; font-size: 0.8125rem; line-height: 1.5; color: #6e3a21; }
+
+.sv-bk-ends { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 1.25rem 0 1.5rem; }
+.sv-bk-ends > div {
+  display: grid; gap: 0.2rem; min-width: 9.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--color-rule);  background: #fff;
+}
+.sv-bk-ends > div[data-active="true"] { border-color: var(--color-forest); box-shadow: inset 0 0 0 1px var(--color-forest); }
+.sv-bk-ends .tnum[data-empty="true"] { color: var(--color-ink-soft); }
+
+.sv-bk-guests { max-width: 30rem; margin-top: 1.75rem; }
+.sv-bk-guests .sv-stepper { padding: 0.75rem 0.75rem 0.75rem 1.1rem; border: 1px solid var(--color-rule); background: #fff; }
+.sv-stepper-label small { display: block; font-size: 0.8125rem; font-weight: 300; color: var(--color-ink-soft); }
+
+/* Rooms */
+.sv-bk-rooms { display: grid; gap: 0.75rem; margin-top: 1.5rem; padding: 0; list-style: none; }
+
+.sv-bk-room {
+  position: relative;
+  display: grid; grid-template-columns: 6rem minmax(0, 1fr) auto; gap: 1rem; align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--color-rule);  background: #fff;
+  cursor: pointer;
+}
+@media (min-width: 600px) { .sv-bk-room { grid-template-columns: 9rem minmax(0, 1fr) auto; gap: 1.25rem; } }
+.sv-bk-room:hover { border-color: #b8ad98; }
+.sv-bk-room:has(input:focus-visible) { outline: 2px solid var(--color-ink); outline-offset: 3px; }
+.sv-bk-room[data-picked="true"] { border-color: var(--color-forest); box-shadow: inset 0 0 0 1px var(--color-forest); background: color-mix(in srgb, var(--color-sand) 16%, #fff); }
+.sv-bk-room[data-off="true"]:not([data-picked="true"]) { background: var(--color-paper); cursor: not-allowed; }
+.sv-bk-room[data-off="true"] .sv-bk-room-media { opacity: 0.55; filter: grayscale(0.6); }
+
+.sv-bk-room-media { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--color-mist); }
+@media (min-width: 600px) { .sv-bk-room-media { aspect-ratio: 4 / 3; } }
+
+.sv-bk-room-info { display: grid; gap: 0.2rem; min-width: 0; }
+.sv-bk-room-name { font-size: 1.25rem; font-weight: 300; letter-spacing: -0.01em; }
+.sv-bk-room-meta { font-size: 0.875rem; color: var(--color-ink-soft); }
+.sv-bk-room-why { font-size: 0.875rem; line-height: 1.45; color: var(--color-clay); }
+.sv-bk-room-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.4rem; margin-top: 0.3rem; }
+.sv-bk-room-price strong { font-size: 1.0625rem; font-weight: 500; }
+.sv-bk-room-price small { font-size: 0.8125rem; color: var(--color-ink-soft); }
+
+.sv-bk-room-check {
+  display: grid; place-items: center;
+  width: 2.75rem; height: 2.75rem;
+  border: 1px solid var(--color-rule);
+}
+.sv-bk-room[data-picked="true"] .sv-bk-room-check { background: var(--color-forest); border-color: var(--color-forest); color: var(--color-paper); }
+.sv-bk-room[data-off="true"]:not([data-picked="true"]) .sv-bk-room-check { opacity: 0.35; }
+
+/* Fields */
+.sv-bk-form { display: grid; gap: 1.25rem; max-width: 34rem; margin-top: 1.75rem; }
+
+.sv-input { display: grid; gap: 0.45rem; }
+.sv-input > label { font-size: 0.875rem; font-weight: 500; color: var(--color-ink); }
+.sv-input > label > span { color: var(--color-clay); }
+.sv-input input, .sv-input textarea, .sv-input select {
+  width: 100%; min-height: 3.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-rule);  background: #fff;
+  font: inherit; font-size: 1rem; color: var(--color-ink);
+}
+.sv-input textarea { min-height: 6.5rem; resize: vertical; }
+.sv-input input::placeholder, .sv-input textarea::placeholder { color: #75716a; }
+.sv-input input:hover, .sv-input textarea:hover, .sv-input select:hover { border-color: #b8ad98; }
+.sv-input input:focus-visible, .sv-input textarea:focus-visible, .sv-input select:focus-visible { border-color: var(--color-forest); outline-offset: 1px; }
+.sv-input[data-invalid="true"] input { border-color: #a1321c; }
+.sv-input-err { font-size: 0.875rem; color: #a1321c; }
+.sv-input-hint { font-size: 0.875rem; color: var(--color-ink-soft); }
+
+.sv-input-phone { display: flex; align-items: stretch; }
+.sv-input-phone > span {
+  display: grid; place-items: center;
+  padding-inline: 0.9rem;
+  border: 1px solid var(--color-rule); border-right: 0;  background: var(--color-mist);
+  font-variant-numeric: tabular-nums; color: var(--color-ink-soft);
+}
+
+/* Payment methods */
+.sv-pay { display: grid; gap: 1.25rem; margin-top: 1.75rem; }
+.sv-pay--compact { margin: 0 1.4rem 1.4rem; }
+.sv-pay-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+.sv-pay-group legend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.75rem; margin-bottom: 0.6rem; padding: 0; font-weight: 500; }
+.sv-pay-group legend small { font-size: 0.875rem; font-weight: 300; color: var(--color-ink-soft); }
+.sv-pay-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.5rem; }
+
+.sv-pay-opt {
+  position: relative;
+  display: flex; align-items: center; gap: 0.7rem;
+  min-height: 3.5rem; padding: 0 1rem;
+  border: 1px solid var(--color-rule);  background: #fff;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+.sv-pay-opt:hover { border-color: #b8ad98; }
+.sv-pay-opt:has(input:focus-visible) { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.sv-pay-opt[data-checked="true"] { border-color: var(--color-forest); box-shadow: inset 0 0 0 1px var(--color-forest); background: color-mix(in srgb, var(--color-sand) 16%, #fff); }
+
+.sv-pay-radio { display: grid; place-items: center; flex: none; width: 1.1rem; height: 1.1rem; border: 1.5px solid #8a857a; }
+.sv-pay-radio::after { content: ""; width: 0.55rem; height: 0.55rem; background: var(--color-forest); transform: scale(0); }
+.sv-pay-opt[data-checked="true"] .sv-pay-radio { border-color: var(--color-forest); }
+.sv-pay-opt[data-checked="true"] .sv-pay-radio::after { transform: scale(1); }
+
+/* Logos: one height, natural width, so wide wordmarks and square marks sit on
+   the same line. ShopeePay, with no free logo, falls back to its name. */
+.sv-mark { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.sv-mark img { display: block; width: auto; height: 1.375rem; max-width: 5.75rem; object-fit: contain; }
+.sv-mark[data-group="card"] img { height: 1.5rem; }
+.sv-mark[data-group="qris"] img { height: 1.5rem; }
+.sv-mark[data-size="sm"] img { height: 1rem; max-width: 4.25rem; }
+.sv-mark-text { font-weight: 600; letter-spacing: -0.01em; color: var(--color-ink); }
+.sv-pay-card-body > .sv-mark img { height: 1.875rem; max-width: 8rem; }
+.sv-order-method { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+.sv-bk-after { display: flex; align-items: flex-start; gap: 0.6rem; max-width: 52ch; margin-top: 1.75rem; color: var(--color-ink); line-height: 1.55; }
+.sv-bk-after svg { flex: none; margin-top: 0.2rem; color: var(--color-ink-soft); }
+.sv-bk-policy { margin-top: 1.25rem; padding: 1.1rem 1.25rem; background: var(--color-mist); }
+.sv-bk-policy p:last-child { margin-top: 0.4rem; font-size: 0.9375rem; color: var(--color-ink-soft); }
+.sv-bk-terms { margin-top: 1rem; font-size: 0.8125rem; color: var(--color-ink-soft); }
+
+/* Price breakdown, shared by the summary, step 4 and the order page */
+.sv-bk-breakdown { margin-top: 1.25rem; }
+.sv-bk-breakdown ul { display: grid; margin: 0.6rem 0 0; padding: 0; list-style: none; }
+.sv-bk-breakdown li { display: flex; justify-content: space-between; gap: 1rem; padding-block: 0.55rem; border-top: 1px solid var(--color-rule); font-size: 0.9375rem; }
+.sv-bk-breakdown li small { display: block; font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-bk-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--color-ink); }
+.sv-bk-total strong { font-size: 1.375rem; font-weight: 500; }
+
+@media (min-width: 1024px) { .sv-bk-only-narrow { display: none; } }
+
+.sv-bk-nav { display: flex; justify-content: space-between; gap: 1rem; margin-top: clamp(2rem, 5vh, 3rem); padding-top: 1.5rem; border-top: 1px solid var(--color-rule); }
+@media (max-width: 1023px) { .sv-bk-nav-next { display: none; } }
+
+.sv-bk-nudge, .sv-bk-alert {
+  margin-top: 1.25rem; padding: 0.85rem 1rem;
+  background: color-mix(in srgb, var(--color-clay) 9%, var(--color-paper));
+  font-size: 0.9375rem; color: #6e3a21;
+}
+.sv-bk-alert { margin: 0 0 1.5rem; border: 1px solid color-mix(in srgb, var(--color-clay) 35%, transparent); }
+
+/* Summary */
+.sv-bk-summary { display: none; }
+@media (min-width: 1024px) {
+  .sv-bk-summary {
+    position: sticky; top: calc(var(--head-h) + 1.25rem);
+    display: block; overflow: hidden;
+    border: 1px solid var(--color-rule);    background: #fff;
+  }
+}
+.sv-bk-summary-media { position: relative; aspect-ratio: 16 / 9; background: var(--color-mist); }
+.sv-bk-summary-body { padding: 1.25rem 1.4rem 1.4rem; }
+.sv-bk-summary-list { display: grid; margin: 0.75rem 0 0; }
+.sv-bk-summary-list > div { position: relative; display: grid; gap: 0.15rem; padding-block: 0.7rem; border-top: 1px solid var(--color-rule); }
+.sv-bk-summary-list dt, .sv-order-list dt { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-soft); }
+.sv-bk-summary-list dd, .sv-order-list dd { margin: 0; font-size: 0.9375rem; }
+.sv-bk-summary-list dd small, .sv-order-list dd small { display: block; font-size: 0.8125rem; color: var(--color-ink-soft); word-break: break-word; }
+.sv-bk-summary-list [data-empty="true"] { color: var(--color-ink-soft); }
+
+.sv-bk-edit {
+  position: absolute; top: 0.2rem; right: -0.5rem;
+  min-height: 2.75rem; padding-inline: 0.5rem;
+  border: 0; background: none;
+  font-size: 0.8125rem; color: var(--color-forest); text-decoration: underline; text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.sv-bk-help { display: grid; margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--color-rule); font-size: 0.875rem; }
+.sv-bk-help a { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2.75rem; color: var(--color-ink-soft); text-decoration-color: var(--color-rule); }
+.sv-bk-help a:hover { color: var(--color-forest); }
+
+/* Bottom bar, phones and tablets */
+.sv-bk-bar {
+  position: sticky; bottom: 0; z-index: 20;
+  display: flex; align-items: center; gap: 1rem;
+  margin: 2rem calc(-1 * var(--gutter)) 0;
+  padding: 0.75rem var(--gutter) calc(0.75rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-rule);
+  background: var(--color-paper);
+}
+@media (min-width: 1024px) { .sv-bk-bar { display: none; } }
+.sv-bk-bar-sum { display: grid; flex: 1; min-width: 0; line-height: 1.3; }
+.sv-bk-bar-sum strong { font-size: 1.125rem; font-weight: 500; }
+.sv-bk-bar-sum small { font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-bk-bar-go { flex: none; min-height: 3rem; padding-inline: 1.25rem; }
+
+.sv-bk-skeleton { min-height: 36rem; margin-top: 3rem; background: var(--color-mist); }
+
+.sv-btn:disabled { opacity: 0.6; cursor: progress; }
+.sv-spin { animation: sv-spin 900ms linear infinite; }
+@keyframes sv-spin { to { transform: rotate(360deg); } }
+
+button.sv-textlink { padding: 0; border: 0; background-color: transparent; cursor: pointer; font-family: inherit; }
+
+/* --- Order page ---------------------------------------------------------- */
+
+.sv-order, .sv-order-loading, .sv-order-empty { max-width: 72rem; margin-inline: auto; padding-top: calc(var(--head-h) + clamp(2rem, 6vh, 4rem)); }
+.sv-order-loading { display: flex; align-items: center; gap: 0.6rem; min-height: 50vh; color: var(--color-ink-soft); }
+.sv-order-empty { max-width: 72rem; }
+
+.sv-order-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--color-rule); }
+.sv-order-code { display: grid; gap: 0.25rem; }
+
+.sv-copy {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  min-height: 2.75rem; padding: 0 0.25rem;
+  border: 0; background: none;
+  font-size: 1.25rem; font-weight: 500; letter-spacing: 0.04em; color: var(--color-ink);
+  cursor: pointer;
+}
+.sv-copy svg { color: var(--color-ink-soft); }
+.sv-copy:hover svg { color: var(--color-forest); }
+.sv-copy--big { font-size: 1.5rem; }
+.sv-copy--va { min-height: 3.5rem; padding: 0.5rem 1rem; background: var(--color-mist); font-size: clamp(1.25rem, 1rem + 1.4vw, 1.75rem); letter-spacing: 0.06em; }
+
+.sv-pill { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2rem; padding: 0 0.85rem; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
+.sv-pill::before { content: ""; width: 0.45rem; height: 0.45rem; background: currentColor; }
+.sv-pill[data-status="pending"] { background: #f3e6c8; color: #6b4a12; }
+/* Paid and waiting for the admin: the one state that is somebody's turn. */
+.sv-pill[data-status="paid"] { background: #fbe3d2; color: #7a3413; }
+.sv-pill[data-status="confirmed"] { background: color-mix(in srgb, var(--color-forest) 12%, #fff); color: var(--color-forest); }
+.sv-pill[data-status="checked_in"] { background: color-mix(in srgb, var(--color-forest) 22%, #fff); color: var(--color-forest-deep); }
+.sv-pill[data-status="completed"] { background: var(--color-mist); color: #4f524b; }
+.sv-pill[data-status="rejected"] { background: #f6dcd6; color: #8a2414; }
+.sv-pill[data-status="cancelled"], .sv-pill[data-status="expired"] { background: #ece7de; color: #5f5b53; }
+
+/* Where the booking is: made, paid, confirmed. */
+.sv-track { display: flex; gap: 0.5rem; margin: 1.5rem 0 0; padding: 0; list-style: none; }
+.sv-track li { position: relative; display: flex; flex: 1 1 0; align-items: center; gap: 0.6rem; min-width: 0; padding-top: 0.9rem; border-top: 2px solid var(--color-rule); font-size: 0.875rem; color: var(--color-ink-soft); }
+.sv-track li > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-track-dot { display: grid; flex: none; place-items: center; width: 1.6rem; height: 1.6rem; border: 1px solid currentColor; font-size: 0.75rem; font-weight: 600; }
+.sv-track li[data-state="done"] { border-top-color: var(--color-forest); color: var(--color-forest); }
+.sv-track li[data-state="done"] .sv-track-dot { border-color: var(--color-forest); background: var(--color-forest); color: var(--color-paper); }
+.sv-track li[data-state="now"] { border-top-color: var(--color-clay); color: var(--color-ink); font-weight: 500; }
+.sv-track li[data-state="now"] .sv-track-dot { border-color: var(--color-clay); background: var(--color-clay); color: var(--color-paper); }
+.sv-track li[data-state="fail"] { color: #5f5b53; }
+.sv-track li[data-state="fail"] > span:last-child { text-decoration: line-through; }
+
+.sv-order-tick { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; margin-top: 2rem; background: var(--color-forest); color: var(--color-paper); }
+.sv-order-tick svg { width: 2rem; height: 2rem; }
+.sv-order-tick--wait { background: #fbe3d2; color: #7a3413; }
+.sv-order-tick--wait svg { width: 1.5rem; height: 1.5rem; }
+.sv-order-title { margin-top: 1.5rem; }
+.sv-order-lead { margin-top: 1rem; }
+
+.sv-order-grid { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: start; margin-top: clamp(2rem, 5vh, 3rem); }
+@media (min-width: 1024px) { .sv-order-grid { grid-template-columns: minmax(0, 1fr) 22.5rem; } }
+.sv-order-main { min-width: 0; }
+
+.sv-pay-card { overflow: hidden; border: 1px solid var(--color-rule); background: #fff; }
+.sv-pay-card-top {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.25rem 2rem;
+  padding: 1.25rem 1.4rem;
+  background: var(--color-forest); color: var(--color-paper);
+  --label-c: var(--color-sand);
+}
+.sv-pay-card-top .sv-copy { color: var(--color-paper); }
+.sv-pay-card-top .sv-copy svg { color: var(--color-paper-soft); }
+.sv-countdown { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem; font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem); font-weight: 300; letter-spacing: -0.01em; }
+.sv-pay-card-due { font-size: 0.875rem; color: var(--color-paper-soft); }
+.sv-pay-card-amount { display: grid; justify-items: start; gap: 0.25rem; }
+.sv-pay-card-body { display: grid; justify-items: start; gap: 1rem; padding: 1.5rem 1.4rem; }
+.sv-pay-card-title { font-size: 1.0625rem; font-weight: 500; }
+.sv-pay-steps { display: grid; gap: 0.4rem; margin: 0; padding-left: 1.25rem; font-size: 0.9375rem; color: var(--color-ink-soft); }
+.sv-pay-note { font-size: 0.875rem; color: var(--color-ink-soft); }
+.sv-pay-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; padding: 1.1rem 1.4rem; border-top: 1px solid var(--color-rule); }
+.sv-pay-card > .sv-bk-nudge { margin: 0 1.4rem 1.25rem; }
+
+.sv-qr { position: relative; width: min(15rem, 70vw); padding: 0.5rem; border: 1px solid var(--color-rule); background: #fff; color: var(--color-ink); }
+.sv-qr svg { display: block; width: 100%; height: auto; }
+.sv-qr-stamp {
+  position: absolute; left: 50%; top: 50%;
+  translate: -50% -50%; rotate: -12deg;
+  padding: 0.3rem 0.8rem;
+  border: 2px solid var(--color-clay);  background: rgba(255, 255, 255, 0.94);
+  font-size: 0.875rem; font-weight: 600; letter-spacing: 0.2em; color: var(--color-clay);
+}
+
+.sv-sent { padding: 1.4rem; border: 1px solid var(--color-rule); background: #fff; }
+.sv-sent ul { display: grid; gap: 0.5rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.sv-sent li { display: flex; align-items: center; gap: 0.6rem; word-break: break-word; }
+.sv-sent li svg { flex: none; color: var(--color-forest); }
+.sv-sent-preview { margin-top: 1rem; }
+.sv-sent-preview > summary { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: 0.875rem; font-weight: 500; color: var(--color-forest); cursor: pointer; }
+.sv-sent .sv-actions { margin-top: 1.5rem; }
+.sv-sent li svg { flex: none; }
+.sv-sent--wait li svg { color: var(--color-ink-soft); }
+.sv-wait-note { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 1.25rem; padding: 0.9rem 1rem; background: #fdf1e7; color: #6b3414; line-height: 1.5; }
+.sv-wait-note svg { flex: none; margin-top: 0.15rem; }
+.sv-reject-reason { margin-top: 0.4rem; font-size: 1.125rem; font-weight: 300; }
+.sv-refund { margin-top: 1.25rem; padding: 0.9rem 1rem; background: var(--color-mist); line-height: 1.55; }
+.sv-sent > .sv-msg, .sv-sent-preview > .sv-msg, .ad-details > .sv-msg { margin-top: 0.75rem; }
+
+.sv-msg { overflow: hidden; margin: 0; border: 1px solid var(--color-rule); background: var(--color-paper); font-size: 0.875rem; }
+.sv-msg figcaption { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--color-rule); font-size: 0.8125rem; color: var(--color-ink-soft); word-break: break-all; }
+.sv-msg-subject { padding: 0.75rem 0.9rem 0; font-weight: 600; }
+.sv-msg pre { margin: 0; padding: 0.5rem 0.9rem 0.9rem; font-family: var(--font-sans); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+
+.sv-demo-panel { margin-top: 1.5rem; padding: 1.1rem 1.25rem; border: 1.5px dashed color-mix(in srgb, var(--color-clay) 55%, transparent); background: color-mix(in srgb, var(--color-clay) 5%, var(--color-paper)); }
+.sv-demo-panel-title { display: flex; align-items: center; gap: 0.45rem; font-weight: 600; color: #6e3a21; }
+.sv-demo-panel p:not(.sv-demo-panel-title) { margin-top: 0.35rem; font-size: 0.9375rem; color: var(--color-ink-soft); }
+.sv-demo-panel-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.9rem; }
+
+.sv-order-details { padding: 1.4rem; border: 1px solid var(--color-rule); background: #fff; }
+@media (min-width: 1024px) { .sv-order-details { position: sticky; top: calc(var(--head-h) + 1.25rem); } }
+.sv-order-rooms { display: grid; gap: 0.6rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.sv-order-rooms li { display: flex; align-items: center; gap: 0.8rem; }
+.sv-order-rooms strong { display: block; font-weight: 500; }
+.sv-order-rooms small { font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-order-thumb { position: relative; flex: none; width: 3.5rem; height: 3.5rem; overflow: hidden; background: var(--color-mist); }
+.sv-order-list { display: grid; margin: 1rem 0 0; }
+.sv-order-list > div { display: grid; gap: 0.15rem; padding-block: 0.7rem; border-top: 1px solid var(--color-rule); }
+
+.sv-order-cancel { min-height: 2.75rem; margin-top: 0.75rem; padding: 0; border: 0; background: none; font-size: 0.875rem; color: #a1321c; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+.sv-confirm { margin-top: 1rem; padding: 1rem; background: color-mix(in srgb, var(--color-clay) 8%, var(--color-paper)); }
+.sv-confirm > div { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.sv-order-help { display: flex; align-items: center; gap: 0.4rem; min-height: 2.75rem; margin-top: 0.25rem; font-size: 0.875rem; color: var(--color-ink-soft); text-decoration-color: var(--color-rule); }
+.sv-order-help:hover { color: var(--color-forest); }
+
+.sv-find { display: grid; gap: 1.25rem; max-width: 28rem; margin-top: clamp(2.5rem, 6vh, 4rem); }
+.sv-find .sv-btn { justify-self: start; }
+
+/* --- Gallery -------------------------------------------------------------- */
+
+/* Photographs only, no captions (21 October 2026): a tight grid, four across
+   on a wide screen, three on a tablet, two on a phone. */
+.sv-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (max-width: 899px) { .sv-gallery { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 599px) {
+  /* Edge to edge, two across. */
+  .sv-gallery { grid-template-columns: 1fr 1fr; gap: 4px; margin-inline: calc(-1 * var(--gutter)); }
+  .sv-gallery .sv-gallery-frame { aspect-ratio: 1 / 1; }
+}
+
+.sv-gallery-btn { display: block; width: 100%; padding: 0; background: none; border: 0; cursor: zoom-in; }
+.sv-gallery-frame { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-mist); }
+
+.sv-lightbox { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: clamp(1rem, 4vw, 3rem); }
+.sv-lightbox-backdrop { position: absolute; inset: 0; width: 100%; border: 0; cursor: zoom-out; background: rgba(17, 17, 17, 0.94); }
+.sv-lightbox-figure { position: relative; margin: 0; max-width: min(96rem, 100%); display: grid; gap: 1rem; }
+.sv-lightbox-img { width: 100%; height: auto; max-height: 76svh; object-fit: contain; }
+.sv-lightbox-cap { justify-self: center; color: rgba(255, 255, 255, 0.72); font-size: 0.8125rem; letter-spacing: 0.08em; }
+.sv-lightbox-close, .sv-lightbox-nav {
+  position: absolute; z-index: 1; display: grid; place-items: center;
+  width: 3rem; height: 3rem;  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.45); color: var(--color-paper); cursor: pointer;
+}
+.sv-lightbox-close:hover, .sv-lightbox-nav:hover { background: rgba(255, 255, 255, 0.16); }
+.sv-lightbox-close { top: clamp(1rem, 4vw, 2rem); right: clamp(1rem, 4vw, 2rem); }
+.sv-lightbox-prev { left: clamp(0.5rem, 3vw, 2rem); top: 50%; translate: 0 -50%; }
+.sv-lightbox-next { right: clamp(0.5rem, 3vw, 2rem); top: 50%; translate: 0 -50%; }
+
+/* --- Header ---------------------------------------------------------------
+   A plain white bar on every page, the home page included (the owner's
+   reference: yatscolony.com): the logo on the left, the tabs centred, the
+   dates and Book now on the right. Solid rather than frosted, which also
+   keeps scrolling smooth on a phone. Colours ease; nothing moves.
+-------------------------------------------------------------------------- */
+
+.sv-sentinel { position: absolute; top: 0; left: 0; width: 1px; height: 8px; pointer-events: none; }
+
+.sv-header {
+  position: fixed; inset-inline: 0; top: 0; z-index: 30;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 1.5rem;
+  height: var(--head-h);
+  padding-inline: var(--gutter);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 1px 0 transparent;
+  transition: box-shadow 400ms var(--ease-soft);
+}
+.sv-header[data-scrolled="true"] { box-shadow: 0 1px 0 var(--color-rule); }
+
+/* The owner's full logo: the palm over "suka" over VILLAGE, as the owner
+   asked. The bar is a little taller on a wide screen to give it room. */
+.sv-brand { justify-self: start; display: inline-flex; align-items: center; min-height: 2.75rem; text-decoration: none; color: var(--color-forest); }
+.sv-brand-logo { display: block; height: 3rem; width: auto; aspect-ratio: 1433 / 1064; }
+@media (min-width: 900px) { .sv-brand-logo { height: 3.5rem; } }
+
+.sv-tabs { display: none; align-self: stretch; gap: clamp(0.5rem, 1.5vw, 1.9rem); }
+.sv-tabs a {
+  position: relative;
+  display: inline-flex; align-items: center;
+  padding-inline: 0.2rem;
+  white-space: nowrap; text-decoration: none;
+  font-size: 0.875rem; font-weight: 400; letter-spacing: 0.01em;
+  color: var(--color-ink-soft);
+  transition: color 250ms var(--ease-soft);
+}
+.sv-tabs a::after { content: ""; position: absolute; left: 50%; bottom: 0.85rem; width: 4px; height: 4px; translate: -50% 0; background: var(--color-tea); opacity: 0; }
+.sv-tabs a:hover { color: var(--color-ink); }
+.sv-tabs a[data-current="true"] { color: var(--color-forest); font-weight: 500; }
+.sv-tabs a[data-current="true"]::after { opacity: 1; }
+
+.sv-header-end { justify-self: end; display: inline-flex; align-items: center; gap: 0.5rem; }
+
+.sv-lang-compact {
+  display: none; place-items: center;
+  min-width: 2.5rem; min-height: 2.5rem;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+  text-decoration: none; color: var(--color-ink-soft);
+  transition: color 250ms var(--ease-soft), background-color 250ms var(--ease-soft);
+}
+.sv-lang-compact:hover { color: var(--color-ink); background: var(--color-cream); }
+
+.sv-lang { display: inline-flex; align-items: center; padding: 2px; border: 1px solid var(--color-rule); }
+.sv-lang-option {
+  display: grid; place-items: center;
+  min-width: 2.75rem; min-height: 2.75rem; padding-inline: 0.5rem;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+  text-decoration: none; color: var(--color-ink-soft);
+}
+.sv-lang-option[data-active="true"] { background: var(--color-forest); color: var(--color-paper); }
+
+/* One date button, then Book now. */
+.sv-book { position: relative; display: flex; align-items: center; gap: 0.5rem; }
+
+.sv-book-field {
+  display: none; align-items: center; gap: 0.7rem;
+  min-width: 11.5rem; height: 2.5rem;
+  padding: 0 1rem 0 0.85rem;
+  border: 1px solid var(--color-rule); background: rgba(255, 255, 255, 0.72);
+  text-align: left; cursor: pointer;
+  transition: background-color 250ms var(--ease-soft), border-color 250ms var(--ease-soft);
+}
+@media (min-width: 1600px) { .sv-book-field { display: flex; } }
+.sv-book-field:hover { background: var(--color-cream); }
+.sv-book-field[data-active="true"] { border-color: var(--color-forest); background: var(--color-cream); }
+.sv-book-field svg { flex: none; color: var(--color-forest); }
+
+.sv-book-field-text { display: grid; min-width: 0; line-height: 1.15; }
+.sv-book-field-label { font-size: 0.5625rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink); }
+.sv-book-field-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; color: var(--color-ink); }
+.sv-book-field-value[data-empty="true"] { color: var(--color-ink-soft); }
+
+
+.sv-book-go, .sv-book-mini {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 2.5rem; padding-inline: 1.25rem;
+  border: 0; background: var(--color-forest); color: var(--color-paper);
+  font-size: 0.875rem; font-weight: 500; white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 250ms var(--ease-soft);
+}
+.sv-book-mini { height: 2.75rem; }
+.sv-book-go:hover, .sv-book-mini:hover { background: var(--color-forest-deep); }
+
+.sv-book-panel {
+  position: absolute; top: calc(100% + 0.75rem); right: 0;
+  width: max-content;
+  padding: 1.25rem 1.6rem 1.6rem;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 30px 70px -30px rgba(23, 70, 52, 0.45), 0 0 0 1px var(--color-rule);
+  transform-origin: top right;
+}
+.sv-book-panel .sv-cal .rdp-months { flex-wrap: nowrap; justify-content: space-between; gap: 2rem; }
+
+.sv-dock-hint { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; margin-bottom: 0.5rem; }
+.sv-dock-hint .sv-label { color: var(--color-wood); }
+.sv-dock-nights { padding: 0.25rem 0.65rem; background: var(--color-cream); font-size: 0.8125rem; }
+.sv-dock-clear {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  margin-left: auto; min-height: 2.75rem; padding-inline: 0.5rem;
+  border: 0; background: none; cursor: pointer;
+  font-size: 0.875rem; color: var(--color-ink-soft);
+}
+.sv-dock-clear:hover { color: var(--color-ink); }
+.sv-dock-seg-label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink); }
+
+.sv-menu-btn { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin-inline-end: -0.5rem; cursor: pointer; background: none; border: 0; color: inherit; }
+.sv-menu-bars { display: grid; gap: 5px; width: 20px; }
+.sv-menu-bars span { display: block; height: 1.5px; background: currentColor; }
+
+@media (min-width: 1100px) {
+  .sv-header { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .sv-tabs { display: flex; }
+  .sv-lang-compact { display: grid; }
+  .sv-menu-btn { display: none; }
+}
+/* Seven tabs and the controls: the word steps aside until there is room. */
+
+/* --- Mobile menu ---------------------------------------------------------
+   A full white sheet over the page. It carries its own
+   header with a close control, so closing never depends on a button the
+   overlay has covered.
+-------------------------------------------------------------------------- */
+
+.sv-menu {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sv-menu-top { display: flex; align-items: center; justify-content: space-between; height: var(--head-h); padding-inline: var(--gutter); border-bottom: 1px solid var(--color-rule); }
+
+.sv-menu-close {
+  display: grid; place-items: center;
+  width: 2.75rem; height: 2.75rem; margin-inline-end: -0.5rem; border: 1px solid var(--color-rule);
+  background: transparent; color: var(--color-ink); cursor: pointer;
+}
+.sv-menu-close:hover { background: var(--color-cream); }
+
+.sv-menu-nav { display: grid; align-content: start; padding: 0.5rem var(--gutter) 1rem; }
+
+.sv-menu-nav a {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  border-bottom: 1px solid var(--color-rule);
+  text-decoration: none;
+  font-size: clamp(1.375rem, 6vw, 1.75rem);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+
+
+.sv-menu-num { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; color: var(--color-wood); }
+.sv-menu-arrow { color: var(--color-ink-soft); }
+.sv-menu-nav a[data-current="true"] { color: var(--color-forest); font-weight: 400; }
+.sv-menu-nav a[data-current="true"] .sv-menu-arrow { color: var(--color-tea); }
+
+.sv-menu-foot { display: grid; gap: 0.6rem; padding: 0.85rem var(--gutter) calc(0.85rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-rule); }
+.sv-menu-foot .sv-btn { width: 100%; min-height: 2.75rem; font-size: 0.9375rem; }
+.sv-menu-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; }
+.sv-menu-meta .sv-lang { margin-left: auto; }
+.sv-menu-meta .sv-lang-option { min-height: 2.5rem; min-width: 2.5rem; }
+.sv-menu-meta a { display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2.75rem; text-decoration: none; color: var(--color-ink-soft); font-size: 0.875rem; }
+.sv-menu-meta a:hover { color: var(--color-ink); }
+
+/* --- Phone: the booking sheet ------------------------------------------ */
+
+.sv-sheet-scrim { position: fixed; inset: 0; z-index: 70; width: 100%; border: 0; background: rgba(17, 17, 17, 0.4); cursor: pointer; }
+
+.sv-sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 71;
+  display: grid;
+  gap: 1rem;
+  max-height: 92svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.75rem var(--gutter) calc(1rem + env(safe-area-inset-bottom));
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 -1px 0 var(--color-rule);
+}
+
+.sv-sheet-grab { justify-self: center; width: 2.5rem; height: 4px; background: var(--color-rule); }
+.sv-sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.sv-sheet-title { font-family: var(--font-head); font-size: 1.5rem; font-weight: 400; letter-spacing: -0.02em; }
+.sv-sheet-close { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 1px solid var(--color-rule); background: transparent; cursor: pointer; }
+
+.sv-sheet-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.sv-sheet-dates > div { display: grid; gap: 0.2rem; padding: 0.75rem 1rem; border: 1px solid var(--color-rule); }
+.sv-sheet-dates > div[data-active="true"] { border-color: var(--color-forest); background: #fff; }
+.sv-sheet-dates .tnum { font-size: 0.9375rem; }
+.sv-sheet-dates .tnum[data-empty="true"] { color: var(--color-ink-soft); }
+
+.sv-sheet-cal { display: grid; justify-items: center; }
+.sv-sheet-cal .sv-cal { --cell: min(2.75rem, calc((100vw - 2 * var(--gutter)) / 7)); }
+.sv-sheet-foot { position: sticky; bottom: 0; padding-top: 0.5rem; background: var(--color-paper); }
+.sv-sheet-go { width: 100%; }
+
+/* --- Footer --------------------------------------------------------------
+   One thin band of garden green: the logo, where it is, WhatsApp, Instagram
+   and the language on one line, the fine print under it.
+-------------------------------------------------------------------------- */
+
+.sv-footer { background: var(--color-forest); color: var(--color-cream); }
+
+.sv-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 2.5rem; padding-block: 1.5rem; }
+/* Where there is room, three equal-sided columns, so the place sits on the
+   true centre of the page rather than midway between two unequal groups. */
+@media (min-width: 1024px) {
+  .sv-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .sv-foot-brand { justify-self: start; }
+  .sv-foot-place { justify-self: center; }
+  .sv-foot-links { justify-self: end; }
+}
+
+.sv-foot-brand { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--color-cream); text-decoration: none; }
+.sv-foot-logo { display: block; height: 3.25rem; width: auto; aspect-ratio: 1433 / 1064; }
+
+.sv-foot-place { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; font-size: 0.875rem; color: var(--color-sage); text-decoration: none; transition: color 250ms var(--ease-soft); }
+.sv-foot-place:hover { color: var(--color-cream); }
+
+.sv-foot-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1.5rem; font-size: 0.875rem; }
+.sv-foot-links > a { display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2.75rem; color: var(--color-cream); text-decoration: none; transition: opacity 250ms var(--ease-soft); }
+.sv-foot-links > a:hover { opacity: 0.7; }
+.sv-footer .sv-lang { border-color: rgba(243, 238, 228, 0.3); }
+.sv-footer .sv-lang-option { min-width: 2.75rem; min-height: 2.25rem; color: var(--color-sage); }
+.sv-footer .sv-lang-option[data-active="true"] { background: var(--color-cream); color: var(--color-forest); }
+
+.sv-foot-base {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.35rem 2rem;
+  padding-block: 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(243, 238, 228, 0.16);
+  font-size: 0.75rem; line-height: 1.6;
+  color: var(--color-sage);
+}
+
+@media (max-width: 1023px) {
+  .sv-foot { flex-direction: column; align-items: flex-start; gap: 0.25rem; padding-block: 1.25rem 1rem; }
+}
+
+/* --- Home: one screen ------------------------------------------------------
+   The Main Villa fills the screen edge to edge from the foot of the white
+   header down, the header itself staying plain white (the owner's reference,
+   yatscolony.com). A scrim at the foot keeps the fine print readable on it.
+-------------------------------------------------------------------------- */
+
+.sv-home { position: fixed; inset: 0; overflow: hidden; background: var(--color-forest-deep); color: #fff; }
+.sv-home::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; z-index: 1; height: 10rem; background: linear-gradient(transparent, rgba(12, 28, 20, 0.55)); pointer-events: none; }
+
+.sv-home-stage { position: absolute; inset: var(--head-h) 0 0; }
+/* The house sits a little right of centre in the frame; keep it in view when
+   a tall phone screen crops the sides. */
+.sv-home-photo { object-position: 54% 60%; }
+
+.sv-home-foot {
+  position: absolute; z-index: 2;
+  left: var(--gutter); right: var(--gutter); bottom: max(clamp(1.25rem, 3vh, 2.25rem), env(safe-area-inset-bottom));
+}
+
+.sv-home-meta {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 1.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 0.8125rem;
+}
+.sv-home-place { color: rgba(255, 255, 255, 0.85); }
+.sv-home-meta nav { display: flex; flex-wrap: wrap; gap: 0 1.25rem; }
+.sv-home-meta a { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 2.75rem; color: #fff; text-decoration: none; transition: opacity 250ms var(--ease-soft); }
+.sv-home-meta a:hover { opacity: 0.72; }
+
+/* --- One room: a wide slider of every photograph, the details below ------ */
+
+.sv-room-slider { position: relative; margin-top: 0.75rem; height: clamp(20rem, calc(100svh - var(--head-h) - 8.5rem), 52rem); }
+@media (max-width: 899px) { .sv-room-slider { height: auto; aspect-ratio: 4 / 3; margin-inline: calc(-1 * var(--gutter)); } }
+
+.sv-room { display: grid; gap: 2.75rem; margin-top: clamp(2rem, 5vh, 3.25rem); }
+@media (min-width: 900px) { .sv-room { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(3rem, 7vw, 7rem); align-items: start; } }
+.sv-room-facts { margin-top: 0.5rem; font-size: 0.9375rem; color: var(--color-ink-soft); }
+.sv-room-main .sv-row-title { margin-top: 0; }
+.sv-room-main .sv-row-copy { margin-top: 1.25rem; }
+.sv-room-main .sv-show-actions { margin-top: 1.75rem; }
+.sv-room-specs-title { margin-top: 0.35rem; }
+.sv-room-side .sv-specs { margin-top: 0.75rem; }
+.sv-room-side .sv-specs { display: block; columns: 2; column-gap: 2rem; }
+.sv-room-side .sv-specs li { break-inside: avoid; }
+.sv-room-side .sv-note { margin-top: 2rem; }
+
+.sv-room-dock { display: none; }
+@media (max-width: 899px) {
+  .sv-room-dock {
+    position: fixed; inset-inline: 0; bottom: 0; z-index: 25;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.65rem var(--gutter) calc(0.65rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-rule);
+    background: var(--color-paper);
+  }
+  .sv-room-dock-name { font-family: var(--font-head); font-size: 1.0625rem; letter-spacing: -0.01em; color: var(--color-forest); }
+  .sv-room-dock-meta { font-size: 0.8125rem; color: var(--color-ink-soft); }
+  .sv-room-dock .sv-btn { flex: none; }
+  /* Room for the bar under the last thing on the page. */
+  body:has(.sv-room-dock) .sv-footer { padding-bottom: calc(4.25rem + env(safe-area-inset-bottom)); }
+}
+
+.sv-others { margin-top: clamp(4.5rem, 12vh, 8rem); padding-top: 1.5rem; border-top: 1px solid var(--rule-c); }
+.sv-around { display: grid; gap: clamp(1.5rem, 3vw, 2rem); margin-top: 2rem; padding: 0; list-style: none; }
+@media (min-width: 900px) { .sv-around { grid-template-columns: 1fr 1fr; } }
+.sv-tile { display: grid; gap: 0.9rem; text-decoration: none; color: inherit; }
+.sv-tile-media { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--color-cream); }
+.sv-tile-name { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; min-height: 2.75rem; font-family: var(--font-head); font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem); letter-spacing: -0.02em; color: var(--color-forest); }
+.sv-tile:hover .sv-tile-name { text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+.sv-tile-meta { font-family: var(--font-sans); font-size: 0.875rem; font-weight: 400; letter-spacing: 0.01em; text-transform: none; color: var(--color-ink-soft); }
+
+/* --- Contact -----------------------------------------------------------------
+   The same rows as every page: reaching the estate, then finding it, with
+   the map where a photograph would be.
+-------------------------------------------------------------------------- */
+
+.sv-contact-number { display: inline-block; margin-top: 1.1rem; font-size: 1.125rem; font-weight: 400; letter-spacing: 0.01em; color: var(--color-ink); text-decoration: none; transition: color 250ms var(--ease-soft); }
+.sv-contact-number:hover { color: var(--color-forest); }
+
+.sv-contact-plus { margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-ink-soft); }
+
+
+/* Set high in its frame, so Google's place card in the corner is out of
+   view; "Petunjuk arah" beside it opens the full map. */
+.sv-contact-map { --lift: 7.5rem; position: absolute; inset: 0; overflow: hidden; background: var(--color-cream); }
+.sv-contact-map iframe { position: absolute; left: 0; top: calc(-1 * var(--lift)); width: 100%; height: calc(100% + var(--lift)); border: 0; filter: saturate(0.85); }
+/* Google's place card grows a line taller in a wide frame. */
+@media (min-width: 900px) { .sv-contact-map { --lift: 9rem; } }
+
+/* The one circle. A square radio dot reads as a checkbox. */
+.sv-pay-radio, .sv-pay-radio::after { border-radius: 50%; }
+
+/* --- Motion ------------------------------------------------------------------
+   Few things move, and each one shows where something came from: a page's
+   first row is simply there, the rows after it fade in as they scroll into
+   view, the home photograph settles in, overlays come in from where they
+   live. No zooms anywhere, by the owner's choice. Durations are long and the
+   curve is soft, so it reads as calm rather than busy.
+
+   All of it is CSS. Scroll-linked reveals use scroll-driven animations where
+   the browser has them (Chrome, Edge, Safari 26) and are simply absent where
+   it does not, so content is never hidden waiting for a script. Nothing moves
+   on hover, and nothing moves at all under prefers-reduced-motion.
+-------------------------------------------------------------------------- */
+
+@keyframes sv-rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes sv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sv-pop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes sv-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sv-draw { to { stroke-dashoffset: 0; } }
+@keyframes sv-dock {
+  entry 0% { transform: none; }
+  entry 100%, exit 0% { transform: translateY(110%); }
+  exit 100% { transform: none; }
+}
+
+
+@media (prefers-reduced-motion: no-preference) {
+  /* On load: nothing waits. What is on screen first (a page's first row, a
+     room's slider) is there at once, which is what makes a phone feel quick;
+     only the home photograph settles in, and the rows below fade as they
+     arrive. */
+
+  .sv-home-stage { animation: sv-fade 1.6s var(--ease-soft) both; }
+  .sv-home-foot { animation: sv-fade 1s var(--ease-soft) 0.5s both; }
+
+  /* Overlays come in from where they live */
+  .sv-menu { animation: sv-fade 280ms var(--ease-soft) both; }
+  .sv-menu-nav a { animation: sv-rise 640ms var(--ease-soft) both; animation-delay: calc(var(--i, 0) * 45ms + 60ms); }
+  .sv-book-panel { animation: sv-pop 300ms var(--ease-soft) both; }
+  .sv-sheet, .sv-room-dock { animation: sv-up 440ms var(--ease-soft) both; }
+  /* A room page on a phone: the bar at the foot steps aside while the
+     page's own Book now is on screen, and comes back once it has scrolled
+     past, so the same button is never shown twice. */
+  @supports (animation-timeline: view()) {
+    .sv-wrap:has(> .sv-room-dock) { timeline-scope: --book; }
+    .sv-room-main .sv-show-actions { view-timeline: --book block; }
+    .sv-room-dock { animation: sv-dock linear both; animation-timeline: --book; animation-range: entry 0% exit 100%; }
+  }
+  .sv-sheet-scrim, .sv-lightbox { animation: sv-fade 300ms ease both; }
+  .sv-lightbox-figure { animation: sv-rise 520ms var(--ease-soft) both; }
+  .sv-step-in { animation: sv-rise 520ms var(--ease-soft) both; }
+  .sv-order-tick path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: sv-draw 700ms var(--ease-soft) 200ms forwards; }
+
+  /* As they scroll into view */
+  @supports (animation-timeline: view()) {
+    /* Words fade in block by block as each comes up the screen, and are
+       whole once they are fully on it, so nothing rests half faded. */
+    .sv-row:not([data-first="true"]) .sv-row-body > * { animation: sv-fade linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+    /* On a wide screen the picture fades with its row. On a phone it is
+       simply there: it is what peeks in at the foot of the screen, and a
+       photograph left half faded there reads as a fault. */
+    @media (min-width: 900px) {
+      .sv-row:not([data-first="true"]) .sv-row-media { animation: sv-fade linear both; animation-timeline: --row; animation-range: entry 0% entry 70%; }
+    }
+
+
+    .sv-gallery-item, .sv-others, .sv-page > .sv-wrap > .sv-note {
+      animation: sv-fade linear both; animation-timeline: view(); animation-range: entry 0% entry 50%;
+    }
+  }
+}
+

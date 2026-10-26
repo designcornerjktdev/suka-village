@@ -1,0 +1,141 @@
+{
+  "title": "Suka Village — roll 3, model produk dikoreksi",
+  "question": "PRODUCT.md diperbaiki: ini farm stay dengan program kegiatan (ATV, pancing, peternakan, jalur sepeda, petik kebun), bukan sewa villa. Semua arah di bawah menjual HARI, bukan kamar.",
+  "options": [
+    {
+      "id": "assigned-4",
+      "label": "Program Hari Ini",
+      "kicker": "THE ROLL",
+      "lineage": "papan program harian yang ditulis ulang tiap pagi di farm, camp, dan dive shop",
+      "thesis": "Ketakutan asli penyelenggara bukan 'kamarnya bagus nggak', tapi 'nanti semua orang ngapain seharian'. Papan program menjawab itu dalam satu-satunya bentuk yang punya wibawa: jadwal yang ditulis orang di lokasi tiap pagi. Itu bukan copy marketing, itu operasional yang dibikin kelihatan. Menolak susunan bawaan kategori: hero kolam dan grid ikon fasilitas.",
+      "palette": ["#FCFCFA", "#0E4032", "#C4333C", "#1A1A17"],
+      "materials": ["papan tulis putih", "tinta spidol", "jejak hapusan", "magnet dan klip kertas"],
+      "viewport": "Papan putih memenuhi layar, bingkainya terpotong tepi layar — Anda berdiri terlalu dekat untuk melihat seluruhnya. Kiri atas, stempel kecil SUKA VILLAGE. Lalu ditulis besar: PROGRAM HARI INI. Di bawahnya hari terbentang dalam kolom jam, tiap baris satu kegiatan: petik kebun, ATV, mancing, peternakan, kolam, makan malam. Satu baris ditandai merah — yang sedang berjalan. PARALLAX: papannya diam, isinya yang bergerak. Scroll mengangkat tiap baris lepas dari papan jadi panelnya sendiri, lalu menurunkannya kembali. Pergantian bagian adalah papan dihapus dan ditulis ulang — sapuan, bukan fade. Pelat WhatsApp hijau menempel magnet di sudut, satu-satunya yang tidak pernah terhapus.",
+      "risk": "Dua risiko nyata. Estetika papan tulis putih jatuh jadi ruang rapat kantor dalam sekejap — persis mode gagal 'hotel korporat'. Dan devicenya bergantung jadwal asli: kalau owner tidak memberi jam dan urutan kegiatan, baris-barisnya jadi karangan. Itu data yang harus diminta, bukan diisi sendiri.",
+      "raised": [
+        {
+          "from": "Kiln Shelf Glaze",
+          "raise": "Gravitasi yang menentukan urutan baca. Arah scroll adalah logika struktur itu sendiri, bukan wadah tempat section ditumpuk."
+        },
+        {
+          "from": "Seven-Segment",
+          "raise": "Ketiadaan digambar sesengaja kehadiran. Kegiatan yang tidak jalan hari ini tetap punya slotnya di papan, kosong dan terlihat — tidak dihapus dari daftar."
+        },
+        {
+          "from": "Kinetic Sand Glyphs",
+          "raise": "Satu pusat yang diorbit seluruh medan: jam yang sedang berjalan. Hierarki radial dari satu titik hangat, bukan daftar rata."
+        },
+        {
+          "from": "Sleeping City Fold",
+          "raise": "Label menempel pada jahitan strukturnya sendiri, tidak mengambang di atasnya."
+        },
+        {
+          "from": "Brief klien",
+          "raise": "Papan tulis memang putih. Brief 'mostly white' tidak diterjemahkan ke sini — ia sudah material aslinya."
+        }
+      ]
+    },
+    {
+      "id": "model-pick-4",
+      "label": "Karcis Terusan",
+      "kicker": "IMPECCABLE'S PICK",
+      "lineage": "buku karcis terusan berperforasi — satu sobekan per kegiatan",
+      "thesis": "Hari itu dijadikan benda yang bisa dipegang: satu lembar karcis panjang, garis perforasi memisahkan tiap kegiatan.",
+      "palette": ["#FBFAF6", "#0E4032", "#C4333C", "#1A1A17"],
+      "materials": ["kertas karcis", "garis perforasi", "nomor seri", "stempel tinta"],
+      "viewport": "Satu lembar karcis panjang memenuhi layar, tiap kegiatan satu sobekan bernomor. PARALLAX: scroll merobek sobekan berikutnya lepas dari lembarnya.",
+      "risk": "Kandidat teratas saya sendiri, jadi curigai. Dan ada cacat produk nyata: karcis menyiratkan transaksi per kegiatan, padahal belum tentu ada biaya per kegiatan — tamu bisa salah mengira harus bayar tiap ikut sesuatu."
+    },
+    {
+      "id": "challenger-crouwel",
+      "label": "Grid Specimen",
+      "kicker": "ALTERNATIF KUAT",
+      "verdict": "competitive",
+      "lineage": "specimen huruf bergrid Wim Crouwel — huruf dibangun sel demi sel di atas grid yang sengaja terlihat",
+      "thesis": "Grid konstruksinya tidak disembunyikan. Struktur halaman adalah desainnya.",
+      "palette": ["#FFFFFF", "#1A1A1A", "#2B57D6", "#0E4032"],
+      "materials": ["garis konstruksi tipis", "huruf dibangun dari sel", "satu bidang aksen"],
+      "viewport": "Dasar putih dengan garis grid biru samar seperti kertas milimeter. Huruf raksasa merakit diri dari sel-selnya.",
+      "case": "Natif putih dengan garis konstruksi tipis — brief klien tidak menyiksa arah ini sama sekali, ia memang lahir begitu. Grid sebagai rangka yang terlihat adalah kejujuran struktural, dan 'bergerak per sel, per entri katalog' memetakan langsung ke program yang tersusun dalam sel. Menang di kejelasan produk.",
+      "risk": "Ini bahasa desainer, bukan bahasa keluarga. Tidak ada penyelenggara acara keluarga yang merasa terwakili oleh specimen tipografi Swiss, dan huruf grid raksasa gampang terbaca dingin serta institusional — dekat sekali dengan mode gagal 'hotel korporat'.",
+      "hero": "https://impeccable.style/worlds/cards/crouwel-grid-specimen-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/crouwel-grid-specimen.webp"
+    },
+    {
+      "id": "challenger-blind",
+      "label": "Depot Blind Courses",
+      "kicker": "ALTERNATIF KUAT",
+      "verdict": "competitive",
+      "lineage": "papan tujuan gulung di depot — kain celup bertumpuk melangkah di bawah satu jendela tetap",
+      "thesis": "Isi halaman menaiki gulungan kain; tiap pergantian melangkah satu kursus, melampaui sedikit, lalu mengendap.",
+      "palette": ["#F5F3EC", "#1B4D3E", "#E8C11C", "#1A1A17"],
+      "materials": ["kain bebas celup untuk prosa", "hijau botol pekat", "legenda kuning krom"],
+      "viewport": "Satu jendela tetap; kursus kain melangkah di bawahnya. Kesalahan adalah kursus yang berhenti di tengah langkah, dua setengah-legenda bertemu di satu jahitan.",
+      "case": "Mekanik langkahnya menjawab keinginan klien soal scroll dengan sesuatu yang lebih baik daripada parallax: tidak ada yang meluncur, semuanya melangkah satu kursus dengan overshoot lalu mengendap. Terasa mekanis dan pasti, bukan dekoratif. Dan 'kain bebas celup memikul seluruh prosa' berarti putih sudah ada di tata bahasanya. Hijau botolnya kebetulan hijau brand.",
+      "risk": "Panel hijau pekat mendorong melawan 'mostly white' — ini yang harus dinegosiasi kalau arah ini dipilih. Dan papan tujuan terbaca sebagai transit: itu perjalanannya, bukan tinggalnya.",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-depot-blind-courses-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/operate-c-depot-blind-courses.webp"
+    },
+    {
+      "id": "challenger-sand",
+      "label": "Kinetic Sand Glyphs",
+      "verdict": "declined",
+      "lineage": "permukaan kendali Afrofuturis — pasir kinetik dan emas hangat",
+      "palette": ["#8A5A2B", "#3A2A1A", "#141414", "#C9A227"],
+      "materials": ["relief pasir", "cahaya emas antik"],
+      "case": "Tidak ada pijakan identifikasi bagi keluarga Indonesia, dan cincin glyph tidak memetakan ke program sehari. Palet ochre-umber juga bertabrakan langsung dengan brief putih.",
+      "kept": "Hierarki radial dari satu pusat hangat.",
+      "hero": "https://impeccable.style/worlds/cards/kinetic-sand-glyphs-hero.webp"
+    },
+    {
+      "id": "challenger-segment",
+      "label": "Seven-Segment",
+      "verdict": "declined",
+      "lineage": "keluarga tampilan tujuh segmen — jam beker, totem harga, papan skor",
+      "palette": ["#0A0A0A", "#E02B20", "#E8A020"],
+      "materials": ["segmen menyala", "sel hantu tak menyala"],
+      "case": "Dasar nyaris hitam melawan brief, dan farm stay yang tampil sebagai jam beker terasa dingin — kebalikan dari tempat berkumpul keluarga.",
+      "kept": "Ketiadaan digambar sesengaja kehadiran.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-seven-segment-alarm-clock-hero.webp"
+    },
+    {
+      "id": "challenger-sleeping",
+      "label": "Sleeping City Fold",
+      "verdict": "declined",
+      "lineage": "kota tidur yang terlipat jadi selimut",
+      "palette": ["#141A33", "#C9A227", "#E8E4DA"],
+      "materials": ["jahitan selimut", "lampu jendela sebagai bintang sulam"],
+      "case": "Dunia surealis mengaburkan tempat yang nyata — persis kebalikan dari yang harus dipercaya pengunjung. Dan navy malam melawan brief putih.",
+      "kept": "Label menempel pada jahitan strukturnya sendiri.",
+      "hero": "https://impeccable.style/worlds/cards/dream-surreal-impossible-worlds-sleeping-city-fold-hero.webp"
+    },
+    {
+      "id": "challenger-kiln",
+      "label": "Kiln Shelf Glaze River",
+      "verdict": "declined",
+      "lineage": "rak tungku di bawah deretan cangkir berglasir tebal",
+      "palette": ["#F2F0EA", "#1B4FA8", "#1A1A1A"],
+      "materials": ["rak tungku putih kapur", "aliran glasir kobalt"],
+      "case": "Dasar putih kapurnya cocok dengan brief, tapi resep dan pembakaran tidak memetakan ke kegiatan keluarga, dan tidak ada identifikasi sama sekali.",
+      "kept": "Gravitasi menentukan urutan baca.",
+      "hero": "https://impeccable.style/worlds/cards/clay-ceramics-fracture-glaze-river-shelf-hero.webp"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "code",
+    "toggle": false
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "Standar kategori",
+    "thesis": "Yang dikirim kategori ini, dikerjakan dengan sempurna: putih bersih, hero full-bleed, serif tipis, grid ikon fasilitas, parallax lembut, bar booking mengambang. Brief klien memang menunjuk ke sini — pintu ini terbuka dan sah.",
+    "palette": ["#FFFFFF", "#2F3E36", "#C9A227"],
+    "materials": ["fotografi golden hour", "grid bersih"],
+    "viewport": "Susunan yang persis diharapkan pengunjung, dengan kualitas eksekusi penuh.",
+    "risk": "Tidak bisa dibedakan dari kompetitor — dan bertumpu penuh pada foto asli yang belum ada."
+  },
+  "steer": true
+}
