@@ -99,6 +99,16 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
   panel edit, atau menu ⋯). Desain email HTML untuk semua pesan otomatis
   (`lib/booking/email.ts`), pratinjaunya di Pengaturan → Email otomatis.
 
+- Audit UI dan bug (28 Okt, lanjutan): footer selalu di dasar layar walau
+  halamannya pendek; detail kamar: foto 4:3 besar di tengah, sisi kiri dan
+  kanan menampilkan potongan foto sebelum/sesudahnya (`peek` di
+  `Slides.tsx`), hierarki teks dirapikan untuk HP dan desktop; 404 bermerek (`app/[lang]/not-found.tsx`); halaman Cek
+  pesanan diberi judul; "Pesanan tidak ditemukan" menampilkan pesanan terbaru
+  di browser itu (demo); Reset data contoh di admin kini minta konfirmasi
+  (sebelumnya langsung menghapus, dan link pesanan lama jadi tidak ditemukan);
+  tinggi kolom form admin seragam; toolbar, bar Simpan, kartu tabel di HP,
+  target sentuh 44px dirapikan.
+
 ## Menunggu
 
 - **Dari owner** (detail di REPLACE.md): file logo SVG/AI asli, harga, jumlah

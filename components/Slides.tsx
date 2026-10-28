@@ -24,6 +24,11 @@ import type { Locale } from "@/content/i18n";
  * whichever comes first: on a phone on a slow connection the photograph on
  * screen then has the bandwidth to itself, and the next ones are ready by the
  * time a thumb gets to them.
+ *
+ * `peek` (a room's own page) sets the slider on a stage: on a wide screen the
+ * 4:3 frame stays centred and the space either side shows a sliver of the
+ * previous and the next photograph, veiled, a click away. The sides are then
+ * a filmstrip rather than empty paper. On a phone there is no room for them.
  */
 export default function Slides({
   photos,
@@ -31,6 +36,7 @@ export default function Slides({
   name,
   sizes,
   priority = false,
+  peek = false,
   className = "",
 }: {
   photos: readonly Photo[];
@@ -38,6 +44,7 @@ export default function Slides({
   name: string;
   sizes: string;
   priority?: boolean;
+  peek?: boolean;
   className?: string;
 }) {
   const t = getDict(locale).common;
@@ -91,7 +98,7 @@ export default function Slides({
 
   const label = fill(t.photosOf, { name });
 
-  return (
+  const slider = (
     <div
       className={`sv-slides ${className}`}
       role="region"
@@ -154,6 +161,35 @@ export default function Slides({
           </div>
         </>
       ) : null}
+    </div>
+  );
+
+  if (!peek) return slider;
+
+  /* The neighbours, wrapping like the chevrons. Decorative to assistive tech:
+     the chevrons and dots already do the same job. */
+  const side = (dir: -1 | 1) => {
+    if (!many) return <span aria-hidden="true" />;
+    const photo = photos[(index + dir + count) % count];
+    return (
+      <button
+        type="button"
+        className="sv-stage-peek"
+        data-side={dir < 0 ? "prev" : "next"}
+        tabIndex={-1}
+        aria-hidden="true"
+        onClick={() => go(index + dir)}
+      >
+        {armed ? <Image key={photo.src} src={photo.src} alt="" fill sizes="16vw" className="sv-photo" /> : null}
+      </button>
+    );
+  };
+
+  return (
+    <div className="sv-stage" onPointerEnter={many ? arm : undefined}>
+      {side(-1)}
+      <div className="sv-stage-frame">{slider}</div>
+      {side(1)}
     </div>
   );
 }

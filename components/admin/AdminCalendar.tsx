@@ -104,10 +104,10 @@ export default function AdminCalendar() {
             <button type="button" className="ad-icon-btn" onClick={() => shift(1)} aria-label="Bulan berikutnya">
               <ChevronRight size={18} strokeWidth={1.6} aria-hidden="true" />
             </button>
+            <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => setMonth(today.slice(0, 8) + "01")}>
+              Bulan ini
+            </button>
           </div>
-          <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => setMonth(today.slice(0, 8) + "01")}>
-            Bulan ini
-          </button>
         </div>
 
         <div className="ad-cal-scroll">

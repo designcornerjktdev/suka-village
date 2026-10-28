@@ -236,10 +236,12 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
   const cta =
     step === 3 ? (submitting ? c.paying : fill(c.pay, { total: idr(q?.total ?? 0) })) : c.next;
 
-  const primary = (className: string) => (
+  /* The phone bar already shows the total beside its button, so there the
+     button says only "Bayar" and the total keeps to one line. */
+  const primary = (className: string, short = false) => (
     <button type="button" className={`sv-btn sv-btn--primary ${className}`} onClick={next} disabled={submitting} aria-busy={submitting}>
       {submitting ? <LoaderCircle className="sv-spin" size={16} strokeWidth={1.8} aria-hidden="true" /> : null}
-      <span>{cta}</span>
+      <span>{short && step === 3 && !submitting ? c.payShort : cta}</span>
       {!submitting ? <ArrowRight size={16} strokeWidth={1.6} aria-hidden="true" /> : null}
     </button>
   );
@@ -739,7 +741,7 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
             <small>{complete ? c.noRooms : c.noDates}</small>
           )}
         </div>
-        {primary("sv-bk-bar-go")}
+        {primary("sv-bk-bar-go", true)}
       </div>
     </div>
   );

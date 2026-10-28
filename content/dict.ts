@@ -66,6 +66,8 @@ type Copy = {
     bookNow: string;
     /** The label on a facility (or anything else) that is not open yet. */
     soon: string;
+    missingTitle: string;
+    missingLead: string;
     bookShort: string;
     details: string;
     prev: string;
@@ -156,6 +158,7 @@ type Copy = {
     roomsTitle: string;
     roomsLead: string;
     perNight: string;
+    payShort: string;
     /** Under every price a guest sees (MoM 26 Oct 2026: prices include tax). */
     taxIncluded: string;
     choose: string;
@@ -278,6 +281,8 @@ type Copy = {
     cancelledLead: string;
     notFoundTitle: string;
     notFoundLead: string;
+    /** Prototype only: the bookings this browser holds, so a demo never dead-ends. */
+    recentTitle: string;
     details: string;
     stay: string;
     rooms: string;
@@ -403,6 +408,8 @@ const id: Copy = {
     close: "Tutup",
     bookNow: "Pesan sekarang",
     soon: "Segera hadir",
+    missingTitle: "Halaman *tidak ditemukan*",
+    missingLead: "Alamatnya mungkin salah ketik, atau halamannya sudah dipindah. Mulai lagi dari beranda, atau langsung lihat kamar.",
     bookShort: "Pesan",
     details: "Lihat detail",
     prev: "Sebelumnya",
@@ -565,6 +572,7 @@ const id: Copy = {
     roomsTitle: "Pilih kamar",
     roomsLead: "Untuk rombongan, pilih lebih dari satu.",
     perNight: "/ malam",
+    payShort: "Bayar",
     taxIncluded: "Termasuk pajak",
     choose: "Pilih",
     chosen: "Dipilih",
@@ -707,7 +715,8 @@ const id: Copy = {
     cancelledTitle: "Pesanan *dibatalkan*",
     cancelledLead: "Pesanan ini sudah dibatalkan dan kamarnya kami lepas. Kalau ini keliru, hubungi kami lewat WhatsApp.",
     notFoundTitle: "Pesanan tidak ditemukan",
-    notFoundLead: "Periksa lagi kode pesanannya. Di prototipe ini, pesanan hanya tersimpan di browser tempat pesanan dibuat.",
+    notFoundLead: "Periksa lagi kode pesanannya. Di prototipe ini, pesanan hanya tersimpan di browser tempat pesanan dibuat, dan hilang kalau data contoh direset dari admin.",
+    recentTitle: "Pesanan terbaru di browser ini",
     details: "Detail pesanan",
     stay: "Menginap",
     rooms: "Kamar",
@@ -835,6 +844,8 @@ const en: Copy = {
     close: "Close",
     bookNow: "Book now",
     soon: "Coming soon",
+    missingTitle: "Page *not found*",
+    missingLead: "The address may be mistyped, or the page has moved. Start again from the home page, or go straight to the rooms.",
     bookShort: "Book",
     details: "View details",
     prev: "Previous",
@@ -997,6 +1008,7 @@ const en: Copy = {
     roomsTitle: "Choose your rooms",
     roomsLead: "For a group, choose more than one.",
     perNight: "/ night",
+    payShort: "Pay",
     taxIncluded: "Tax included",
     choose: "Choose",
     chosen: "Chosen",
@@ -1139,7 +1151,8 @@ const en: Copy = {
     cancelledTitle: "Booking *cancelled*",
     cancelledLead: "This booking has been cancelled and the room released. If this is a mistake, reach us on WhatsApp.",
     notFoundTitle: "Booking not found",
-    notFoundLead: "Check the booking code again. In this prototype, bookings are only stored in the browser they were made in.",
+    notFoundLead: "Check the booking code again. In this prototype, bookings are only stored in the browser they were made in, and are gone if the example data is reset from the admin.",
+    recentTitle: "Latest bookings in this browser",
     details: "Booking details",
     stay: "Stay",
     rooms: "Rooms",

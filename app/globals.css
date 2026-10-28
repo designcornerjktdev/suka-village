@@ -77,7 +77,13 @@
     font-feature-settings: "kern" 1;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
+    /* A short page (a booking not found, a 404) still ends with the footer
+       at the foot of the screen, not floating in the middle. */
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
   }
+  body > main { flex: 1 0 auto; }
 
   ::selection { background: var(--color-forest); color: var(--color-paper); }
 
@@ -355,8 +361,8 @@
 
 .sv-show-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.75rem; margin-top: 2rem; }
 
-.sv-credits { display: grid; gap: 0.25rem; margin-top: 1.25rem; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
-.sv-credits a { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.sv-credits { display: grid; gap: 0; margin-top: 1.25rem; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-credits a { display: inline-flex; align-items: center; min-height: 2.75rem; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 .sv-credits a:hover { color: var(--color-ink); }
 
 /* No photographs yet: misty sage, a drawn icon and one word. */
@@ -658,7 +664,7 @@
 /* Fields */
 .sv-bk-form { display: grid; gap: 1.25rem; max-width: 34rem; margin-top: 1.75rem; }
 
-.sv-input { display: grid; gap: 0.45rem; }
+.sv-input { display: grid; align-content: start; gap: 0.45rem; }
 .sv-input > label { font-size: 0.875rem; font-weight: 500; color: var(--color-ink); }
 .sv-input > label > span { color: var(--color-clay); }
 .sv-input input, .sv-input textarea, .sv-input select {
@@ -818,8 +824,10 @@
   background: var(--color-paper);
 }
 @media (min-width: 1024px) { .sv-bk-bar { display: none; } }
+/* The bar is the last thing on the page: no page padding left under it. */
+@media (max-width: 1023px) { .sv-page:has(.sv-bk-bar) { padding-bottom: 0; } }
 .sv-bk-bar-sum { display: grid; flex: 1; min-width: 0; line-height: 1.3; }
-.sv-bk-bar-sum strong { font-size: 1.125rem; font-weight: 500; }
+.sv-bk-bar-sum strong { font-size: 1.125rem; font-weight: 500; white-space: nowrap; }
 .sv-bk-bar-sum small { font-size: 0.8125rem; color: var(--color-ink-soft); }
 .sv-bk-bar-go { flex: none; min-height: 3rem; padding-inline: 1.25rem; }
 
@@ -833,9 +841,20 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
 /* --- Order page ---------------------------------------------------------- */
 
-.sv-order, .sv-order-loading, .sv-order-empty { max-width: 72rem; margin-inline: auto; padding-top: calc(var(--head-h) + clamp(2rem, 6vh, 4rem)); }
+/* .sv-page already clears the header; adding it again here left a blank band. */
+.sv-order, .sv-order-loading, .sv-order-empty { max-width: 72rem; margin-inline: auto; padding-top: clamp(0.5rem, 3vh, 2rem); }
 .sv-order-loading { display: flex; align-items: center; gap: 0.6rem; min-height: 50vh; color: var(--color-ink-soft); }
 .sv-order-empty { max-width: 72rem; }
+.sv-order-recent { max-width: 36rem; margin-top: 3rem; }
+.sv-order-recent ul { margin: 0.75rem 0 0; padding: 0; list-style: none; border-top: 1px solid var(--color-rule); }
+.sv-order-recent a {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem;
+  min-height: 3.25rem; border-bottom: 1px solid var(--color-rule);
+  font-size: 0.9375rem; color: var(--color-ink); text-decoration: none;
+}
+.sv-order-recent a strong { font-weight: 500; letter-spacing: 0.04em; }
+.sv-order-recent a span:last-child { font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-order-recent a:hover strong { color: var(--color-forest); text-decoration: underline; }
 
 .sv-order-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--color-rule); }
 .sv-order-code { display: grid; gap: 0.25rem; }
@@ -867,6 +886,12 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-track { display: flex; gap: 0.5rem; margin: 1.5rem 0 0; padding: 0; list-style: none; }
 .sv-track li { position: relative; display: flex; flex: 1 1 0; align-items: center; gap: 0.6rem; min-width: 0; padding-top: 0.9rem; border-top: 2px solid var(--color-rule); font-size: 0.875rem; color: var(--color-ink-soft); }
 .sv-track li > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A phone has no room for three labels side by side: number over label,
+   the label free to wrap, rather than cut to "Pembay...". */
+@media (max-width: 599px) {
+  .sv-track li { flex-direction: column; align-items: flex-start; gap: 0.45rem; font-size: 0.8125rem; line-height: 1.3; }
+  .sv-track li > span:last-child { overflow: visible; white-space: normal; }
+}
 .sv-track-dot { display: grid; flex: none; place-items: center; width: 1.6rem; height: 1.6rem; border: 1px solid currentColor; font-size: 0.75rem; font-weight: 600; }
 .sv-track li[data-state="done"] { border-top-color: var(--color-forest); color: var(--color-forest); }
 .sv-track li[data-state="done"] .sv-track-dot { border-color: var(--color-forest); background: var(--color-forest); color: var(--color-paper); }
@@ -958,6 +983,11 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-order-help:hover { color: var(--color-forest); }
 
 .sv-find { display: grid; gap: 1.25rem; max-width: 28rem; margin-top: clamp(2.5rem, 6vh, 4rem); }
+/* A one-task page (find a booking, a missing page): a narrow column a little
+   down from the header, so it does not sit in the top corner of a wide screen. */
+.sv-utility { max-width: 72rem; padding-top: clamp(1rem, 6vh, 4rem); padding-bottom: clamp(3rem, 10vh, 6rem); }
+.sv-utility .sv-lead { max-width: 36rem; margin-top: 1rem; }
+.sv-utility .sv-find { margin-top: 2.25rem; }
 .sv-find .sv-btn { justify-self: start; }
 
 /* --- Gallery -------------------------------------------------------------- */
@@ -1245,7 +1275,7 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-foot-links > a { display: inline-flex; align-items: center; gap: 0.3rem; min-height: 2.75rem; color: var(--color-cream); text-decoration: none; transition: opacity 250ms var(--ease-soft); }
 .sv-foot-links > a:hover { opacity: 0.7; }
 .sv-footer .sv-lang { border-color: rgba(243, 238, 228, 0.3); }
-.sv-footer .sv-lang-option { min-width: 2.75rem; min-height: 2.25rem; color: var(--color-sage); }
+.sv-footer .sv-lang-option { min-width: 2.75rem; min-height: 2.75rem; color: var(--color-sage); }
 .sv-footer .sv-lang-option[data-active="true"] { background: var(--color-cream); color: var(--color-forest); }
 
 .sv-foot-base {
@@ -1292,25 +1322,57 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
 /* --- One room: a wide slider of every photograph, the details below ------ */
 
-/* 4:3 everywhere, per the owner (MoM 26 Oct 2026). On a wide screen the
-   frame is as wide as it can be while still fitting under the header. */
+/* Photographs at 4:3, per the owner (MoM 26 Oct 2026). A phone shows the
+   frame edge to edge. A wide screen keeps it large and centred, as tall as
+   fits under the header, and fills the paper either side with a veiled
+   sliver of the previous and next photograph (the `peek` stage in Slides),
+   so the sides read as a filmstrip, not as empty space. */
 .sv-room-slider { position: relative; margin-top: 0.75rem; aspect-ratio: 4 / 3; }
-@media (min-width: 900px) {
-  .sv-room-slider { width: min(100%, calc((100svh - var(--head-h) - 8.5rem) * 4 / 3), 72rem); min-width: min(100%, 36rem); margin-inline: auto; }
-}
+.sv-stage, .sv-stage-frame { height: 100%; }
+.sv-stage-peek { display: none; }
 @media (max-width: 899px) { .sv-room-slider { margin-inline: calc(-1 * var(--gutter)); } }
+@media (min-width: 900px) {
+  .sv-room-slider { aspect-ratio: auto; container-type: inline-size; }
+  .sv-stage { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.75rem; height: auto; }
+  .sv-stage-frame {
+    width: clamp(30rem, calc((100svh - var(--head-h) - 9rem) * 4 / 3), min(calc(100cqw - 11.5rem), 72rem));
+    height: auto; aspect-ratio: 4 / 3;
+  }
+  .sv-stage-peek { position: relative; display: block; overflow: hidden; padding: 0; border: 0; background: var(--color-mist); cursor: pointer; }
+  .sv-stage-peek .sv-photo { animation: sv-fade 420ms var(--ease-soft) both; }
+  .sv-stage-peek[data-side="prev"] .sv-photo { object-position: right center; }
+  .sv-stage-peek[data-side="next"] .sv-photo { object-position: left center; }
+  .sv-stage-peek::after { content: ""; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.5); transition: background-color 300ms var(--ease-soft); }
+  .sv-stage-peek:hover::after { background: rgba(255, 255, 255, 0.25); }
+}
 
-.sv-room { display: grid; gap: 2.75rem; margin-top: clamp(2rem, 5vh, 3.25rem); }
-@media (min-width: 900px) { .sv-room { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(3rem, 7vw, 7rem); align-items: start; } }
-.sv-room-facts { margin-top: 0.5rem; font-size: 0.9375rem; color: var(--color-ink-soft); }
+/* The details, in one clear order of size: the name, then its facts, the
+   description, the actions; then what is in the room as a quieter list, and
+   the note on rates smallest of all. */
+.sv-room { display: grid; gap: 2.5rem; margin-top: clamp(1.75rem, 4vh, 3rem); }
+@media (min-width: 900px) {
+  .sv-room { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(3rem, 7vw, 7rem); align-items: start; }
+}
+.sv-room-facts { margin-top: 0.6rem; font-size: 0.9375rem; color: var(--color-ink-soft); }
 .sv-room-main .sv-row-title { margin-top: 0; }
 .sv-room-main .sv-row-copy { margin-top: 1.25rem; }
 .sv-room-main .sv-show-actions { margin-top: 1.75rem; }
 .sv-room-specs-title { margin-top: 0.35rem; }
-.sv-room-side .sv-specs { margin-top: 0.75rem; }
-.sv-room-side .sv-specs { display: block; columns: 2; column-gap: 2rem; }
-.sv-room-side .sv-specs li { break-inside: avoid; }
-.sv-room-side .sv-note { margin-top: 2rem; }
+.sv-room-side .sv-specs { display: block; columns: 2; column-gap: 2rem; margin-top: 1rem; }
+.sv-room-side .sv-specs li { break-inside: avoid; padding-block: 0.2rem; line-height: 1.5; }
+.sv-room-side .sv-specs li::before { top: 0.6em; }
+.sv-room-side .sv-note { gap: 0.75rem; margin-top: 2rem; padding: 1rem 1.15rem; font-size: 0.875rem; line-height: 1.6; }
+.sv-room-side .sv-note svg { width: 1rem; height: 1rem; margin-top: 0.15rem; }
+.sv-room-side .sv-note-title { margin-bottom: 0.15rem; font-weight: 600; }
+@media (max-width: 899px) {
+  /* The list and the note read as their own part, after the actions. */
+  .sv-room-side { padding-top: 2rem; border-top: 1px solid var(--color-rule); }
+}
+@media (max-width: 599px) {
+  .sv-room-main .sv-show-actions { display: grid; gap: 0.75rem; margin-top: 1.5rem; }
+  .sv-room-main .sv-show-actions .sv-btn { justify-content: center; width: 100%; }
+  .sv-room-side .sv-specs { column-gap: 1.25rem; font-size: 0.875rem; }
+}
 
 .sv-room-dock { display: none; }
 @media (max-width: 899px) {
@@ -1329,6 +1391,7 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 }
 
 .sv-others { margin-top: clamp(4.5rem, 12vh, 8rem); padding-top: 1.5rem; border-top: 1px solid var(--rule-c); }
+@media (max-width: 599px) { .sv-others { margin-top: 3.5rem; } }
 .sv-around { display: grid; gap: clamp(1.5rem, 3vw, 2rem); margin-top: 2rem; padding: 0; list-style: none; }
 @media (min-width: 900px) { .sv-around { grid-template-columns: 1fr 1fr; } }
 .sv-tile { display: grid; gap: 0.9rem; text-decoration: none; color: inherit; }
@@ -1342,7 +1405,7 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
    the map where a photograph would be.
 -------------------------------------------------------------------------- */
 
-.sv-contact-number { display: inline-block; margin-top: 1.1rem; font-size: 1.125rem; font-weight: 400; letter-spacing: 0.01em; color: var(--color-ink); text-decoration: none; transition: color 250ms var(--ease-soft); }
+.sv-contact-number { display: inline-flex; align-items: center; min-height: 2.75rem; margin-top: 0.6rem; font-size: 1.125rem; font-weight: 400; letter-spacing: 0.01em; color: var(--color-ink); text-decoration: none; transition: color 250ms var(--ease-soft); }
 .sv-contact-number:hover { color: var(--color-forest); }
 
 .sv-contact-plus { margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-ink-soft); }

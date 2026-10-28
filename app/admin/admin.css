@@ -183,20 +183,23 @@
 }
 .ad-demo > .lucide { color: var(--ad-warn); }
 .ad-demo p { flex: 1; min-width: 0; }
+@media (max-width: 1679px) { .ad-demo-more { display: none; } }
 .ad-demo strong { font-weight: 600; }
 .ad-demo-reset {
   --ad-icon: 14px;
   display: inline-flex; flex: none; align-items: center; gap: 0.375rem;
-  min-height: 1.875rem; padding: 0 0.625rem;
+  min-height: var(--ad-ctl-sm); padding: 0 0.625rem;
   border: 1px solid var(--ad-warn-line); border-radius: var(--ad-r-sm); background: #fff;
   font: inherit; font-size: 0.75rem; font-weight: 500; color: var(--ad-warn);
   cursor: pointer;
   transition: background-color 150ms ease;
 }
 .ad-demo-reset:hover { background: #fffaf0; }
+.ad-demo-short { display: none; }
 @media (max-width: 639px) {
   .ad-demo { margin-top: 0.75rem; }
-  .ad-demo-more { display: none; }
+  .ad-demo-more, .ad-demo-desc { display: none; }
+  .ad-demo-short { display: inline; }
 }
 
 .ad-main { max-width: 80rem; padding: 1.75rem var(--ad-gutter) 4rem; }
@@ -240,7 +243,7 @@
 .ad-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; min-height: 2rem; margin-bottom: 1rem; }
 .ad-card-title { font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.005em; }
 
-.ad-stack, .ad-stack-sm { display: grid; gap: 1rem; }
+.ad-stack, .ad-stack-sm { display: grid; align-content: start; gap: 1rem; }
 .ad-cols { display: grid; gap: 1rem; margin-bottom: 1rem; }
 @media (min-width: 1024px) { .ad-cols { grid-template-columns: 1fr 1fr; } }
 @media (min-width: 1100px) { .ad-cols--detail { grid-template-columns: 1.5fr 1fr; align-items: start; } }
@@ -341,7 +344,7 @@
 
 /* --- Form controls --------------------------------------------------------- */
 
-.ad-body .sv-input { display: grid; gap: 0.375rem; }
+.ad-body .sv-input { display: grid; align-content: start; gap: 0.375rem; }
 .ad-body .sv-input > label { font-size: 0.8125rem; font-weight: 500; line-height: 1.3; color: var(--ad-ink-2); }
 .ad-body .sv-input input,
 .ad-body .sv-input textarea,
@@ -372,7 +375,7 @@
 .ad-grid-2 { display: grid; gap: 1rem; }
 @media (min-width: 640px) { .ad-grid-2 { grid-template-columns: 1fr 1fr; align-items: start; } }
 .ad-span-all { grid-column: 1 / -1; }
-.ad-bilingual { display: grid; gap: 1rem; }
+.ad-bilingual { display: grid; align-content: start; gap: 1rem; }
 @media (min-width: 900px) { .ad-bilingual { grid-template-columns: 1fr 1fr; } }
 .ad-bilingual--stack { grid-template-columns: 1fr !important; }
 
@@ -560,6 +563,11 @@
 /* --- Toolbar --------------------------------------------------------------- */
 
 .ad-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+/* Everything in a toolbar is one height, so a dropdown, a segmented switch
+   and a button sit on the same line. */
+.ad-toolbar .ad-segmented { margin-top: 0; }
+.ad-toolbar .ad-segmented label { min-height: calc(var(--ad-ctl) - 0.375rem); }
+.ad-toolbar .ad-btn--sm { min-height: var(--ad-ctl); }
 .ad-toolbar-select { flex: 0 0 12rem; }
 @media (max-width: 639px) { .ad-toolbar-select { flex: 1 1 100%; } }
 
@@ -624,6 +632,11 @@
   .ad-table td::before { content: attr(data-label); grid-column: 1; grid-row: 1 / span 3; font-size: 0.75rem; font-weight: 500; text-align: left; color: var(--ad-ink-3); }
   .ad-table td[data-label="Tindakan"] { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.625rem; }
   .ad-table td[data-label="Tindakan"]::before { content: none; }
+  /* A row whose only action is the "⋯" menu: the menu sits in the card's top
+     right corner, beside the first value, instead of on a line of its own. */
+  .ad-table tr { position: relative; }
+  .ad-table td[data-label="Tindakan"]:has(> .ad-row-actions:only-child) { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0; }
+  .ad-table tr:has(> td[data-label="Tindakan"] > .ad-row-actions:only-child) > td:first-child { padding-right: 2.5rem; }
 }
 
 /* --- Records: list, edit in a sheet, confirm a delete ---------------------
@@ -684,7 +697,7 @@
 .ad-dialog-lead { font-size: 0.8125rem; color: var(--ad-ink-3); }
 .ad-dialog-head .ad-icon-btn { --ad-icon: 18px; width: 2.25rem; height: 2.25rem; border-color: transparent; border-radius: var(--ad-r); color: var(--ad-ink-3); }
 .ad-dialog-head .ad-icon-btn:hover { background: var(--ad-hover); color: var(--ad-ink); }
-.ad-dialog-body { display: grid; gap: 1rem; padding: 0.5rem 1.25rem 1.25rem; overflow-y: auto; }
+.ad-dialog-body { display: grid; align-content: start; gap: 1rem; padding: 0.5rem 1.25rem 1.25rem; overflow-y: auto; }
 .ad-dialog-body > .ad-note { margin-bottom: 0; }
 .ad-dialog-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; padding: 0.75rem 1.25rem; border-top: 1px solid var(--ad-line); background: var(--ad-sunk); border-radius: 0 0 var(--ad-r-xl) var(--ad-r-xl); }
 @keyframes ad-dialog-in { from { opacity: 0; transform: translateY(6px) scale(0.99); } }
@@ -708,7 +721,9 @@
 @keyframes ad-sheet-in { from { opacity: 0; transform: translateX(1.5rem); } }
 
 /* A form in a sheet, in short labelled sections. */
-.ad-form-sec { display: grid; gap: 1rem; padding-block: 1.375rem; border-top: 1px solid var(--ad-line); }
+/* align-content: start, so a section that is taller than its fields (the
+   last one in a sheet) does not stretch its rows and inflate the inputs. */
+.ad-form-sec { display: grid; align-content: start; gap: 1rem; padding-block: 1.375rem; border-top: 1px solid var(--ad-line); }
 .ad-form-sec:first-child { border-top: 0; }
 .ad-form-sec > h3 { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ad-ink-3); }
 .ad-form-sec .ad-segmented { width: fit-content; margin-top: 0; }
@@ -746,6 +761,18 @@
 .ad-savebar[data-dirty="true"] .ad-savebar-state { color: var(--ad-ink); }
 .ad-savebar[data-dirty="true"] .ad-savebar-state::before { background: #d39a3c; }
 .ad-savebar > div { display: flex; gap: 0.5rem; }
+/* Nothing to save: the bar rests at the end of the form instead of floating
+   over it (on a phone it would cover the last rows for nothing). It lifts and
+   follows the scroll only while there are changes. */
+.ad-savebar:not([data-dirty="true"]) {
+  position: relative; bottom: auto;
+  border-color: transparent; background: transparent; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+@media (max-width: 639px) {
+  .ad-savebar > div { flex: 1 1 100%; }
+  .ad-savebar > div .ad-btn { flex: 1; }
+}
 
 .ad-toasts { position: fixed; right: 1rem; bottom: 1rem; left: 1rem; z-index: 1100; display: grid; justify-items: end; gap: 0.5rem; pointer-events: none; }
 .ad-toast {
@@ -924,8 +951,14 @@
 .ad-legend i[data-kind="block"] { background: repeating-linear-gradient(135deg, #e7e5df 0 3px, #d3cfc5 3px 6px); }
 
 .ad-cal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
+.ad-cal-bar .ad-btn--sm { min-height: var(--ad-ctl); }
 .ad-cal-nav { display: flex; align-items: center; gap: 0.5rem; }
 .ad-cal-month { min-width: 9rem; font-size: 0.9375rem; font-weight: 600; text-align: center; }
+.ad-cal-nav .ad-btn { margin-left: 0.25rem; }
+@media (max-width: 479px) {
+  .ad-cal-nav { flex: 1; }
+  .ad-cal-month { flex: 1; min-width: 0; }
+}
 
 .ad-cal-scroll { overflow-x: auto; border: 1px solid var(--ad-line); border-radius: var(--ad-r); }
 .ad-cal { min-width: calc(8.5rem + var(--days) * 2.5rem); }

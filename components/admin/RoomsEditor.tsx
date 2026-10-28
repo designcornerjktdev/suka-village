@@ -84,8 +84,9 @@ export default function RoomsEditor() {
                   <span className="ad-record-text">
                     <strong>{room.name || "(tanpa nama)"}</strong>
                     <small className="tnum">
-                      {room.size} m² · {room.bedrooms} kamar tidur · {from ? `mulai ${idr(from)} / malam` : "harga belum diisi"}
+                      {room.size} m² · {room.bedrooms} kamar tidur
                     </small>
+                    <small className="tnum">{from ? `Mulai ${idr(from)} / malam` : "Harga belum diisi"}</small>
                   </span>
                 </button>
                 <span className="ad-record-state">

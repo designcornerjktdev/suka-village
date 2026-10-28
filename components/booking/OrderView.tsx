@@ -27,8 +27,9 @@ import MethodMark from "./MethodMark";
 import MessagePreview from "./MessagePreview";
 import { DEMO } from "@/lib/booking/config";
 import { cancelBooking, changePaymentMethod, checkPayment, confirmBooking, rejectBooking, simulateGateway } from "@/lib/booking/api";
-import { useBooking, useNow, useRooms, useSettings } from "@/lib/booking/hooks";
+import { useBooking, useBookings, useNow, useRooms, useSettings } from "@/lib/booking/hooks";
 import { GUEST_GROUPS, METHODS, methodInfo } from "@/lib/booking/payments";
+import { effectiveStatus } from "@/lib/booking/occupancy";
 import { fmtDate, fmtDateTime, formatPhone, idr } from "@/lib/booking/format";
 import type { Booking, BookingStatus } from "@/lib/booking/types";
 
@@ -53,6 +54,7 @@ export default function OrderView({ locale, code }: { locale: Locale; code: stri
   const t = getDict(locale);
   const o = t.order;
   const booking = useBooking(code);
+  const all = useBookings();
   const now = useNow(1000);
 
   if (booking === undefined) {
@@ -77,6 +79,27 @@ export default function OrderView({ locale, code }: { locale: Locale; code: stri
             <span>{t.common.bookNow}</span>
           </Link>
         </div>
+        {DEMO && all.length ? (
+          <div className="sv-order-recent">
+            <h2 className="sv-label">{o.recentTitle}</h2>
+            <ul>
+              {[...all]
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                .slice(0, 3)
+                .map((b) => (
+                  <li key={b.code}>
+                    <Link href={localePath(locale, `booking/${b.code}`)}>
+                      <strong className="tnum">{b.code}</strong>
+                      <span className="tnum">
+                        {fmtDate(b.checkIn, locale, "short")} → {fmtDate(b.checkOut, locale, "short")}
+                      </span>
+                      <span>{o.status[effectiveStatus(b, now)]}</span>
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     );
   }

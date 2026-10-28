@@ -52,7 +52,7 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
           </Link>
 
           <div className="sv-room-slider">
-            <Slides photos={all} locale={lang} name={found.name} sizes="(min-width: 900px) 72rem, 100vw" priority />
+            <Slides photos={all} locale={lang} name={found.name} sizes="(min-width: 900px) 70vw, 100vw" priority peek />
           </div>
 
           <div className="sv-room">

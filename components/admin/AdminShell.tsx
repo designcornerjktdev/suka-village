@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import Logo from "../Logo";
-import { Toaster, toast } from "./ui";
+import { ConfirmDelete, Toaster, toast } from "./ui";
 import { DEMO } from "@/lib/booking/config";
 import { adminLogout, resetDemo } from "@/lib/booking/api";
 import { useAdminSession, useBookings } from "@/lib/booking/hooks";
@@ -64,6 +64,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const session = useAdminSession();
   const bookings = useBookings();
   const [openAt, setOpenAt] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
   const open = openAt === pathname;
 
   useEffect(() => {
@@ -160,22 +161,36 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           <div className="ad-demo">
             <Info size={15} strokeWidth={1.7} aria-hidden="true" />
             <p>
-              <strong>Mode demo.</strong> Semua data di sini contoh dan tersimpan di browser ini saja.
+              <strong>Mode demo.</strong>
+              <span className="ad-demo-desc"> Semua data di sini contoh dan tersimpan di browser ini saja.</span>
+              <span className="ad-demo-short"> Data contoh, di browser ini saja.</span>
               <span className="ad-demo-more"> Developer menyambungkannya ke database, payment gateway, dan email.</span>
             </p>
-            <button
-              type="button"
-              className="ad-demo-reset"
-              onClick={async () => {
-                await resetDemo();
-                toast("Data contoh dikembalikan");
-              }}
-            >
+            <button type="button" className="ad-demo-reset" onClick={() => setResetting(true)}>
               <RotateCcw size={14} strokeWidth={1.6} aria-hidden="true" />
-              Reset data contoh
+              <span>
+                Reset<span className="ad-demo-desc"> data contoh</span>
+              </span>
             </button>
           </div>
         ) : null}
+
+        {/* Resetting replaces every booking, price, promo and text in this
+            browser, and old booking links stop working: it asks first. */}
+        <ConfirmDelete
+          open={resetting}
+          title="Kembalikan data contoh?"
+          confirmLabel="Reset data"
+          onCancel={() => setResetting(false)}
+          onConfirm={async () => {
+            await resetDemo();
+            setResetting(false);
+            toast("Data contoh dikembalikan");
+          }}
+        >
+          Semua booking, harga, promo, konten, dan pengaturan yang sudah diubah di browser ini diganti dengan data contoh awal. Link
+          pesanan yang lama tidak bisa dibuka lagi.
+        </ConfirmDelete>
 
         <main className="ad-main">{children}</main>
       </div>

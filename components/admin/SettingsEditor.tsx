@@ -9,6 +9,7 @@ import { Card, PageHeader, SaveBar, Select, Toggle, toast } from "./ui";
 import { useBookings, useSettings } from "@/lib/booking/hooks";
 import { saveSettings } from "@/lib/booking/api";
 import { METHODS } from "@/lib/booking/payments";
+import { effectiveStatus } from "@/lib/booking/occupancy";
 import { DEFAULT_TEMPLATES, TEMPLATE_LABELS, VARIABLES } from "@/lib/booking/notifications";
 import type { PaymentGroup, Settings, TemplateId } from "@/lib/booking/types";
 
@@ -146,7 +147,7 @@ function NotifyTab({ draft, update }: TabProps) {
   const focused = useRef<{ el: HTMLInputElement | HTMLTextAreaElement; field: "subject" | "email" } | null>(null);
   const tpl = draft.templates[template];
   const wanted = template === "awaiting_payment" ? "pending" : template === "payment_received" ? "paid" : template === "rejected" ? "rejected" : "confirmed";
-  const sample = bookings.find((b) => b.status === wanted) ?? bookings[0];
+  const sample = bookings.find((b) => effectiveStatus(b) === wanted) ?? bookings[0];
 
   const setField = (field: "subject" | "email", value: string) =>
     update((s) => ({
@@ -198,7 +199,7 @@ function NotifyTab({ draft, update }: TabProps) {
           </div>
           <button
             type="button"
-            className="ad-btn ad-btn--ghost ad-btn--sm"
+            className="ad-btn ad-btn--ghost"
             onClick={() => update((s) => ({ ...s, templates: { ...s.templates, [template]: structuredClone(DEFAULT_TEMPLATES[template]) } }))}
           >
             Kembalikan teks awal
