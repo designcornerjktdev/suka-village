@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Lock, Trash2 } from "lucide-react";
-import { Card, Dialog, PageHeader, toast } from "./ui";
+import { ChevronLeft, ChevronRight, Lock, Pencil, Trash2 } from "lucide-react";
+import { Card, ConfirmDelete, Dialog, Empty, PageHeader, RowActions, Sheet, SheetFooter, toast } from "./ui";
 import { useBlocks, useBookings, useRooms } from "@/lib/booking/hooks";
-import { createBlock, deleteBlock } from "@/lib/booking/api";
+import { createBlock, deleteBlock, updateBlock } from "@/lib/booking/api";
 import { addDays, day, fmtDate, iso, nightsOf, todayISO } from "@/lib/booking/format";
 import { HOLDING, type Block, type BlockReason, type UnitId } from "@/lib/booking/types";
 
@@ -18,6 +18,8 @@ import { HOLDING, type Block, type BlockReason, type UnitId } from "@/lib/bookin
  * by the owner's decision. When a room is sold somewhere else, or is being
  * repaired, or the owner is using it, someone closes those dates here, and the
  * website stops offering them. A free day can be clicked to close it directly.
+ * Closed dates coming up are also listed under the calendar, each with Ubah
+ * and Buka kembali.
  */
 
 export const REASON_LABEL: Record<BlockReason, string> = {
@@ -31,7 +33,7 @@ export const REASON_LABEL: Record<BlockReason, string> = {
 const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const WEEK = ["M", "S", "S", "R", "K", "J", "S"];
 
-type Prefill = { unit?: UnitId; from?: string; n: number };
+type Prefill = { unit?: UnitId; from?: string; block?: Block; n: number };
 
 export default function AdminCalendar() {
   const bookings = useBookings();
@@ -41,6 +43,7 @@ export default function AdminCalendar() {
   const [month, setMonth] = useState(() => today.slice(0, 8) + "01");
   const [prefill, setPrefill] = useState<Prefill | null>(null);
   const [selected, setSelected] = useState<Block | null>(null);
+  const [reopening, setReopening] = useState<Block | null>(null);
 
   const first = day(month);
   const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
@@ -73,7 +76,8 @@ export default function AdminCalendar() {
       .filter((x) => x.pos),
   }));
 
-  const openDialog = (unit?: UnitId, from?: string) => setPrefill((p) => ({ unit, from, n: (p?.n ?? 0) + 1 }));
+  const openDialog = (unit?: UnitId, from?: string, block?: Block) => setPrefill((p) => ({ unit, from, block, n: (p?.n ?? 0) + 1 }));
+  const upcoming = blocks.filter((k) => k.to > today && rooms.some((r) => r.unit === k.unit)).sort((a, b) => a.from.localeCompare(b.from));
 
   return (
     <>
@@ -183,9 +187,39 @@ export default function AdminCalendar() {
         </p>
       </Card>
 
+      <div className="ad-section-head">
+        <div>
+          <h2 className="ad-section-title">Tanggal ditutup</h2>
+          <p className="ad-muted">Yang akan datang, paling dekat dulu.</p>
+        </div>
+      </div>
+      {upcoming.length ? (
+        <ol className="ad-records">
+          {upcoming.map((k) => (
+            <li key={k.id} className="ad-record">
+              <button type="button" className="ad-record-main" onClick={() => setSelected(k)}>
+                <span className="ad-record-text">
+                  <strong>
+                    {roomName(k.unit)} · {REASON_LABEL[k.reason]}
+                  </strong>
+                  <small className="tnum">
+                    {fmtDate(k.from, "id", "day")} sampai {fmtDate(k.to, "id", "day")} · {nightsOf(k.from, k.to).length} malam
+                    {k.note ? ` · ${k.note}` : ""}
+                  </small>
+                </span>
+              </button>
+              <RowActions label={`${roomName(k.unit)} ${fmtDate(k.from, "id", "short")}`} onEdit={() => openDialog(undefined, undefined, k)} onDelete={() => setReopening(k)} deleteLabel="Buka kembali" />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <Empty>Tidak ada tanggal yang ditutup ke depan.</Empty>
+      )}
+
       {prefill ? (
         <BlockDialog
           key={prefill.n}
+          block={prefill.block}
           initialUnit={prefill.unit ?? rooms[0]?.unit}
           initialFrom={prefill.from}
           roomName={roomName}
@@ -199,9 +233,6 @@ export default function AdminCalendar() {
         title="Tanggal ditutup"
         footer={
           <>
-            <button type="button" className="ad-btn ad-btn--ghost" onClick={() => setSelected(null)}>
-              Tutup
-            </button>
             <button
               type="button"
               className="ad-btn ad-btn--danger"
@@ -214,6 +245,18 @@ export default function AdminCalendar() {
             >
               <Trash2 size={14} strokeWidth={1.7} aria-hidden="true" />
               Buka kembali
+            </button>
+            <button
+              type="button"
+              className="ad-btn ad-btn--primary"
+              onClick={() => {
+                if (!selected) return;
+                openDialog(undefined, undefined, selected);
+                setSelected(null);
+              }}
+            >
+              <Pencil size={14} strokeWidth={1.7} aria-hidden="true" />
+              Ubah
             </button>
           </>
         }
@@ -243,16 +286,36 @@ export default function AdminCalendar() {
           </dl>
         ) : null}
       </Dialog>
+
+      <ConfirmDelete
+        open={!!reopening}
+        title="Buka kembali tanggal ini?"
+        confirmLabel="Buka kembali"
+        onCancel={() => setReopening(null)}
+        onConfirm={async () => {
+          if (!reopening) return;
+          await deleteBlock(reopening.id);
+          toast(`${roomName(reopening.unit)} dibuka kembali`);
+          setReopening(null);
+        }}
+      >
+        {reopening
+          ? `${roomName(reopening.unit)}, ${fmtDate(reopening.from, "id", "day")} sampai ${fmtDate(reopening.to, "id", "day")}, bisa dipesan lagi di website. Pastikan kamarnya memang kosong di platform lain.`
+          : null}
+      </ConfirmDelete>
     </>
   );
 }
 
+/** Close dates, or change dates already closed (`block`). */
 function BlockDialog({
+  block,
   initialUnit,
   initialFrom,
   roomName,
   onClose,
 }: {
+  block?: Block;
   initialUnit?: UnitId;
   initialFrom?: string;
   roomName: (unit: UnitId) => string;
@@ -260,79 +323,77 @@ function BlockDialog({
 }) {
   const rooms = useRooms();
   const today = todayISO();
-  const [unit, setUnit] = useState<UnitId>(initialUnit ?? "");
-  const [from, setFrom] = useState(initialFrom ?? today);
-  const [to, setTo] = useState(addDays(initialFrom ?? today, 1));
-  const [reason, setReason] = useState<BlockReason>("airbnb");
-  const [note, setNote] = useState("");
+  const [unit, setUnit] = useState<UnitId>(block?.unit ?? initialUnit ?? "");
+  const [from, setFrom] = useState(block?.from ?? initialFrom ?? today);
+  const [to, setTo] = useState(block?.to ?? addDays(initialFrom ?? today, 1));
+  const [reason, setReason] = useState<BlockReason>(block?.reason ?? "airbnb");
+  const [note, setNote] = useState(block?.note ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     setError(null);
     if (!unit) return setError("Pilih kamarnya.");
     if (to <= from) return setError("Tanggal akhir harus setelah tanggal awal.");
-    const res = await createBlock({ unit, from, to, reason, note: note.trim() || undefined });
+    setBusy(true);
+    const input = { unit, from, to, reason, note: note.trim() || undefined };
+    const res = block ? await updateBlock(block.id, input) : await createBlock(input);
+    setBusy(false);
     if (!res.ok) return setError(`Tanggal ${fmtDate(res.clash, "id", "day")} sudah terisi. Pilih rentang lain atau batalkan booking-nya dulu.`);
-    toast(`${roomName(unit)} ditutup ${nightsOf(from, to).length} malam`);
+    toast(block ? "Tanggal ditutup diperbarui" : `${roomName(unit)} ditutup ${nightsOf(from, to).length} malam`);
     onClose();
   };
 
   return (
-    <Dialog
+    <Sheet
       open
       onClose={onClose}
-      title="Tutup tanggal"
-      footer={
-        <>
-          <button type="button" className="ad-btn ad-btn--ghost" onClick={onClose}>
-            Batal
-          </button>
-          <button type="button" className="ad-btn ad-btn--primary" onClick={submit}>
-            Tutup tanggal
-          </button>
-        </>
-      }
+      title={block ? "Ubah tanggal ditutup" : "Tutup tanggal"}
+      lead="Tanggal ini tidak bisa dipesan di website."
+      footer={<SheetFooter busy={busy} onCancel={onClose} onSave={submit} saveLabel={block ? "Simpan" : "Tutup tanggal"} />}
     >
-      <p className="ad-muted">Untuk kamar yang sudah terjual di Airbnb, Booking.com atau platform lain, sedang dalam perawatan, atau dipakai sendiri. Tanggal ini tidak bisa dipesan di website.</p>
-      <div className="sv-input">
-        <label htmlFor="b-unit">Kamar</label>
-        <select id="b-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
-          {rooms.map((r) => (
-            <option key={r.unit} value={r.unit}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="ad-grid-2">
+      <section className="ad-form-sec">
+        <p className="ad-muted">Untuk kamar yang sudah terjual di Airbnb, Booking.com atau platform lain, sedang dalam perawatan, atau dipakai sendiri.</p>
         <div className="sv-input">
-          <label htmlFor="b-from">Dari (malam pertama)</label>
-          <input id="b-from" type="date" value={from} min={today} onChange={(e) => setFrom(e.target.value)} />
+          <label htmlFor="b-unit">Kamar</label>
+          <select id="b-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
+            {rooms.map((r) => (
+              <option key={r.unit} value={r.unit}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ad-grid-2">
+          <div className="sv-input">
+            <label htmlFor="b-from">Dari (malam pertama)</label>
+            <input id="b-from" type="date" value={from} min={today} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="sv-input">
+            <label htmlFor="b-to">Sampai (hari keluar)</label>
+            <input id="b-to" type="date" value={to} min={addDays(from, 1)} onChange={(e) => setTo(e.target.value)} />
+          </div>
         </div>
         <div className="sv-input">
-          <label htmlFor="b-to">Sampai (hari keluar)</label>
-          <input id="b-to" type="date" value={to} min={addDays(from, 1)} onChange={(e) => setTo(e.target.value)} />
+          <label htmlFor="b-reason">Alasan</label>
+          <select id="b-reason" value={reason} onChange={(e) => setReason(e.target.value as BlockReason)}>
+            {(Object.keys(REASON_LABEL) as BlockReason[]).map((r) => (
+              <option key={r} value={r}>
+                {REASON_LABEL[r]}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-      <div className="sv-input">
-        <label htmlFor="b-reason">Alasan</label>
-        <select id="b-reason" value={reason} onChange={(e) => setReason(e.target.value as BlockReason)}>
-          {(Object.keys(REASON_LABEL) as BlockReason[]).map((r) => (
-            <option key={r} value={r}>
-              {REASON_LABEL[r]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="sv-input">
-        <label htmlFor="b-note">Catatan (opsional)</label>
-        <input id="b-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Misal: kode booking Airbnb HMXXXX" />
-      </div>
+        <div className="sv-input">
+          <label htmlFor="b-note">Catatan (opsional)</label>
+          <input id="b-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Misal: kode booking Airbnb HMXXXX" />
+        </div>
+      </section>
       {error ? (
         <p className="sv-bk-alert" role="alert">
           {error}
         </p>
       ) : null}
-    </Dialog>
+    </Sheet>
   );
 }

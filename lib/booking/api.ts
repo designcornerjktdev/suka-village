@@ -13,6 +13,9 @@ import type {
   MediaMeta,
   NotificationLog,
   PaymentMethodId,
+  Promo,
+  PromoError,
+  Quote,
   Room,
   Settings,
   TemplateId,
@@ -24,6 +27,7 @@ import { bookingCode, isValidEmail, nightsOf, normalizePhone, todayISO, uid } fr
 import { effectiveStatus, isTaken, occupancy } from "./occupancy";
 import { HOLDING } from "./types";
 import { quote } from "./pricing";
+import { applyPromo, normalizeCode, promoProblem, promoUses } from "./promo";
 import { mockReference } from "./payments";
 import { getDB, resetDB, setDB, sweep } from "./store";
 
@@ -82,15 +86,48 @@ export type CreateInput = {
   notes?: string;
   method: PaymentMethodId;
   locale: Locale;
+  /** A promo code the guest applied. Checked again here, and the discount
+      worked out again: what the browser showed is never trusted. */
+  promoCode?: string;
   /** Admin only: a booking taken by hand. `paid` means the admin has the
       money and vouches for it, so it is created already confirmed. */
   source?: "website" | "admin";
   paid?: boolean;
 };
 
-export type CreateError = "invalid" | "unavailable" | "min_nights" | "not_bookable";
+export type CreateError = "invalid" | "unavailable" | "min_nights" | "not_bookable" | "promo";
 
-export type CreateResult = { ok: true; booking: Booking } | { ok: false; error: CreateError; units?: UnitId[] };
+export type CreateResult = { ok: true; booking: Booking } | { ok: false; error: CreateError; units?: UnitId[]; promoError?: PromoError };
+
+/** Looks a code up and checks it against a stay. */
+function findPromo(db: ReturnType<typeof getDB>, code: string, ctx: { checkIn: string; checkOut: string; units: UnitId[] }) {
+  const wanted = normalizeCode(code);
+  const promo = db.promos.find((p) => p.code === wanted);
+  if (!promo) return { ok: false as const, error: "not_found" as PromoError };
+  const problem = promoProblem(promo, {
+    nights: nightsOf(ctx.checkIn, ctx.checkOut).length,
+    units: ctx.units,
+    today: todayISO(),
+    uses: promoUses(promo, db.bookings),
+  });
+  return problem ? { ok: false as const, error: problem, promo } : { ok: true as const, promo };
+}
+
+export type PromoResult = { ok: true; promo: Promo; quote: Quote } | { ok: false; error: PromoError; promo?: Promo };
+
+/**
+ * POST /api/promos/check  { code, checkIn, checkOut, units }
+ *
+ * The "Pakai" button at checkout. Server: rate limit it (codes can be
+ * guessed), answer with the discounted quote, and never list other codes.
+ */
+export async function checkPromo(input: { code: string; checkIn: string; checkOut: string; units: UnitId[] }): Promise<PromoResult> {
+  await wait(350);
+  const db = getDB();
+  const found = findPromo(db, input.code, input);
+  if (!found.ok) return found;
+  return { ok: true, promo: found.promo, quote: applyPromo(quote(db.rates, input.checkIn, input.checkOut, input.units), found.promo) };
+}
 
 /**
  * POST /api/bookings
@@ -131,7 +168,12 @@ export async function createBooking(input: CreateInput): Promise<CreateResult> {
   let code = bookingCode();
   while (find(code)) code = bookingCode();
 
-  const q = quote(db.rates, input.checkIn, input.checkOut, input.units);
+  let q = quote(db.rates, input.checkIn, input.checkOut, input.units);
+  if (input.promoCode?.trim()) {
+    const found = findPromo(db, input.promoCode, input);
+    if (!found.ok) return { ok: false, error: "promo", promoError: found.error };
+    q = applyPromo(q, found.promo);
+  }
   const created = new Date();
   const expiresAt = new Date(created.getTime() + db.settings.holdMinutes * 60_000).toISOString();
   const paid = !!input.paid;
@@ -164,6 +206,9 @@ export async function createBooking(input: CreateInput): Promise<CreateResult> {
         by: input.source === "admin" ? "admin" : "guest",
         event: input.source === "admin" ? "Pesanan dibuat oleh admin" : "Pesanan dibuat di website",
       },
+      ...(q.promo
+        ? [{ at: created.toISOString(), by: (input.source === "admin" ? "admin" : "guest") as "admin" | "guest", event: `Kode promo ${q.promo.code} dipakai, potongan Rp ${q.promo.discount.toLocaleString("id-ID")}` }]
+        : []),
     ],
   };
   booking.notifications = notify(booking, paid ? "confirmed" : "awaiting_payment");
@@ -369,6 +414,49 @@ export async function saveInternalNote(code: string, internalNote: string) {
   return patch(code, (b) => ({ ...b, internalNote }));
 }
 
+export type BookingPatch = { guest: Guest; guests: number; notes?: string };
+
+/**
+ * PATCH /api/admin/bookings/:code  { guest, guests, notes }
+ *
+ * Corrects who the booking is for: a misspelt name, a new number, one more
+ * guest. Dates, rooms and the price are not edited here; cancel and book
+ * again so availability and payment stay right.
+ */
+export async function updateBooking(code: string, input: BookingPatch) {
+  await wait();
+  const phone = normalizePhone(input.guest.phone);
+  const email = input.guest.email.trim();
+  if (!input.guest.name.trim() || !phone || (email && !isValidEmail(email)) || input.guests < 1) return { ok: false as const };
+  const booking = patch(code, (b) => ({
+    ...b,
+    guest: { name: input.guest.name.trim(), email, phone },
+    guests: input.guests,
+    notes: input.notes?.trim() || undefined,
+    history: [...b.history, { at: nowISO(), by: "admin", event: "Data tamu diubah admin" }],
+  }));
+  return booking ? { ok: true as const, booking } : { ok: false as const };
+}
+
+/** Bookings that can be erased: ones that never became, or no longer are, a stay. */
+export const DELETABLE: BookingStatus[] = ["cancelled", "expired", "rejected"];
+
+/**
+ * DELETE /api/admin/bookings/:code
+ *
+ * Only for bookings that hold no nights and owe nothing more to anyone
+ * (cancelled, expired, rejected), to keep the list tidy or honour a guest's
+ * request to be forgotten (UU PDP). Production: soft delete, and keep what
+ * the tax records need.
+ */
+export async function deleteBooking(code: string) {
+  await wait(300);
+  const b = find(code);
+  if (!b || !DELETABLE.includes(effectiveStatus(b))) return { ok: false as const };
+  setDB((d) => ({ ...d, bookings: d.bookings.filter((x) => x.code !== b.code) }));
+  return { ok: true as const };
+}
+
 /** POST /api/admin/blocks  (close dates by hand; overlaps are refused) */
 export async function createBlock(input: { unit: UnitId; from: string; to: string; reason: BlockReason; note?: string }) {
   await wait();
@@ -378,6 +466,18 @@ export async function createBlock(input: { unit: UnitId; from: string; to: strin
   if (clash) return { ok: false as const, clash };
   const block: Block = { id: uid(), ...input };
   setDB((d) => ({ ...d, blocks: [...d.blocks, block] }));
+  return { ok: true as const, block };
+}
+
+/** PUT /api/admin/blocks/:id  (change the room, dates, reason or note; overlaps are refused) */
+export async function updateBlock(id: string, input: { unit: UnitId; from: string; to: string; reason: BlockReason; note?: string }) {
+  await wait();
+  const db = getDB();
+  const occ = occupancy(db.bookings, db.blocks.filter((b) => b.id !== id));
+  const clash = nightsOf(input.from, input.to).find((n) => isTaken(occ, input.unit, n));
+  if (clash) return { ok: false as const, clash };
+  const block: Block = { id, ...input };
+  setDB((d) => ({ ...d, blocks: d.blocks.map((b) => (b.id === id ? block : b)) }));
   return { ok: true as const, block };
 }
 
@@ -458,6 +558,45 @@ export async function archiveRoom(unit: UnitId) {
 export async function saveMedia(src: string, meta: MediaMeta) {
   await wait(200);
   setDB((d) => ({ ...d, media: { ...d.media, [src]: meta } }));
+}
+
+/* --- Promo codes --------------------------------------------------------- */
+
+export type PromoInput = Omit<Promo, "id" | "createdAt">;
+export type PromoSaveError = "code" | "duplicate" | "value";
+
+function validPromo(input: PromoInput, id?: string): PromoSaveError | null {
+  const code = normalizeCode(input.code);
+  if (!/^[A-Z0-9-]{3,20}$/.test(code)) return "code";
+  if (getDB().promos.some((p) => p.code === code && p.id !== id)) return "duplicate";
+  if (input.value <= 0 || (input.kind === "percent" && input.value > 100)) return "value";
+  return null;
+}
+
+/** POST /api/admin/promos */
+export async function createPromo(input: PromoInput) {
+  await wait();
+  const error = validPromo(input);
+  if (error) return { ok: false as const, error };
+  const promo: Promo = { ...input, code: normalizeCode(input.code), id: uid(), createdAt: nowISO() };
+  setDB((d) => ({ ...d, promos: [promo, ...d.promos] }));
+  return { ok: true as const, promo };
+}
+
+/** PUT /api/admin/promos/:id. Bookings that already used it keep the discount they got. */
+export async function savePromo(promo: Promo) {
+  await wait();
+  const error = validPromo(promo, promo.id);
+  if (error) return { ok: false as const, error };
+  const next = { ...promo, code: normalizeCode(promo.code) };
+  setDB((d) => ({ ...d, promos: d.promos.map((p) => (p.id === promo.id ? next : p)) }));
+  return { ok: true as const, promo: next };
+}
+
+/** DELETE /api/admin/promos/:id. Bookings that used it keep their discount. */
+export async function deletePromo(id: string) {
+  await wait(250);
+  setDB((d) => ({ ...d, promos: d.promos.filter((p) => p.id !== id) }));
 }
 
 /** PROTOTYPE ONLY: back to the generated demo data. */

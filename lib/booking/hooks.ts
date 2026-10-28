@@ -67,6 +67,15 @@ export function useRooms() {
   return useMemo(() => rooms.filter((r) => !r.archived), [rooms]);
 }
 
+/** The rooms a guest can actually book online. A room the owner has just
+ *  added (off sale, no price yet) is left out, so it never makes the
+ *  calendar look free when every room that is for sale is taken. */
+export function useSellableRooms() {
+  const rooms = useRooms();
+  const rates = useDB().rates;
+  return useMemo(() => rooms.filter((r) => rates.find((x) => x.unit === r.unit)?.bookable), [rooms, rates]);
+}
+
 /** id → the room's current name, for lists that only have the id. Archived
  *  rooms are included: an old booking still names the room it was for. */
 export function useRoomName() {
@@ -79,6 +88,19 @@ export function useRoomName() {
 
 export function useMediaMeta() {
   return useDB().media;
+}
+
+/** Every promo code, for the admin. */
+export function usePromos() {
+  return useDB().promos;
+}
+
+/** One code's rules, for the checkout to keep a discount right while the
+ *  guest changes dates or rooms. Production: GET /api/promos/:code, which
+ *  answers only for a code the guest has already typed. */
+export function usePromo(code: string | null) {
+  const promos = useDB().promos;
+  return useMemo(() => (code ? (promos.find((p) => p.code === code) ?? null) : null), [promos, code]);
 }
 
 /* --- Time ------------------------------------------------------------------ */

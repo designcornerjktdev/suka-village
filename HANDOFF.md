@@ -1,6 +1,6 @@
 # Handoff: Suka Village
 
-Status per 26 Oktober 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
+Status per 28 Oktober 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
 melanjutkan proyek ini: baca ini dulu, lalu PRODUCT.md.
 
 ## Ringkas
@@ -75,6 +75,15 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
   91 sampai 97, aksesibilitas/SEO 100.
 - CMS mengikuti situs: Beranda, Fasilitas, Pengalaman, Acara, Jelajah (link
   peta, kredit foto), Galeri, Kontak; Kamar & harga; Pengaturan.
+- Kode promo (28 Okt): tamu mengetik kode di langkah pembayaran; potongan
+  persen (bisa diberi batas) atau nominal, dengan masa berlaku, minimal malam,
+  kamar tertentu, dan kuota. Diatur di menu admin **Promo**. Dua kode contoh:
+  `CONTOH10`, `CABIN200`.
+- CRUD di semua menu admin (28 Okt): daftar dengan Ubah dan Hapus per baris,
+  Tambah di kanan atas, form di panel kanan. Booking: data tamu bisa diubah,
+  booking batal/kedaluwarsa/ditolak bisa dihapus. Kalender: tanggal ditutup
+  bisa diubah dan ada daftarnya. Sidebar admin dikelompokkan (Operasional,
+  Website, Sistem).
 
 ## Menunggu
 
@@ -96,7 +105,8 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
 | `components/Showcase.tsx`, `Slides.tsx` | Pola baris dan slider foto. |
 | `components/SiteHeader.tsx`, `SiteFooter.tsx`, `Logo.tsx` | Header, footer, logo. |
 | `components/BookingBar.tsx`, `BookingDates.tsx` | Tombol dan kalender booking di header. |
-| `lib/booking/` | Prototipe booking/CMS: `api.ts` (tulis), `hooks.ts` (baca), `store.ts` (localStorage), `seed.ts` (data contoh; naikkan `CONTENT_REV` bila konten situs berubah). |
+| `lib/booking/` | Prototipe booking/CMS: `api.ts` (tulis), `hooks.ts` (baca), `store.ts` (localStorage), `seed.ts` (data contoh; naikkan `CONTENT_REV` bila konten situs berubah), `promo.ts` (aturan kode promo). |
+| `components/admin/ui.tsx` | Komponen admin bersama: `Sheet` (panel edit), `ConfirmDelete`, `RowActions`, `Badge`. |
 | `public/photos/`, `public/brand/` | Foto (sisi terpanjang 1800px) dan file logo SVG. |
 
 ## Lingkungan Claude (tidak wajib untuk menjalankan situs)

@@ -5,22 +5,24 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DayPicker, type DateRange } from "react-day-picker";
 import { id as idLocale, enUS } from "react-day-picker/locale";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Info, LoaderCircle, Minus, Plus, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Info, LoaderCircle, Minus, Plus, TicketPercent, Users, X } from "lucide-react";
 import { photos, waHref } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import { localePath, type Locale } from "@/content/i18n";
 import { DEMO } from "@/lib/booking/config";
-import { createBooking } from "@/lib/booking/api";
-import { useOccupancy, useRates, useRoomName, useRooms, useSettings } from "@/lib/booking/hooks";
-import { anyTaken, fullFor, stayMatcher, unitStatus } from "@/lib/booking/occupancy";
+import { checkPromo, createBooking } from "@/lib/booking/api";
+import { useOccupancy, usePromo, useRates, useRoomName, useRooms, useSellableRooms, useSettings } from "@/lib/booking/hooks";
+import { anyTaken, fullFor, someTaken, stayMatcher, unitStatus } from "@/lib/booking/occupancy";
 import { fromRate, quote } from "@/lib/booking/pricing";
+import { applyPromo, promoProblem } from "@/lib/booking/promo";
 import { GUEST_GROUPS, METHODS } from "@/lib/booking/payments";
-import { day, fmtDate, formatPhone, idr, iso, isValidEmail, normalizePhone } from "@/lib/booking/format";
+import { day, fmtDate, formatPhone, idr, iso, isValidEmail, normalizePhone, todayISO } from "@/lib/booking/format";
 import type { PaymentMethodId, UnitId } from "@/lib/booking/types";
 import { useMedia } from "../useMedia";
 import StorePhoto from "../StorePhoto";
 import MethodMark from "./MethodMark";
-import { startOfToday } from "../dates";
+import { dayKinds, startOfToday } from "../dates";
+import CalendarLegend from "../CalendarLegend";
 
 /**
  * The booking, as four short steps instead of one long form.
@@ -30,8 +32,8 @@ import { startOfToday } from "../dates";
  *      what the stay costs
  *   3  the guest: name, email and a WhatsApp number, all required, and no
  *      account. Email is where every message goes; the number is a contact.
- *   4  payment method, then "Pay", which creates the booking and opens its
- *      order page with the payment instructions. The step says what happens
+ *   4  payment method and an optional promo code, then "Pay", which creates
+ *      the booking and opens its order page with the payment instructions. The step says what happens
  *      next: the property reviews the booking and confirms it by email.
  *
  * A summary follows the guest down the page on a wide screen, as information
@@ -55,7 +57,20 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
   const rates = useRates();
   /* Rooms as the admin has edited them: names, sizes and photographs here are
      the CMS's, not the code's. */
-  const rooms = useRooms();
+  const allRooms = useRooms();
+  const sellable = useSellableRooms();
+  /* A room shows here once it is for sale, or, while it is not, once it has a
+     price and a photograph to show (the guest is pointed to WhatsApp). A room
+     the owner has only just added, with neither, stays out of sight. */
+  const rooms = useMemo(
+    () =>
+      allRooms.filter((u) => {
+        const rate = rates.find((r) => r.unit === u.unit);
+        return !!rate && (rate.bookable || (fromRate(rate) > 0 && u.photos.length > 0));
+      }),
+    [allRooms, rates],
+  );
+
   const roomName = useRoomName();
   const settings = useSettings();
   const today = startOfToday();
@@ -85,6 +100,11 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
   const [nudge, setNudge] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* The code as typed, and the code once the check has passed. */
+  const [promoInput, setPromoInput] = useState("");
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
 
   /* --- Derived ------------------------------------------------------------ */
 
@@ -106,10 +126,17 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
   );
 
   const pickedOk = picked.length > 0 && picked.every((id) => roomState.find((r) => r.unit.unit === id)?.ok);
-  const q = useMemo(
+  const baseQ = useMemo(
     () => (complete && picked.length ? quote(rates, checkIn!, checkOut!, picked) : null),
     [complete, picked, rates, checkIn, checkOut],
   );
+
+  /* An applied code follows the guest's choices: going back and picking
+     another room or fewer nights can take it out of bounds, and the discount
+     then drops out of the total with a word on why, rather than silently. */
+  const promo = usePromo(promoCode);
+  const promoErr = promoCode && baseQ ? (promo ? promoProblem(promo, { nights: baseQ.nights, units: picked, today: todayISO() }) : "not_found") : null;
+  const q = baseQ && promo && !promoErr ? applyPromo(baseQ, promo) : baseQ;
 
   const phone = normalizePhone(guest.phone);
   const fieldError: Record<Field, string | null> = {
@@ -121,8 +148,12 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
 
   const enabledMethods = METHODS.filter((m) => m.group !== "manual" && settings.methods[m.id]);
 
-  const isTaken = picked.length ? anyTaken(occ, picked) : fullFor(occ, rooms.map((r) => r.unit));
+  /* With rooms picked, a night is full if any of them is taken. Before that,
+     it is full when every room on sale is taken, and "few left" when some are. */
+  const sellableUnits = sellable.map((r) => r.unit);
+  const isTaken = picked.length ? anyTaken(occ, picked) : fullFor(occ, sellableUnits);
   const matcher = stayMatcher(range, today, isTaken);
+  const kinds = dayKinds(today, isTaken, picked.length ? undefined : someTaken(occ, sellableUnits));
 
   /* --- Navigation ---------------------------------------------------------- */
 
@@ -156,6 +187,7 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
       notes,
       method,
       locale,
+      promoCode: promoCode && !promoErr ? promoCode : undefined,
     });
     if (res.ok) {
       router.push(localePath(locale, `booking/${res.booking.code}`));
@@ -167,6 +199,9 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
       setError(fill(c.errUnavailable, { rooms: names }));
       setStep(1);
       scrollTop();
+    } else if (res.error === "promo") {
+      setPromoCode(null);
+      setPromoMsg(c.promoErr[res.promoError ?? "not_found"]);
     } else {
       setError(c.errGeneric);
     }
@@ -175,6 +210,21 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
   const toggle = (id: UnitId) => {
     setNudge(null);
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  };
+
+  const applyCode = async () => {
+    const code = promoInput.trim();
+    if (!code || !checkIn || !checkOut || !picked.length || promoBusy) return;
+    setPromoBusy(true);
+    setPromoMsg(null);
+    const res = await checkPromo({ code, checkIn, checkOut, units: picked });
+    setPromoBusy(false);
+    if (res.ok) {
+      setPromoCode(res.promo.code);
+      setPromoInput("");
+    } else {
+      setPromoMsg(c.promoErr[res.error]);
+    }
   };
 
   const selectRange = (r: DateRange | undefined) => {
@@ -212,6 +262,18 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
             </li>
           );
         })}
+        {q.discount ? (
+          <>
+            <li className="sv-bk-sub">
+              <span>{c.subtotal}</span>
+              <span className="tnum">{idr(q.subtotal ?? q.total)}</span>
+            </li>
+            <li className="sv-bk-discount">
+              <span>{fill(c.promoOff, { code: q.promo?.code ?? "" })}</span>
+              <span className="tnum">−{idr(q.discount)}</span>
+            </li>
+          </>
+        ) : null}
       </ul>
       <p className="sv-bk-total">
         <span>{c.total}</span>
@@ -274,14 +336,15 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
         numberOfMonths={wide ? 2 : 1}
         startMonth={today}
         disabled={matcher}
-        modifiers={{ full: isTaken }}
-        modifiersClassNames={{ full: "sv-day-full" }}
+        modifiers={kinds.modifiers}
+        modifiersClassNames={kinds.modifiersClassNames}
         resetOnSelect
         min={1}
         weekStartsOn={1}
         locale={locale === "id" ? idLocale : enUS}
         className="sv-cal sv-cal--wide"
       />
+      <CalendarLegend locale={locale} few={!picked.length} />
 
       {DEMO ? (
         <p className="sv-demo" role="note">
@@ -346,10 +409,10 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
                 <span className="sv-bk-room-info">
                   <span className="sv-bk-room-name">{unit.name}</span>
                   <span className="sv-bk-room-meta tnum">
-                    {unit.size} m² · {unit.bedrooms} {t.rooms.bedroomsShort}
+                    {unit.size} m² · {unit.bedrooms} {unit.bedrooms === 1 ? t.rooms.bedroomShortOne : t.rooms.bedroomsShort}
                   </span>
                   {why ? <span className="sv-bk-room-why">{why}</span> : null}
-                  {rate ? (
+                  {rate && fromRate(rate) > 0 ? (
                     <span className="sv-bk-room-price tnum">
                       {ok && subtotal ? (
                         <>
@@ -467,6 +530,61 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
             </fieldset>
           );
         })}
+      </div>
+
+      <div className="sv-promo">
+        {promoCode ? (
+          <>
+            <p className="sv-promo-title">{c.promo}</p>
+            <div className="sv-promo-applied" data-invalid={promoErr ? "true" : undefined}>
+              <TicketPercent size={18} strokeWidth={1.5} aria-hidden="true" />
+              <span>
+                <strong className="tnum">{promoCode}</strong>
+                <small role="status">{promoErr ? c.promoErr[promoErr] : fill(c.promoApplied, { code: promoCode, amount: idr(q?.discount ?? 0) })}</small>
+              </span>
+              <button type="button" onClick={() => setPromoCode(null)} disabled={submitting}>
+                <X size={16} strokeWidth={1.6} aria-hidden="true" />
+                <span className="sr-only">{c.promoRemove}</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="sv-input" data-invalid={promoMsg ? "true" : undefined}>
+            <label htmlFor="bk-promo">{c.promo}</label>
+            <div className="sv-promo-row">
+              <input
+                id="bk-promo"
+                value={promoInput}
+                onChange={(e) => {
+                  setPromoInput(e.target.value.toUpperCase());
+                  setPromoMsg(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyCode();
+                  }
+                }}
+                placeholder={c.promoPh}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={20}
+                aria-invalid={!!promoMsg}
+                aria-describedby={promoMsg ? "bk-promo-err" : undefined}
+              />
+              <button type="button" className="sv-btn sv-btn--ghost" onClick={applyCode} disabled={promoBusy || !promoInput.trim()} aria-busy={promoBusy}>
+                {promoBusy ? <LoaderCircle className="sv-spin" size={16} strokeWidth={1.8} aria-hidden="true" /> : null}
+                {promoBusy ? c.promoChecking : c.promoApply}
+              </button>
+            </div>
+            {promoMsg ? (
+              <p className="sv-input-err" id="bk-promo-err" role="alert">
+                {promoMsg}
+              </p>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className="sv-bk-only-narrow">{breakdown}</div>

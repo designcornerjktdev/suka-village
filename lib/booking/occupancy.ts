@@ -67,6 +67,15 @@ export function fullFor(occ: Occupancy, among: UnitId[]) {
   };
 }
 
+/** Some of the rooms in `among` are taken that night, but not all: "few left". */
+export function someTaken(occ: Occupancy, among: UnitId[]) {
+  return (date: Date) => {
+    const k = iso(date);
+    const taken = among.filter((u) => isTaken(occ, u, k)).length;
+    return taken > 0 && taken < among.length;
+  };
+}
+
 /** Same, but taken for ANY of them: picking several rooms needs all free. */
 export function anyTaken(occ: Occupancy, among: UnitId[]) {
   return (date: Date) => {

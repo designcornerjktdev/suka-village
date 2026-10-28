@@ -501,7 +501,7 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
                   <span>
                     <strong>{room.name}</strong>
                     <small className="tnum">
-                      {room.size} m² · {room.bedrooms} {t.rooms.bedroomsShort}
+                      {room.size} m² · {room.bedrooms} {room.bedrooms === 1 ? t.rooms.bedroomShortOne : t.rooms.bedroomsShort}
                     </small>
                   </span>
                 </li>
@@ -556,6 +556,18 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
                   <span className="tnum">{idr(line.subtotal)}</span>
                 </li>
               ))}
+              {booking.quote.discount ? (
+                <>
+                  <li className="sv-bk-sub">
+                    <span>{c.subtotal}</span>
+                    <span className="tnum">{idr(booking.quote.subtotal ?? booking.quote.total)}</span>
+                  </li>
+                  <li className="sv-bk-discount">
+                    <span>{fill(c.promoOff, { code: booking.quote.promo?.code ?? "" })}</span>
+                    <span className="tnum">−{idr(booking.quote.discount)}</span>
+                  </li>
+                </>
+              ) : null}
             </ul>
             <p className="sv-bk-total">
               <span>{c.total}</span>

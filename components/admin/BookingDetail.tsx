@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowUpRight, Check, Clock, Info, LoaderCircle, Mail, MessageCircle, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowUpRight, Check, Clock, Info, LoaderCircle, Mail, MessageCircle, Pencil, Send, Trash2 } from "lucide-react";
 import StorePhoto from "../StorePhoto";
 import Decision from "./Decision";
 import MessagePreview from "../booking/MessagePreview";
-import { Card, Dialog, Empty, PageHeader, StatusPill, toast } from "./ui";
+import { Card, ConfirmDelete, Dialog, Empty, PageHeader, Sheet, SheetFooter, StatusPill, toast } from "./ui";
 import { useBooking, useRooms, useSettings } from "@/lib/booking/hooks";
-import { cancelBooking, markPaidManually, resendNotification, saveInternalNote, setBookingStatus } from "@/lib/booking/api";
-import { fmtDate, fmtDateTime, formatPhone, idr, todayISO } from "@/lib/booking/format";
+import { cancelBooking, DELETABLE, deleteBooking, markPaidManually, resendNotification, saveInternalNote, setBookingStatus, updateBooking } from "@/lib/booking/api";
+import { fmtDate, fmtDateTime, formatPhone, idr, isValidEmail, normalizePhone, todayISO } from "@/lib/booking/format";
 import { methodInfo } from "@/lib/booking/payments";
 import { TEMPLATE_LABELS } from "@/lib/booking/notifications";
 import type { Booking, TemplateId } from "@/lib/booking/types";
@@ -18,6 +19,10 @@ import type { Booking, TemplateId } from "@/lib/booking/types";
  * One booking, everything the front desk needs: who, when, which rooms, what
  * was paid and how, every message that went out, a private note, and the
  * actions that fit its current state.
+ *
+ * The guest's details can be corrected (Ubah data tamu). A booking that never
+ * became a stay, or no longer is one (cancelled, expired, rejected), can be
+ * deleted; anything else is cancelled instead, so its history stays.
  */
 
 function templateFor(b: Booking): TemplateId {
@@ -54,6 +59,9 @@ function Detail({ booking: b }: { booking: Booking }) {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [template, setTemplate] = useState<TemplateId>(templateFor(b));
+  const [editOpen, setEditOpen] = useState(0);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const router = useRouter();
   const method = methodInfo(b.payment.method);
 
   const run = async (key: string, task: () => Promise<unknown>, done: string) => {
@@ -94,6 +102,12 @@ function Detail({ booking: b }: { booking: Booking }) {
           Batalkan
         </button>
       ) : null}
+      {DELETABLE.includes(b.status) ? (
+        <button type="button" className="ad-btn ad-btn--danger" onClick={() => setDeleteOpen(true)}>
+          <Trash2 size={15} strokeWidth={1.7} aria-hidden="true" />
+          Hapus booking
+        </button>
+      ) : null}
     </>
   );
 
@@ -132,7 +146,15 @@ function Detail({ booking: b }: { booking: Booking }) {
 
       <div className="ad-cols ad-cols--detail">
         <div className="ad-stack">
-          <Card title="Tamu">
+          <Card
+            title="Tamu"
+            actions={
+              <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => setEditOpen((n) => n + 1)}>
+                <Pencil size={14} strokeWidth={1.7} aria-hidden="true" />
+                Ubah data tamu
+              </button>
+            }
+          >
             <dl className="ad-dl">
               <div>
                 <dt>Nama</dt>
@@ -201,6 +223,15 @@ function Detail({ booking: b }: { booking: Booking }) {
                 );
               })}
             </ul>
+            {b.quote.promo ? (
+              <p className="ad-discount">
+                <span>
+                  Kode promo <strong>{b.quote.promo.code}</strong>
+                  <small className="tnum">Subtotal {idr(b.quote.subtotal ?? b.quote.total)}</small>
+                </span>
+                <span className="tnum">−{idr(b.quote.promo.discount)}</span>
+              </p>
+            ) : null}
             <p className="sv-bk-total">
               <span>Total</span>
               <strong className="tnum">{idr(b.quote.total)}</strong>
@@ -358,6 +389,25 @@ function Detail({ booking: b }: { booking: Booking }) {
         </div>
       </Dialog>
 
+      {editOpen ? <GuestSheet key={editOpen} booking={b} onClose={() => setEditOpen(0)} /> : null}
+
+      <ConfirmDelete
+        open={deleteOpen}
+        title={`Hapus booking ${b.code}?`}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={async () => {
+          const res = await deleteBooking(b.code);
+          setDeleteOpen(false);
+          if (!res.ok) return toast("Booking ini tidak bisa dihapus");
+          toast(`Booking ${b.code} dihapus`);
+          router.replace("/admin/bookings");
+        }}
+      >
+        Booking ini {b.status === "rejected" ? "sudah ditolak" : b.status === "expired" ? "sudah kedaluwarsa" : "sudah dibatalkan"} dan tidak memegang tanggal apa pun. Menghapusnya
+        menghilangkan data tamu dan riwayatnya dari admin untuk selamanya.
+        {b.status === "rejected" ? " Pastikan uang tamu sudah dikembalikan sebelum menghapus." : ""}
+      </ConfirmDelete>
+
       <Dialog
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
@@ -393,3 +443,72 @@ function Detail({ booking: b }: { booking: Booking }) {
   );
 }
 
+
+/** Correct who the booking is for. Dates and rooms are not edited here. */
+function GuestSheet({ booking: b, onClose }: { booking: Booking; onClose: () => void }) {
+  const [form, setForm] = useState({ name: b.guest.name, email: b.guest.email, phone: formatPhone(b.guest.phone), guests: b.guests, notes: b.notes ?? "" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => {
+    setError(null);
+    setForm((f) => ({ ...f, [k]: v }));
+  };
+
+  const save = async () => {
+    if (!form.name.trim()) return setError("Isi nama tamu.");
+    if (!normalizePhone(form.phone)) return setError("Nomor WhatsApp belum valid.");
+    if (form.email.trim() && !isValidEmail(form.email)) return setError("Email belum valid.");
+    if (b.source === "website" && !form.email.trim()) return setError("Booking dari website butuh email: semua pemberitahuan dikirim ke sana.");
+    setBusy(true);
+    const res = await updateBooking(b.code, { guest: { name: form.name, email: form.email, phone: form.phone }, guests: form.guests, notes: form.notes });
+    setBusy(false);
+    if (!res.ok) return setError("Data belum lengkap.");
+    toast("Data tamu disimpan");
+    onClose();
+  };
+
+  return (
+    <Sheet
+      open
+      onClose={onClose}
+      title="Ubah data tamu"
+      lead={`${b.code} · ${fmtDate(b.checkIn, "id", "short")} → ${fmtDate(b.checkOut, "id", "short")}`}
+      footer={<SheetFooter busy={busy} onCancel={onClose} onSave={save} />}
+    >
+      <section className="ad-form-sec">
+        <h3>Tamu</h3>
+        <div className="sv-input">
+          <label htmlFor="g-name">Nama</label>
+          <input id="g-name" value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="off" />
+        </div>
+        <div className="ad-grid-2">
+          <div className="sv-input">
+            <label htmlFor="g-phone">Nomor WhatsApp</label>
+            <input id="g-phone" type="tel" inputMode="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+          </div>
+          <div className="sv-input">
+            <label htmlFor="g-guests">Jumlah tamu</label>
+            <input id="g-guests" type="number" inputMode="numeric" min={1} max={40} value={form.guests} onChange={(e) => set("guests", Math.max(1, Number(e.target.value) || 1))} />
+          </div>
+        </div>
+        <div className="sv-input">
+          <label htmlFor="g-email">Email{b.source === "admin" ? " (opsional)" : ""}</label>
+          <input id="g-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+        </div>
+        <div className="sv-input">
+          <label htmlFor="g-notes">Catatan dari tamu</label>
+          <textarea id="g-notes" rows={3} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
+        </div>
+      </section>
+      <p className="ad-note">
+        <Info size={15} strokeWidth={1.6} aria-hidden="true" />
+        Tanggal dan kamar tidak bisa diubah di sini supaya ketersediaan dan pembayarannya tetap benar. Untuk pindah tanggal, batalkan lalu buat booking manual baru.
+      </p>
+      {error ? (
+        <p className="sv-bk-alert" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </Sheet>
+  );
+}

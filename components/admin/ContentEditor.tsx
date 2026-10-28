@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpRight, ChevronDown, Info, Plus, Trash2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, ArrowUpRight, Eye, EyeOff, ImageOff, Info, Plus } from "lucide-react";
 import StorePhoto from "../StorePhoto";
 import PhotoManager from "./PhotoManager";
-import { Card, Dialog, PageHeader, SaveBar, Toggle, toast } from "./ui";
+import { Badge, Card, ConfirmDelete, Empty, PageHeader, RowActions, SaveBar, Sheet, SheetFooter, Toggle, toast } from "./ui";
 import { useContent } from "@/lib/booking/hooks";
 import { saveContent } from "@/lib/booking/api";
 import { DEMO } from "@/lib/booking/config";
@@ -15,14 +15,16 @@ import type { ContentItem, ContentSection } from "@/lib/booking/types";
 /**
  * The CMS: one tab per page of the public site, holding exactly what that
  * page shows, in both languages side by side, so a change in one language is
- * never made without seeing the other. Nothing is final until Simpan.
+ * never made without seeing the other.
  *
  * Three shapes, as the pages are built:
  *   photos   Beranda (one photograph) and Galeri (photographs only, in order)
- *   list     Fasilitas, Pengalaman, Acara, Jelajah: rows of title, text and
- *            photographs that can be added, removed, hidden and put in order;
- *            Jelajah also has its map link and photo credits
- *   contact  Kontak: its two fixed rows, Reservasi and Lokasi
+ *   list     Fasilitas, Pengalaman, Acara, Jelajah: a list of items, each
+ *            added, edited (in a panel), hidden, moved and deleted on its
+ *            own, saved as soon as it is done; Jelajah also has its map link
+ *            and photo credits
+ *   contact  Kontak: its two fixed rows, Reservasi and Lokasi, edited the same
+ *            way; the page always has exactly these two, so none is added
  *
  * Rooms are not here: a room's text and photographs live with its facts and
  * its price, under Kamar & harga. The WhatsApp number is under Pengaturan.
@@ -57,8 +59,8 @@ export default function ContentEditor() {
       {DEMO ? (
         <p className="ad-note">
           <Info size={15} strokeWidth={1.6} aria-hidden="true" />
-          Prototipe: perubahan dan foto yang diunggah tersimpan di browser ini, tapi situs publik masih membaca konten dari kode.
-          Developer menyambungkan situs ke database supaya perubahan langsung tampil setelah disimpan.
+          Prototipe: perubahan tersimpan di browser ini, tapi situs publik masih membaca konten dari kode sampai developer
+          menyambungkannya ke database.
         </p>
       ) : null}
 
@@ -71,17 +73,8 @@ export default function ContentEditor() {
         ))}
       </div>
 
-      <div className="ad-section-head">
-        <p className="ad-muted">{meta.hint}</p>
-        <Link href={`/id${meta.page ? `/${meta.page}` : ""}`} target="_blank" className="ad-link">
-          Lihat halaman <ArrowUpRight size={13} strokeWidth={1.6} aria-hidden="true" />
-        </Link>
-      </div>
-
       {meta.kind === "photos" ? (
         <PhotosEditor key={section} section={section} items={content[section]} meta={meta} />
-      ) : meta.kind === "contact" ? (
-        <ContactEditor key={section} items={content.contact} />
       ) : (
         <ListEditor key={section} section={section} items={content[section]} meta={meta} />
       )}
@@ -90,6 +83,23 @@ export default function ContentEditor() {
 }
 
 /* --- Shared ----------------------------------------------------------------- */
+
+function SectionHead({ meta, action }: { meta: Meta; action?: ReactNode }) {
+  return (
+    <div className="ad-section-head">
+      <div>
+        <h2 className="ad-section-title">{meta.label}</h2>
+        <p className="ad-muted">{meta.hint}</p>
+      </div>
+      <div className="ad-section-actions">
+        <Link href={`/id${meta.page ? `/${meta.page}` : ""}`} target="_blank" className="ad-btn ad-btn--ghost">
+          Lihat halaman <ArrowUpRight size={14} strokeWidth={1.6} aria-hidden="true" />
+        </Link>
+        {action}
+      </div>
+    </div>
+  );
+}
 
 function useDraft(items: ContentItem[]) {
   const [draft, setDraft] = useState(items);
@@ -160,6 +170,7 @@ function PhotosEditor({ section, items, meta }: { section: ContentSection; items
   const item = draft[0];
   return (
     <>
+      <SectionHead meta={meta} />
       {item ? (
         <Card>
           <PhotoManager photos={item.photos} onChange={(next) => patch(item.id, { photos: next })} emptyHint={meta.empty} />
@@ -170,201 +181,234 @@ function PhotosEditor({ section, items, meta }: { section: ContentSection; items
   );
 }
 
-/* --- Kontak: Reservasi and Lokasi ------------------------------------------ */
+/* --- Fasilitas, Pengalaman, Acara, Jelajah, Kontak: a list of items ------- */
 
-function ContactEditor({ items }: { items: ContentItem[] }) {
-  const { draft, setDraft, dirty, saving, saved, patch, save } = useDraft(items);
-  const reserve = draft.find((x) => x.id === "reserve");
-  const location = draft.find((x) => x.id === "location");
+/**
+ * The list is what the page shows, in order. Every change is saved the moment
+ * it is made (moved, hidden, deleted, or Simpan in the panel), so there is
+ * never a half saved list to remember.
+ */
+function ListEditor({ section, items, meta }: { section: ContentSection; items: ContentItem[]; meta: Meta }) {
+  const fixed = meta.kind === "contact";
+  const [editing, setEditing] = useState<{ item: ContentItem | null; n: number } | null>(null);
+  const [removing, setRemoving] = useState<ContentItem | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const commit = async (next: ContentItem[], message: string) => {
+    setBusy(true);
+    await saveContent(section, next);
+    setBusy(false);
+    toast(message);
+  };
+  const move = (index: number, by: number) => {
+    const next = [...items];
+    const [item] = next.splice(index, 1);
+    next.splice(index + by, 0, item);
+    return commit(next, "Urutan disimpan");
+  };
+  const open = (item: ContentItem | null) => setEditing((e) => ({ item, n: (e?.n ?? 0) + 1 }));
+
+  const add = fixed ? undefined : (
+    <button type="button" className="ad-btn ad-btn--primary" onClick={() => open(null)}>
+      <Plus size={16} strokeWidth={1.8} aria-hidden="true" />
+      Tambah {meta.noun}
+    </button>
+  );
 
   return (
     <>
-      <div className="ad-stack">
-        {reserve ? (
-          <Card title="Reservasi">
-            <div className="ad-item-body ad-item-body--flat">
-              <div className="ad-bilingual">
-                <Bilingual id="c-rn" label="Judul" value={reserve.name} onChange={(v) => patch(reserve.id, { name: v })} />
-                <Bilingual id="c-rb" label="Teks" rows={4} value={reserve.body} onChange={(v) => patch(reserve.id, { body: v })} />
-              </div>
-              <p className="ad-hint">{NO_DASH}</p>
-              <Field id="c-ig" label="Link Instagram" type="url" value={reserve.link ?? ""} placeholder="https://www.instagram.com/…" onChange={(v) => patch(reserve.id, { link: v })} />
-              <PhotoManager photos={reserve.photos} onChange={(next) => patch(reserve.id, { photos: next })} emptyHint="Belum ada foto. Yang tampil di samping Reservasi adalah foto pertama." />
-            </div>
-          </Card>
-        ) : null}
+      <SectionHead meta={meta} action={add} />
 
-        {location ? (
-          <Card title="Lokasi">
-            <div className="ad-item-body ad-item-body--flat">
-              <div className="ad-bilingual">
-                <Bilingual id="c-ln" label="Judul" value={location.name} onChange={(v) => patch(location.id, { name: v })} />
-              </div>
-              <div className="sv-input">
-                <label htmlFor="c-addr">Alamat</label>
-                <textarea id="c-addr" rows={2} value={location.body.id} onChange={(e) => patch(location.id, { body: { id: e.target.value, en: e.target.value } })} />
-              </div>
-              <div className="ad-grid-2">
-                <Field id="c-plus" label="Plus code" value={location.plusCode ?? ""} placeholder="42C5+CV5" onChange={(v) => patch(location.id, { plusCode: v })} />
-                <Field id="c-map" label="Link Google Maps (Petunjuk arah)" type="url" value={location.link ?? ""} onChange={(v) => patch(location.id, { link: v })} />
-              </div>
-              <p className="ad-hint">Peta di halaman Kontak dicari dari plus code ini.</p>
-            </div>
-          </Card>
-        ) : null}
-      </div>
+      {items.length ? (
+        <ol className="ad-records" aria-busy={busy}>
+          {items.map((item, index) => {
+            const title = item.name.id || "(tanpa judul)";
+            return (
+              <li key={item.id} className="ad-record" data-hidden={item.visible ? undefined : "true"}>
+                {fixed ? null : (
+                  <div className="ad-record-order">
+                    <button type="button" className="ad-icon-btn ad-icon-btn--quiet" onClick={() => move(index, -1)} disabled={index === 0 || busy} aria-label={`Naikkan ${title}`}>
+                      <ArrowUp size={15} strokeWidth={1.7} aria-hidden="true" />
+                    </button>
+                    <button type="button" className="ad-icon-btn ad-icon-btn--quiet" onClick={() => move(index, 1)} disabled={index === items.length - 1 || busy} aria-label={`Turunkan ${title}`}>
+                      <ArrowDown size={15} strokeWidth={1.7} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+                <button type="button" className="ad-record-main" onClick={() => open(item)}>
+                  <span className="ad-record-thumb">
+                    {item.photos[0] ? <StorePhoto src={item.photos[0]} alt="" sizes="72px" /> : <ImageOff size={18} strokeWidth={1.4} aria-hidden="true" />}
+                  </span>
+                  <span className="ad-record-text">
+                    <strong>{title}</strong>
+                    <small>
+                      {item.id === "location" ? item.body.id.split("\n")[0] : item.name.en || "Judul Inggris belum diisi"}
+                      {item.id === "location" ? "" : ` · ${item.photos.length} foto`}
+                    </small>
+                  </span>
+                </button>
+                <span className="ad-record-state">{fixed ? null : <Badge tone={item.visible ? "ok" : "off"}>{item.visible ? "Tampil" : "Disembunyikan"}</Badge>}</span>
+                <RowActions label={title} onEdit={() => open(item)} onDelete={fixed ? undefined : () => setRemoving(item)}>
+                  {fixed ? null : (
+                    <button
+                      type="button"
+                      className="ad-icon-btn"
+                      disabled={busy}
+                      onClick={() => commit(items.map((x) => (x.id === item.id ? { ...x, visible: !x.visible } : x)), item.visible ? `${title} disembunyikan` : `${title} ditampilkan`)}
+                      aria-label={item.visible ? `Sembunyikan ${title}` : `Tampilkan ${title}`}
+                      title={item.visible ? "Sembunyikan" : "Tampilkan"}
+                    >
+                      {item.visible ? <EyeOff size={16} strokeWidth={1.6} aria-hidden="true" /> : <Eye size={16} strokeWidth={1.6} aria-hidden="true" />}
+                    </button>
+                  )}
+                </RowActions>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <Empty action={add}>Belum ada {meta.noun} di halaman {meta.label}.</Empty>
+      )}
 
-      <SaveBar
-        dirty={dirty}
-        saving={saving}
-        saved={saved}
-        onReset={() => setDraft(items)}
-        onSave={() => {
-          if (draft.some((x) => !x.name.id.trim())) return toast("Isi judul (Indonesia) dulu");
-          return save("contact", "Konten Kontak disimpan");
+      {editing ? (
+        <ItemSheet
+          key={editing.n}
+          section={section}
+          meta={meta}
+          item={editing.item}
+          onClose={() => setEditing(null)}
+          onSave={async (saved) => {
+            const exists = items.some((x) => x.id === saved.id);
+            await saveContent(section, exists ? items.map((x) => (x.id === saved.id ? saved : x)) : [...items, saved]);
+            toast(exists ? `${saved.name.id} disimpan` : `${saved.name.id} ditambahkan ke ${meta.label}`);
+            setEditing(null);
+          }}
+        />
+      ) : null}
+
+      <ConfirmDelete
+        open={!!removing}
+        title={`Hapus ${removing?.name.id || meta.noun}?`}
+        onCancel={() => setRemoving(null)}
+        onConfirm={async () => {
+          if (!removing) return;
+          await saveContent(section, items.filter((x) => x.id !== removing.id));
+          toast(`${removing.name.id || "Item"} dihapus`);
+          setRemoving(null);
         }}
-      />
+      >
+        Item ini hilang dari halaman {meta.label}, beserta teks dan daftar fotonya. Kalau hanya ingin menyembunyikan sementara, pakai tombol mata di barisnya.
+      </ConfirmDelete>
     </>
   );
 }
 
-/* --- Fasilitas, Pengalaman, Acara, Jelajah: rows ----------------------------- */
-
-function ListEditor({ section, items, meta }: { section: ContentSection; items: ContentItem[]; meta: Meta }) {
-  const { draft, setDraft, dirty, saving, saved, change, patch, save } = useDraft(items);
-  const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null);
-  const [removing, setRemoving] = useState<ContentItem | null>(null);
+/** Add or edit one item, in a panel. */
+function ItemSheet({
+  section,
+  meta,
+  item,
+  onClose,
+  onSave,
+}: {
+  section: ContentSection;
+  meta: Meta;
+  item: ContentItem | null;
+  onClose: () => void;
+  onSave: (item: ContentItem) => Promise<void>;
+}) {
   const place = section === "explore";
-
-  const move = (index: number, by: number) =>
-    change((d) => {
-      const next = [...d];
-      const [item] = next.splice(index, 1);
-      next.splice(index + by, 0, item);
-      return next;
-    });
-  const add = () => {
-    const item: ContentItem = { id: uid(), name: { id: "", en: "" }, body: { id: "", en: "" }, photos: [], visible: true, ...(place ? { link: "", credit: "" } : {}) };
-    change((d) => [...d, item]);
-    setOpenId(item.id);
+  const [draft, setDraft] = useState<ContentItem>(
+    () => item ?? { id: uid(), name: { id: "", en: "" }, body: { id: "", en: "" }, photos: [], visible: true, ...(place ? { link: "", credit: "" } : {}) },
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const patch = (p: Partial<ContentItem>) => {
+    setError(null);
+    setDraft((d) => ({ ...d, ...p }));
   };
 
+  const save = async () => {
+    if (!draft.name.id.trim()) return setError("Isi judul (Indonesia) dulu.");
+    setBusy(true);
+    await onSave({ ...draft, name: { id: draft.name.id.trim(), en: draft.name.en.trim() } });
+    setBusy(false);
+  };
+
+  const location = draft.id === "location";
+  const reserve = draft.id === "reserve";
+
   return (
-    <>
-      <div className="ad-list-tools">
-        <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={add}>
-          <Plus size={14} strokeWidth={1.8} aria-hidden="true" />
-          Tambah {meta.noun}
-        </button>
-      </div>
+    <Sheet
+      open
+      onClose={onClose}
+      title={item ? `Ubah ${item.name.id || meta.noun}` : `Tambah ${meta.noun}`}
+      lead={`Halaman ${meta.label}`}
+      footer={<SheetFooter busy={busy} onCancel={onClose} onSave={save} saveLabel={item ? "Simpan" : "Tambahkan"} />}
+    >
+      <section className="ad-form-sec">
+        <h3>Teks</h3>
+        <div className="ad-bilingual ad-bilingual--stack">
+          <Bilingual id="it-n" label="Judul" value={draft.name} onChange={(v) => patch({ name: v })} />
+        </div>
+        {location ? (
+          <div className="sv-input">
+            <label htmlFor="it-addr">Alamat</label>
+            <textarea id="it-addr" rows={3} value={draft.body.id} onChange={(e) => patch({ body: { id: e.target.value, en: e.target.value } })} />
+          </div>
+        ) : (
+          <div className="ad-bilingual ad-bilingual--stack">
+            <Bilingual id="it-b" label="Teks" rows={5} value={draft.body} onChange={(v) => patch({ body: v })} />
+          </div>
+        )}
+        <p className="ad-hint">{NO_DASH}</p>
+      </section>
 
-      <div className="ad-stack">
-        {draft.map((item, index) => {
-          const open = openId === item.id;
-          return (
-            <Card key={item.id} className="ad-item" id={`item-${item.id}`}>
-              <button type="button" className="ad-item-head" onClick={() => setOpenId(open ? null : item.id)} aria-expanded={open}>
-                <span className="ad-item-thumb">
-                  {item.photos[0] ? <StorePhoto src={item.photos[0]} alt="" sizes="56px" /> : <span aria-hidden="true">–</span>}
-                </span>
-                <span className="ad-item-title">
-                  <strong>{item.name.id || "(tanpa judul)"}</strong>
-                  <small>
-                    {item.photos.length} foto · {item.visible ? "tampil" : "disembunyikan"}
-                  </small>
-                </span>
-                <ChevronDown size={18} strokeWidth={1.6} aria-hidden="true" className="ad-item-chevron" data-open={open ? "true" : undefined} />
-              </button>
+      {place || reserve || location ? (
+        <section className="ad-form-sec">
+          <h3>Link</h3>
+          {place ? (
+            <>
+              <Field id="it-map" label="Link Google Maps (Buka di peta)" type="url" value={draft.link ?? ""} onChange={(v) => patch({ link: v })} />
+              <div className="sv-input">
+                <label htmlFor="it-credit">Kredit foto, satu baris per foto</label>
+                <textarea id="it-credit" rows={3} value={draft.credit ?? ""} placeholder="Nama, sumber, lisensi" onChange={(e) => patch({ credit: e.target.value })} />
+              </div>
+            </>
+          ) : null}
+          {reserve ? <Field id="it-ig" label="Link Instagram" type="url" value={draft.link ?? ""} placeholder="https://www.instagram.com/…" onChange={(v) => patch({ link: v })} /> : null}
+          {location ? (
+            <>
+              <Field id="it-plus" label="Plus code" value={draft.plusCode ?? ""} placeholder="42C5+CV5" onChange={(v) => patch({ plusCode: v })} />
+              <Field id="it-gmap" label="Link Google Maps (Petunjuk arah)" type="url" value={draft.link ?? ""} onChange={(v) => patch({ link: v })} />
+              <p className="ad-hint">Peta di halaman Kontak dicari dari plus code ini.</p>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
-              {open ? (
-                <div className="ad-item-body">
-                  <div className="ad-bilingual">
-                    <Bilingual id={`n-${item.id}`} label="Judul" value={item.name} onChange={(v) => patch(item.id, { name: v })} />
-                    <Bilingual id={`b-${item.id}`} label="Teks" rows={5} value={item.body} onChange={(v) => patch(item.id, { body: v })} />
-                  </div>
-                  <p className="ad-hint">{NO_DASH}</p>
+      {location ? null : (
+        <section className="ad-form-sec">
+          <h3>Foto</h3>
+          <PhotoManager
+            photos={draft.photos}
+            onChange={(next) => patch({ photos: next })}
+            emptyHint={reserve ? "Belum ada foto. Yang tampil di samping Reservasi adalah foto pertama." : "Belum ada foto. Tambahkan setidaknya satu; di situs, foto tampil sebagai slider di samping teks."}
+          />
+        </section>
+      )}
 
-                  {place ? (
-                    <div className="ad-grid-2">
-                      <Field id={`l-${item.id}`} label="Link Google Maps (Buka di peta)" type="url" value={item.link ?? ""} onChange={(v) => patch(item.id, { link: v })} />
-                      <div className="sv-input">
-                        <label htmlFor={`c-${item.id}`}>Kredit foto, satu baris per foto</label>
-                        <textarea id={`c-${item.id}`} rows={2} value={item.credit ?? ""} placeholder="Nama, sumber, lisensi" onChange={(e) => patch(item.id, { credit: e.target.value })} />
-                      </div>
-                    </div>
-                  ) : null}
+      {meta.kind === "list" ? (
+        <section className="ad-form-sec">
+          <Toggle checked={draft.visible} onChange={(v) => patch({ visible: v })} label="Tampilkan di situs" hint={draft.visible ? "Terlihat oleh pengunjung" : "Disembunyikan dari pengunjung"} />
+        </section>
+      ) : null}
 
-                  <PhotoManager
-                    photos={item.photos}
-                    onChange={(next) => patch(item.id, { photos: next })}
-                    emptyHint="Belum ada foto. Tambahkan setidaknya satu; di situs, foto tampil sebagai slider di samping teks."
-                  />
-
-                  <Toggle checked={item.visible} onChange={(v) => patch(item.id, { visible: v })} label="Tampilkan di situs" hint={item.visible ? "Terlihat oleh pengunjung" : "Disembunyikan dari pengunjung"} />
-
-                  <div className="ad-item-tools">
-                    <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => move(index, -1)} disabled={index === 0}>
-                      <ArrowUp size={14} strokeWidth={1.8} aria-hidden="true" />
-                      Naikkan
-                    </button>
-                    <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => move(index, 1)} disabled={index === draft.length - 1}>
-                      <ArrowDown size={14} strokeWidth={1.8} aria-hidden="true" />
-                      Turunkan
-                    </button>
-                    <button type="button" className="ad-btn ad-btn--danger ad-btn--sm" onClick={() => setRemoving(item)}>
-                      <Trash2 size={14} strokeWidth={1.7} aria-hidden="true" />
-                      Hapus
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </Card>
-          );
-        })}
-      </div>
-
-      {draft.length ? null : <p className="ad-empty">Belum ada {meta.noun}. Tambahkan dengan tombol di atas.</p>}
-
-      <SaveBar
-        dirty={dirty}
-        saving={saving}
-        saved={saved}
-        onReset={() => setDraft(items)}
-        onSave={() => {
-          const untitled = draft.find((x) => !x.name.id.trim());
-          if (untitled) {
-            setOpenId(untitled.id);
-            return toast("Isi judul (Indonesia) untuk setiap item dulu");
-          }
-          return save(section, `Konten ${meta.label} disimpan`);
-        }}
-      />
-
-      <Dialog
-        open={!!removing}
-        onClose={() => setRemoving(null)}
-        title={`Hapus ${removing?.name.id || meta.noun}?`}
-        footer={
-          <>
-            <button type="button" className="ad-btn ad-btn--ghost" onClick={() => setRemoving(null)}>
-              Batal
-            </button>
-            <button
-              type="button"
-              className="ad-btn ad-btn--danger"
-              onClick={() => {
-                if (removing) change((d) => d.filter((x) => x.id !== removing.id));
-                setRemoving(null);
-                toast("Dihapus dari daftar. Klik Simpan untuk menerapkan.");
-              }}
-            >
-              Hapus
-            </button>
-          </>
-        }
-      >
-        <p className="ad-muted">Item ini hilang dari halaman {meta.label} setelah disimpan. Kalau hanya ingin menyembunyikan sementara, matikan &quot;Tampilkan di situs&quot;.</p>
-      </Dialog>
-    </>
+      {error ? (
+        <p className="sv-bk-alert" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </Sheet>
   );
 }

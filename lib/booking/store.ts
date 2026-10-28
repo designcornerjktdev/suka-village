@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { CONTENT_REV, DEMO_RATES, seedContent, seedDB, seedRooms, seedSettings, type DB } from "./seed";
+import { CONTENT_REV, DEMO_RATES, seedContent, seedDB, seedPromos, seedRooms, seedSettings, type DB } from "./seed";
 import { effectiveStatus } from "./occupancy";
 
 /**
@@ -34,6 +34,7 @@ const EMPTY: DB = {
   settings: seedSettings(),
   content: seedContent(),
   media: {},
+  promos: [],
 };
 
 let state: DB | null = null;
@@ -47,6 +48,11 @@ function read(): DB {
     const parsed = raw ? (JSON.parse(raw) as DB) : null;
     /* A document saved while the calendar was briefly removed has no blocks. */
     if (parsed?.version === 2 && !Array.isArray(parsed.blocks)) parsed.blocks = [];
+    /* Saved before promo codes existed: start with the examples. */
+    if (parsed?.version === 2 && !Array.isArray(parsed.promos)) {
+      parsed.promos = seedPromos();
+      persist(parsed);
+    }
     /* Seeded from an older edition of the site: take its content and the
        original rooms' photographs afresh, keep bookings, prices and settings. */
     if (parsed?.version === 2 && parsed.contentRev !== CONTENT_REV) {

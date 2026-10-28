@@ -17,6 +17,7 @@ lib/booking/
   seed.ts           demo data. Delete when done (keep seedContent() for the first import).
   config.ts         DEMO = true. Set to false when the backend is live.
   pricing.ts        price rules. Move/duplicate to the server; the server is the authority.
+  promo.ts          promo code rules and the discount. Same: the server is the authority.
   occupancy.ts      night-aware availability rules. Same: the server is the authority.
   notifications.ts  default EMAIL templates + variable rendering (no WhatsApp).
   uploads.ts        ← prototype photo storage in IndexedDB. Replace with object storage.
@@ -36,7 +37,13 @@ Screens:
 | `/admin/bookings/[code]` | owner | `BookingDetail.tsx` |
 | `/admin/calendar` | owner | `AdminCalendar.tsx` (every room by day; close dates by hand: click a free day or "Tutup tanggal") |
 | `/admin/rooms` | owner | `RoomsEditor.tsx` (add and remove rooms; name, size, bedrooms, features, description, photos, rates, rules) |
-| `/admin/content` | owner | `ContentEditor.tsx` (CMS: add, remove and order items; text ID/EN, photo upload, visibility; the home photograph) |
+| `/admin/promos` | owner | `PromosEditor.tsx` (promo codes: add, edit, switch off, delete) |
+| `/admin/content` | owner | `ContentEditor.tsx` (CMS: add, edit, hide, order and delete items; text ID/EN, photo upload; the home photograph) |
+
+Every admin screen that holds records works the same way: a list with
+**Ubah** and **Hapus** on each row, **Tambah** at the top right, and the form in
+a panel along the right edge (`Sheet` in `components/admin/ui.tsx`) with its
+own Simpan. Deletes always ask first (`ConfirmDelete`).
 | `/admin/settings` | owner | `SettingsEditor.tsx` (payment methods, hold time, email templates, policy) |
 
 The header's check-in/check-out fields (`components/BookingBar.tsx`) read the
@@ -55,12 +62,15 @@ See `lib/booking/types.ts`. Rules that matter:
 - A booking holds **one or more units** (`units: UnitId[]`) — groups book the
   villa and a cabin together.
 - `quote` stores the price **night by night** at the moment of booking, so a
-  later rate change never alters an existing booking.
+  later rate change never alters an existing booking. With a promo code it
+  also stores `subtotal`, `discount` and the `promo` as applied, and `total`
+  is what the guest pays; editing or deleting the promo later changes nothing
+  on bookings that used it.
 
 Suggested tables: `bookings`, `booking_units`, `booking_nights` (unit, date,
 booking_id — a unique index on `(unit, date)` for holding statuses is the
 simplest double-booking guard), `payments`, `notifications`, `booking_events`,
-`blocks`, `rooms`, `rates`, `seasons`, `settings`, `content_items`,
+`blocks`, `rooms`, `rates`, `seasons`, `promos`, `settings`, `content_items`,
 `content_photos`, `admins`.
 
 - **Rooms are data.** `UnitId` is a string: the three launch rooms keep
@@ -108,7 +118,8 @@ same return shapes.
 | Function | Endpoint | Server must |
 |---|---|---|
 | `useOccupancy`, `useRates`, `useRooms` | `GET /api/availability?from&to`, `GET /api/rooms` | Return taken nights per unit (every booking that still holds them), public rates, and the rooms as edited in the admin. Cache briefly. |
-| `createBooking` | `POST /api/bookings` | Validate input (name, email, +62 mobile). **Re-check availability inside a transaction / with the unique night index.** **Compute the price on the server** from its own rates — never trust a total from the browser. Enforce `bookable` and `minNights`. Create the charge at the payment gateway, store `reference` + `gatewayId` + `expiresAt`. Email `awaiting_payment`. Return the booking + a signed access token. Rate-limit by IP. |
+| `checkPromo`, `usePromo` | `POST /api/promos/check`, `GET /api/promos/:code` | The checkout's "Pakai" button. Look the code up (case-insensitive), check it is active, inside its dates (the booking date), under its quota, long enough (`minNights`) and for the chosen rooms; answer with the discounted quote. **Rate-limit**: codes can be guessed. Never list codes. |
+| `createBooking` | `POST /api/bookings` | Validate input (name, email, +62 mobile). If `promoCode` is sent, **check it again and compute the discount on the server**, counting uses inside the same transaction (a code with quota 1 must not be used twice). | **Re-check availability inside a transaction / with the unique night index.** **Compute the price on the server** from its own rates — never trust a total from the browser. Enforce `bookable` and `minNights`. Create the charge at the payment gateway, store `reference` + `gatewayId` + `expiresAt`. Email `awaiting_payment`. Return the booking + a signed access token. Rate-limit by IP. |
 | `getBooking` / `useBooking` | `GET /api/bookings/:code?t=token` | Only with a valid token (see §5). |
 | `findBooking` | `POST /api/bookings/lookup {code, email}` | Both must match. Rate-limit. Respond the same way whether or not the code exists. |
 | `checkPayment` | `POST /api/bookings/:code/check-payment` | Ask the gateway for the charge status (the webhook is still the source of truth). |
@@ -128,8 +139,11 @@ same return shapes.
 | `cancelBooking` (admin) | `POST /api/admin/bookings/:code/cancel` |
 | `resendNotification` | `POST /api/admin/bookings/:code/notify {template}` |
 | `saveInternalNote` | `PATCH /api/admin/bookings/:code {internalNote}` |
+| `updateBooking` | `PATCH /api/admin/bookings/:code {guest, guests, notes}` — corrects the guest only; dates, rooms and price are not editable (cancel and book again) |
+| `deleteBooking` | `DELETE /api/admin/bookings/:code` — only `cancelled`, `expired`, `rejected`; soft delete, keep what tax records need |
 | `createBooking` (source `admin`) | `POST /api/admin/bookings` — email optional; `paid: true` creates it confirmed |
-| `createBlock` / `deleteBlock` | `POST /api/admin/blocks`, `DELETE /api/admin/blocks/:id` (refuse overlaps with bookings or other blocks) |
+| `createBlock` / `updateBlock` / `deleteBlock` | `POST /api/admin/blocks`, `PUT /api/admin/blocks/:id`, `DELETE /api/admin/blocks/:id` (refuse overlaps with bookings or other blocks) |
+| `createPromo` / `savePromo` / `deletePromo` | `POST /api/admin/promos`, `PUT /api/admin/promos/:id`, `DELETE /api/admin/promos/:id` — code 3 to 20 of A-Z, 0-9, `-`, unique; percent 1 to 100 |
 | `createRoom` | `POST /api/admin/rooms` — starts empty and `bookable: false` |
 | `archiveRoom` | `DELETE /api/admin/rooms/:unit` — refuse while a holding booking has nights still to come; otherwise archive, take off sale, drop its blocks |
 | `saveRoom` | `PUT /api/admin/rooms/:unit` — then revalidate the room pages (§7) |
@@ -144,6 +158,20 @@ Log every admin write to `booking_events` with the admin's id (the History
 card in the booking detail already renders these).
 
 ---
+
+### Promo codes
+
+Rules in `lib/booking/promo.ts`:
+
+- **percent** (`value` 1 to 100, optional `maxDiscount` cap, rounded down to
+  whole rupiah) or **amount** (`value` rupiah, never more than the stay).
+- Limited by the days the code can be used (`validFrom` / `validTo`, the
+  booking date, not the stay), `minNights`, `units` (empty = every room; in a
+  group booking only the listed rooms are discounted) and `quota`.
+- A use counts while the booking holds its nights (`HOLDING`); a cancelled,
+  rejected or expired booking gives its use back.
+- The admin booking manual can take a code too.
+- The two codes seeded as examples (`CONTOH10`, `CABIN200`) are demo data.
 
 ## 3. Payments
 
@@ -302,6 +330,7 @@ guests ask for deletion.
       `simulateGateway`, the demo data in `seed.ts`, `DemoQR.tsx`, and the
       "simulate" panels go with the flag.
 - [ ] Real rates entered in **Kamar & harga** (the current ones are examples).
+- [ ] Example promo codes deleted in **Promo**; real ones created if wanted.
 - [ ] Cancellation and **refund** policy written in **Pengaturan → Kebijakan
       & kontak**; a refund procedure agreed for rejected bookings.
 - [ ] Payment gateway live keys, webhook URL registered and verified.

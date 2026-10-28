@@ -1,6 +1,6 @@
 import { events, experiences, explore, facilities, gallery, photos, place, SHOP_CONFIRMED, social, units, whatsapp } from "@/content/site";
 import { dict } from "@/content/dict";
-import type { Block, Booking, BookingStatus, Content, MediaMeta, PaymentMethodId, Room, Settings, UnitId, UnitRate } from "./types";
+import type { Block, Booking, BookingStatus, Content, MediaMeta, PaymentMethodId, Promo, Room, Settings, UnitId, UnitRate } from "./types";
 import { addDays, iso, nightsOf } from "./format";
 import { DEFAULT_TEMPLATES } from "./notifications";
 import { quote } from "./pricing";
@@ -29,6 +29,7 @@ export type DB = {
   content: Content;
   /** Alt text and file name for photographs uploaded in the admin. */
   media: Record<string, MediaMeta>;
+  promos: Promo[];
 };
 
 function prng(seed: number) {
@@ -94,6 +95,40 @@ export function seedSettings(): Settings {
     },
     contact: { whatsapp: `+${whatsapp.number}`, senderEmail: "" },
   };
+}
+
+/** Two example codes, so the Promo screen and the checkout have something to
+    show. Invented, and labelled as examples. */
+export function seedPromos(now = new Date()): Promo[] {
+  const today = iso(now);
+  return [
+    {
+      id: "promo-demo-1",
+      code: "CONTOH10",
+      note: "Contoh: potongan 10% untuk semua kamar",
+      kind: "percent",
+      value: 10,
+      maxDiscount: 500_000,
+      minNights: 1,
+      validFrom: today,
+      validTo: addDays(today, 90),
+      units: [],
+      active: true,
+      createdAt: now.toISOString(),
+    },
+    {
+      id: "promo-demo-2",
+      code: "CABIN200",
+      note: "Contoh: Rp 200.000 untuk kabin, minimal 2 malam",
+      kind: "amount",
+      value: 200_000,
+      minNights: 2,
+      units: ["familyCabin", "singleCabin"],
+      quota: 20,
+      active: true,
+      createdAt: now.toISOString(),
+    },
+  ];
 }
 
 /** The rooms as the brief gives them; from here on the owner edits them. */
@@ -302,5 +337,5 @@ export function seedDB(now = new Date()): DB {
 
   bookings.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  return { version: 2, contentRev: CONTENT_REV, bookings, blocks, rooms: seedRooms(), rates, settings: seedSettings(), content: seedContent(), media: {} };
+  return { version: 2, contentRev: CONTENT_REV, bookings, blocks, rooms: seedRooms(), rates, settings: seedSettings(), content: seedContent(), media: {}, promos: seedPromos(now) };
 }

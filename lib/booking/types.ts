@@ -97,9 +97,51 @@ export type Quote = {
   checkOut: ISODate;
   nights: number;
   lines: QuoteLine[];
+  /** The rooms before any promo. Missing on bookings made before promo codes
+      existed; read it as `total` then. */
+  subtotal?: number;
+  /** What the promo took off, in rupiah. */
+  discount?: number;
+  promo?: AppliedPromo;
+  /** What the guest pays: subtotal minus discount. */
   total: number;
   currency: "IDR";
 };
+
+/* --- Promo codes ----------------------------------------------------------- */
+
+/** percent: `value` is 1 to 100, optionally capped by `maxDiscount`.
+    amount:  `value` is rupiah off the stay. */
+export type PromoKind = "percent" | "amount";
+
+export type Promo = {
+  id: string;
+  /** What the guest types. Stored in capitals; matched without regard to case. */
+  code: string;
+  /** For the admin only: what the promo is for. */
+  note?: string;
+  kind: PromoKind;
+  value: number;
+  maxDiscount?: number;
+  minNights: number;
+  /** The days the code can be USED (the booking date, not the stay), both
+      inclusive. Empty means no limit on that side. */
+  validFrom?: ISODate;
+  validTo?: ISODate;
+  /** Rooms it applies to. Empty means every room. In a group booking only
+      the rooms listed are discounted. */
+  units: UnitId[];
+  /** How many bookings may use it. Empty means no limit. A booking that is
+      cancelled, rejected or expired gives its use back. */
+  quota?: number;
+  active: boolean;
+  createdAt: ISODateTime;
+};
+
+/** The promo as it was applied to one booking, frozen with the quote. */
+export type AppliedPromo = { id: string; code: string; kind: PromoKind; value: number; discount: number };
+
+export type PromoError = "not_found" | "inactive" | "not_started" | "ended" | "used_up" | "min_nights" | "rooms";
 
 export type Payment = {
   method: PaymentMethodId;

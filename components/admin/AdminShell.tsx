@@ -15,6 +15,7 @@ import {
   Menu,
   RotateCcw,
   Settings,
+  TicketPercent,
   X,
 } from "lucide-react";
 import Logo from "../Logo";
@@ -33,12 +34,28 @@ import { useAdminSession, useBookings } from "@/lib/booking/hooks";
  * too, so this guard is only for the interface.
  */
 
+/* Grouped by what the owner is doing: running today's stays, shaping what
+   the website sells and says, and the rules behind both. */
 const NAV = [
-  { href: "/admin/bookings", label: "Booking", Icon: CalendarCheck },
-  { href: "/admin/calendar", label: "Kalender", Icon: CalendarRange },
-  { href: "/admin/rooms", label: "Kamar & harga", Icon: BedDouble },
-  { href: "/admin/content", label: "Konten", Icon: FileText },
-  { href: "/admin/settings", label: "Pengaturan", Icon: Settings },
+  {
+    group: "Operasional",
+    items: [
+      { href: "/admin/bookings", label: "Booking", Icon: CalendarCheck },
+      { href: "/admin/calendar", label: "Kalender", Icon: CalendarRange },
+    ],
+  },
+  {
+    group: "Website",
+    items: [
+      { href: "/admin/rooms", label: "Kamar & harga", Icon: BedDouble },
+      { href: "/admin/promos", label: "Promo", Icon: TicketPercent },
+      { href: "/admin/content", label: "Konten", Icon: FileText },
+    ],
+  },
+  {
+    group: "Sistem",
+    items: [{ href: "/admin/settings", label: "Pengaturan", Icon: Settings }],
+  },
 ];
 
 export default function AdminShell({ children }: { children: ReactNode }) {
@@ -69,16 +86,21 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   const nav = (
     <nav className="ad-nav" aria-label="Menu admin">
-      {NAV.map(({ href, label, Icon }) => (
-        <Link key={href} href={href} aria-current={current(href) ? "page" : undefined} onClick={() => setOpenAt(null)}>
-          <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
-          <span>{label}</span>
-          {href === "/admin/bookings" && waiting ? (
-            <span className="ad-badge tnum" aria-label={`${waiting} perlu dikonfirmasi`}>
-              {waiting}
-            </span>
-          ) : null}
-        </Link>
+      {NAV.map(({ group, items }) => (
+        <div key={group} className="ad-nav-group">
+          <p className="ad-nav-label">{group}</p>
+          {items.map(({ href, label, Icon }) => (
+            <Link key={href} href={href} aria-current={current(href) ? "page" : undefined} onClick={() => setOpenAt(null)}>
+              <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
+              <span>{label}</span>
+              {href === "/admin/bookings" && waiting ? (
+                <span className="ad-badge tnum" aria-label={`${waiting} perlu dikonfirmasi`}>
+                  {waiting}
+                </span>
+              ) : null}
+            </Link>
+          ))}
+        </div>
       ))}
     </nav>
   );
@@ -138,8 +160,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           <div className="ad-demo">
             <Info size={15} strokeWidth={1.7} aria-hidden="true" />
             <p>
-              <strong>Mode demo.</strong> Semua data di sini contoh dan tersimpan di browser ini saja. Developer
-              menyambungkannya ke database, payment gateway, dan email.
+              <strong>Mode demo.</strong> Semua data di sini contoh dan tersimpan di browser ini saja.
+              <span className="ad-demo-more"> Developer menyambungkannya ke database, payment gateway, dan email.</span>
             </p>
             <button
               type="button"

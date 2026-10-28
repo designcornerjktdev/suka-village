@@ -59,7 +59,7 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
             <div className="sv-room-main">
               <h1 className="sv-row-title">{found.name}</h1>
               <p className="sv-room-facts tnum">
-                {found.size} m² · {found.bedrooms} {t.rooms.bedroomsShort}
+                {found.size} m² · {found.bedrooms} {found.bedrooms === 1 ? t.rooms.bedroomShortOne : t.rooms.bedroomsShort}
               </p>
               <div className="sv-row-copy">
                 <p>{t.rooms.notes[found.id]}</p>
@@ -95,7 +95,7 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
             <div>
               <p className="sv-room-dock-name">{found.name}</p>
               <p className="sv-room-dock-meta tnum">
-                {found.size} m² · {found.bedrooms} {t.rooms.bedroomsShort}
+                {found.size} m² · {found.bedrooms} {found.bedrooms === 1 ? t.rooms.bedroomShortOne : t.rooms.bedroomsShort}
               </p>
             </div>
             <Link href={`${localePath(lang, "booking")}?unit=${found.id}`} className="sv-btn sv-btn--primary sv-btn--sm">
@@ -116,7 +116,7 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
                     <span className="sv-tile-name">
                       {other.name}
                       <span className="sv-tile-meta tnum">
-                        {other.size} m² · {other.bedrooms} {t.rooms.bedroomsShort}
+                        {other.size} m² · {other.bedrooms} {other.bedrooms === 1 ? t.rooms.bedroomShortOne : t.rooms.bedroomsShort}
                       </span>
                     </span>
                   </Link>

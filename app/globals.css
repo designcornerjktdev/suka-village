@@ -374,11 +374,6 @@
 .sv-cal--loading { min-height: 19rem; }
 
 
-/* A full night that is still a valid check out: hatched, but clickable. */
-.sv-cal .sv-day-full:not(.rdp-disabled) .rdp-day_button {
-  background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(156, 78, 44, 0.12) 4px 5px);
-}
-
 .sv-cal .rdp-months { display: flex; flex-wrap: wrap; gap: 2.5rem; }
 .sv-cal .rdp-month { position: relative; }
 
@@ -412,16 +407,16 @@
   color: var(--color-ink-soft);
 }
 
-.sv-cal .rdp-day { width: var(--cell); height: var(--cell); padding: 0; text-align: center; }
+/* Each day is a tile with a hairline of white around it, so free, few left
+   and full read as a pattern across the month at a glance. */
+.sv-cal .rdp-day { width: var(--cell); height: var(--cell); padding: 2px; text-align: center; }
 
 .sv-cal .rdp-day_button {
-  width: var(--cell); height: var(--cell);
+  width: calc(var(--cell) - 4px); height: calc(var(--cell) - 4px);
   border: 0;  background: transparent;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
-
-.sv-cal .rdp-day_button:hover:not(:disabled) { background: var(--color-mist); }
 
 .sv-cal .rdp-today .rdp-day_button { box-shadow: inset 0 0 0 1px var(--color-ink); font-weight: 600; }
 
@@ -433,15 +428,45 @@
 .sv-cal .rdp-outside,
 .sv-cal .rdp-hidden { background: none !important; }
 
-.sv-cal .rdp-disabled .rdp-day_button { color: #a19c90; text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.2); cursor: not-allowed; }
-.sv-cal .rdp-disabled.sv-day-full .rdp-day_button { background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(156, 78, 44, 0.12) 4px 5px); }
+/* Free: a soft garden tile. Few left: sand. Full: clay, hatched and struck
+   through. A free day that cannot end the stay being chosen: plain, struck.
+   Past days: faded, with nothing more to say. Each is also a word in the
+   legend under the calendar, so colour is never the only signal. */
+.sv-cal .rdp-day:not(.rdp-disabled):not(.rdp-outside):not(.rdp-selected):not(.sv-day-full) .rdp-day_button { background: var(--day-free); color: var(--color-ink); font-weight: 500; }
+.sv-cal .rdp-day:not(.rdp-disabled):not(.rdp-outside):not(.rdp-selected):not(.sv-day-full) .rdp-day_button:hover { background: var(--day-free-hover); }
+.sv-cal .sv-day-few:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button { background: var(--day-few) !important; }
+.sv-cal .sv-day-few:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button:hover { background: var(--day-few-hover) !important; }
 
-.sv-cal .rdp-range_middle { background: var(--color-mist); }
-.sv-cal .rdp-range_middle .rdp-day_button { color: var(--color-ink); }
+.sv-cal .rdp-disabled .rdp-day_button { color: #a8a397; text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, 0.25); cursor: not-allowed; }
+.sv-cal .sv-day-full:not(.rdp-selected) .rdp-day_button {
+  background: var(--day-full);
+  color: #9c4e2c;
+  text-decoration: line-through; text-decoration-color: rgba(156, 78, 44, 0.55);
+}
+/* Full that night, but the morning is free: still a valid check out. */
+.sv-cal .sv-day-full:not(.rdp-disabled) .rdp-day_button { cursor: pointer; }
+.sv-cal .sv-day-past .rdp-day_button { background: none !important; color: #c9c4b9; text-decoration: none; }
 
-.sv-cal .rdp-range_start { background: linear-gradient(to right, transparent 50%, var(--color-mist) 50%); }
-.sv-cal .rdp-range_end { background: linear-gradient(to left, transparent 50%, var(--color-mist) 50%); }
-.sv-cal .rdp-range_start.rdp-range_end { background: none; }
+.sv-cal {
+  --day-free: #e8f0e1;
+  --day-free-hover: #d5e4ca;
+  --day-few: #f7ead0;
+  --day-few-hover: #efdcb5;
+  --day-full: repeating-linear-gradient(135deg, #f6e8e1 0 5px, #edd6cb 5px 6px);
+}
+
+.sv-cal-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-cal-legend li { display: inline-flex; align-items: center; gap: 0.5rem; }
+.sv-cal-legend i { display: inline-block; flex: none; width: 1rem; height: 1rem; }
+.sv-cal-legend i[data-kind="free"] { background: #e8f0e1; }
+.sv-cal-legend i[data-kind="few"] { background: #f7ead0; }
+.sv-cal-legend i[data-kind="full"] { background: repeating-linear-gradient(135deg, #f6e8e1 0 3px, #e3c2b3 3px 4px); }
+.sv-cal-legend i[data-kind="picked"] { background: var(--color-forest); }
+
+/* The nights in between: the same green as the ends, lighter, so the whole
+   stay reads as one block. A full night inside (the check out morning) keeps
+   its own look. */
+.sv-cal .rdp-range_middle .rdp-day_button { background: #bcd5b2; color: var(--color-forest-deep); font-weight: 600; }
 
 .sv-cal .rdp-range_start .rdp-day_button,
 .sv-cal .rdp-range_end .rdp-day_button,
@@ -658,6 +683,38 @@
 .sv-bk-breakdown li small { display: block; font-size: 0.8125rem; color: var(--color-ink-soft); }
 .sv-bk-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--color-ink); }
 .sv-bk-total strong { font-size: 1.375rem; font-weight: 500; }
+
+.sv-bk-breakdown li.sv-bk-sub { color: var(--color-ink-soft); }
+.sv-bk-breakdown li.sv-bk-discount { color: var(--color-forest); font-weight: 500; }
+
+/* Promo code: a field and a button on one line; once applied, the code with
+   what it saves and a way to take it off. */
+.sv-promo { max-width: 34rem; margin-top: 1.75rem; }
+.sv-promo-title { font-size: 0.875rem; font-weight: 500; color: var(--color-ink); }
+.sv-promo-row { display: flex; gap: 0.5rem; }
+.sv-promo-row input { flex: 1; min-width: 0; letter-spacing: 0.06em; text-transform: uppercase; }
+.sv-promo-row input::placeholder { letter-spacing: 0; text-transform: none; }
+.sv-promo-row .sv-btn { flex: none; min-height: 3.25rem; color: var(--color-forest); }
+.sv-promo-row .sv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.sv-promo-applied {
+  display: flex; align-items: center; gap: 0.8rem;
+  margin-top: 0.45rem; padding: 0.5rem 0.5rem 0.5rem 1rem;
+  border: 1px solid var(--color-forest);
+  background: color-mix(in srgb, var(--color-sage) 22%, #fff);
+}
+.sv-promo-applied > svg { flex: none; color: var(--color-forest); }
+.sv-promo-applied > span { display: grid; flex: 1; min-width: 0; gap: 0.1rem; }
+.sv-promo-applied strong { font-weight: 600; letter-spacing: 0.06em; }
+.sv-promo-applied small { font-size: 0.875rem; color: var(--color-ink-soft); }
+.sv-promo-applied button {
+  display: grid; place-items: center; flex: none;
+  width: 2.75rem; height: 2.75rem;
+  border: 0; background: transparent; color: var(--color-ink-soft);
+  cursor: pointer;
+}
+.sv-promo-applied button:hover { background: color-mix(in srgb, var(--color-ink) 7%, transparent); color: var(--color-ink); }
+.sv-promo-applied[data-invalid="true"] { border-color: #a1321c; background: #fdf4f1; }
+.sv-promo-applied[data-invalid="true"] > svg, .sv-promo-applied[data-invalid="true"] small { color: #a1321c; }
 
 @media (min-width: 1024px) { .sv-bk-only-narrow { display: none; } }
 

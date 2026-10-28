@@ -3,9 +3,10 @@
 import { DayPicker, type DateRange } from "react-day-picker";
 import { id as idLocale, enUS } from "react-day-picker/locale";
 import type { Locale } from "@/content/i18n";
-import { useOccupancy, useRooms } from "@/lib/booking/hooks";
-import { fullFor, stayMatcher } from "@/lib/booking/occupancy";
-import { startOfToday } from "./dates";
+import { useOccupancy, useSellableRooms } from "@/lib/booking/hooks";
+import { fullFor, someTaken, stayMatcher } from "@/lib/booking/occupancy";
+import { dayKinds, startOfToday } from "./dates";
+import CalendarLegend from "./CalendarLegend";
 
 /**
  * The header's calendar, on its own so it loads only when a guest opens it:
@@ -28,24 +29,28 @@ export default function BookingDates({
 }) {
   const today = startOfToday();
   const occ = useOccupancy();
-  const rooms = useRooms();
-  const isEstateFull = fullFor(occ, rooms.map((r) => r.unit));
+  const units = useSellableRooms().map((r) => r.unit);
+  const isEstateFull = fullFor(occ, units);
+  const kinds = dayKinds(today, isEstateFull, someTaken(occ, units));
 
   return (
-    <DayPicker
-      mode="range"
-      selected={range}
-      onSelect={onSelect}
-      numberOfMonths={months}
-      startMonth={today}
-      disabled={stayMatcher(range, today, isEstateFull)}
-      modifiers={{ full: isEstateFull }}
-      modifiersClassNames={{ full: "sv-day-full" }}
-      resetOnSelect
-      min={1}
-      weekStartsOn={1}
-      locale={locale === "id" ? idLocale : enUS}
-      className="sv-cal"
-    />
+    <>
+      <DayPicker
+        mode="range"
+        selected={range}
+        onSelect={onSelect}
+        numberOfMonths={months}
+        startMonth={today}
+        disabled={stayMatcher(range, today, isEstateFull)}
+        modifiers={kinds.modifiers}
+        modifiersClassNames={kinds.modifiersClassNames}
+        resetOnSelect
+        min={1}
+        weekStartsOn={1}
+        locale={locale === "id" ? idLocale : enUS}
+        className="sv-cal"
+      />
+      <CalendarLegend locale={locale} />
+    </>
   );
 }

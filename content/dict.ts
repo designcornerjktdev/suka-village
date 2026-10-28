@@ -1,5 +1,6 @@
 import type { Locale } from "./i18n";
 import type { EventId, ExperienceId, ExploreId, FacilityId, Feature, UnitId } from "./site";
+import type { PromoError } from "@/lib/booking/types";
 
 /**
  * Every user-facing string on the site, in both languages.
@@ -85,6 +86,7 @@ type Copy = {
     bathroomsOne: string;
     bathroomsMany: string;
     bedroomsShort: string;
+    bedroomShortOne: string;
     features: Record<Feature, string>;
     notes: Record<UnitId, string>;
     specsTitle: string;
@@ -136,6 +138,10 @@ type Copy = {
   avail: {
     demo: string;
     clear: string;
+    free: string;
+    few: string;
+    full: string;
+    picked: string;
   };
   checkout: {
     title: string;
@@ -179,6 +185,15 @@ type Copy = {
     groupHints: Record<"qris" | "va" | "ewallet" | "card", string>;
     breakdown: string;
     nightsN: string;
+    subtotal: string;
+    promo: string;
+    promoPh: string;
+    promoApply: string;
+    promoChecking: string;
+    promoRemove: string;
+    promoApplied: string;
+    promoOff: string;
+    promoErr: Record<PromoError, string>;
     total: string;
     policy: string;
     terms: string;
@@ -409,6 +424,7 @@ const id: Copy = {
     bathroomsOne: "1 kamar mandi",
     bathroomsMany: "{n} kamar mandi",
     bedroomsShort: "kamar tidur",
+    bedroomShortOne: "kamar tidur",
     features: {
       living: "Ruang keluarga",
       balcony: "Balkon",
@@ -524,6 +540,10 @@ const id: Copy = {
   avail: {
     demo: "Ketersediaan di halaman ini masih contoh, bukan data sebenarnya. Pesanan di prototipe ini tidak memesan kamar dan tidak menagih apa pun.",
     clear: "Ulangi",
+    free: "Tersedia",
+    few: "Sisa sedikit",
+    full: "Penuh",
+    picked: "Tanggal Anda",
   },
   checkout: {
     title: "Pesan *menginap*",
@@ -572,6 +592,23 @@ const id: Copy = {
     },
     breakdown: "Rincian harga",
     nightsN: "{n} malam",
+    subtotal: "Subtotal",
+    promo: "Kode promo",
+    promoPh: "Masukkan kode",
+    promoApply: "Pakai",
+    promoChecking: "Memeriksa",
+    promoRemove: "Hapus kode",
+    promoApplied: "Kode {code} terpasang. Anda hemat {amount}.",
+    promoOff: "Promo {code}",
+    promoErr: {
+      not_found: "Kode promo tidak ditemukan. Periksa lagi ejaannya.",
+      inactive: "Kode promo ini sedang tidak berlaku.",
+      not_started: "Kode promo ini belum bisa dipakai.",
+      ended: "Masa berlaku kode promo ini sudah habis.",
+      used_up: "Kuota kode promo ini sudah habis.",
+      min_nights: "Kode promo ini butuh lebih banyak malam menginap.",
+      rooms: "Kode promo ini tidak berlaku untuk kamar yang Anda pilih.",
+    },
     total: "Total",
     policy: "Kebijakan pembatalan",
     terms: "Dengan menekan tombol bayar, Anda menyetujui syarat & ketentuan serta kebijakan privasi Suka Village.",
@@ -813,6 +850,7 @@ const en: Copy = {
     bathroomsOne: "1 Bathroom",
     bathroomsMany: "{n} Bathrooms",
     bedroomsShort: "bedrooms",
+    bedroomShortOne: "bedroom",
     features: {
       living: "Living room",
       balcony: "Balcony",
@@ -928,6 +966,10 @@ const en: Copy = {
   avail: {
     demo: "Availability on this page is an example, not live data. Bookings in this prototype reserve nothing and charge nothing.",
     clear: "Start over",
+    free: "Available",
+    few: "Few left",
+    full: "Fully booked",
+    picked: "Your dates",
   },
   checkout: {
     title: "Book your *stay*",
@@ -976,6 +1018,23 @@ const en: Copy = {
     },
     breakdown: "Price breakdown",
     nightsN: "{n} nights",
+    subtotal: "Subtotal",
+    promo: "Promo code",
+    promoPh: "Enter code",
+    promoApply: "Apply",
+    promoChecking: "Checking",
+    promoRemove: "Remove code",
+    promoApplied: "Code {code} applied. You save {amount}.",
+    promoOff: "Promo {code}",
+    promoErr: {
+      not_found: "We could not find that promo code. Check the spelling.",
+      inactive: "This promo code is not active at the moment.",
+      not_started: "This promo code cannot be used yet.",
+      ended: "This promo code has expired.",
+      used_up: "This promo code has been fully used.",
+      min_nights: "This promo code needs a longer stay.",
+      rooms: "This promo code does not apply to the rooms you chose.",
+    },
     total: "Total",
     policy: "Cancellation policy",
     terms: "By pressing pay you agree to Suka Village's terms and conditions and privacy policy.",

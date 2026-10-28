@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Clock, Plus, Search } from "lucide-react";
 import Decision from "./Decision";
-import { Dialog, Empty, PageHeader, StatusPill, toast } from "./ui";
+import { Empty, PageHeader, Sheet, SheetFooter, StatusPill, toast } from "./ui";
+import { dict } from "@/content/dict";
 import { useBookings, useNow, useRoomName, useRooms } from "@/lib/booking/hooks";
 import { createBooking } from "@/lib/booking/api";
 import { addDays, fmtDate, fmtDateTime, formatPhone, idr, isValidEmail, normalizePhone, todayISO } from "@/lib/booking/format";
@@ -158,6 +159,7 @@ export default function BookingsTable() {
                   </td>
                   <td data-label="Total" className="ad-num tnum">
                     {idr(b.quote.total)}
+                    {b.quote.promo ? <small>promo {b.quote.promo.code}</small> : null}
                   </td>
                   <td data-label="Status">
                     <StatusPill status={b.status} />
@@ -213,6 +215,7 @@ function ManualBooking({ open, onClose }: { open: boolean; onClose: () => void }
     email: "",
     phone: "",
     notes: "",
+    promo: "",
     paid: true,
   });
   const [busy, setBusy] = useState(false);
@@ -238,13 +241,16 @@ function ManualBooking({ open, onClose }: { open: boolean; onClose: () => void }
       locale: "id",
       source: "admin",
       paid: form.paid,
+      promoCode: form.promo.trim() || undefined,
     });
     setBusy(false);
     if (!res.ok) {
       setError(
         res.error === "unavailable"
           ? `${(res.units ?? []).map(unitName).join(", ")} sudah terisi di sebagian tanggal itu. Cek Kalender.`
-          : "Data belum lengkap.",
+          : res.error === "promo"
+            ? dict.id.checkout.promoErr[res.promoError ?? "not_found"]
+            : "Data belum lengkap.",
       );
       return;
     }
@@ -254,79 +260,83 @@ function ManualBooking({ open, onClose }: { open: boolean; onClose: () => void }
   };
 
   return (
-    <Dialog
+    <Sheet
       open={open}
       onClose={onClose}
       title="Booking manual"
-      wide
-      footer={
-        <>
-          <button type="button" className="ad-btn ad-btn--ghost" onClick={onClose}>
-            Batal
-          </button>
-          <button type="button" className="ad-btn ad-btn--primary" onClick={submit} disabled={busy}>
-            Simpan booking
-          </button>
-        </>
-      }
+      lead="Untuk tamu yang memesan lewat WhatsApp atau telepon."
+      footer={<SheetFooter busy={busy} onCancel={onClose} onSave={submit} saveLabel="Simpan booking" />}
     >
-      <p className="ad-muted">Untuk tamu yang memesan lewat WhatsApp atau telepon. Tanggalnya langsung tertutup di kalender dan website. Kamar yang terjual di Airbnb atau platform lain cukup ditutup di Kalender.</p>
-      <fieldset className="ad-fieldset">
-        <legend>Kamar</legend>
-        <div className="ad-checks">
-          {rooms.map((r) => (
-            <label key={r.unit} className="ad-check">
-              <input
-                type="checkbox"
-                checked={form.units.includes(r.unit)}
-                onChange={(e) => set("units", e.target.checked ? [...form.units, r.unit] : form.units.filter((x) => x !== r.unit))}
-              />
-              {r.name}
-            </label>
-          ))}
+      <section className="ad-form-sec">
+        <h3>Menginap</h3>
+        <p className="ad-muted">Tanggalnya langsung tertutup di kalender dan website. Kamar yang terjual di Airbnb atau platform lain cukup ditutup di Kalender.</p>
+        <fieldset className="ad-fieldset">
+          <legend>Kamar</legend>
+          <div className="ad-checks">
+            {rooms.map((r) => (
+              <label key={r.unit} className="ad-check">
+                <input
+                  type="checkbox"
+                  checked={form.units.includes(r.unit)}
+                  onChange={(e) => set("units", e.target.checked ? [...form.units, r.unit] : form.units.filter((x) => x !== r.unit))}
+                />
+                {r.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className="ad-grid-2">
+          <div className="sv-input">
+            <label htmlFor="m-in">Check-in</label>
+            <input id="m-in" type="date" value={form.checkIn} min={today} onChange={(e) => set("checkIn", e.target.value)} />
+          </div>
+          <div className="sv-input">
+            <label htmlFor="m-out">Check-out</label>
+            <input id="m-out" type="date" value={form.checkOut} min={addDays(form.checkIn, 1)} onChange={(e) => set("checkOut", e.target.value)} />
+          </div>
+          <div className="sv-input">
+            <label htmlFor="m-guests">Jumlah tamu</label>
+            <input id="m-guests" type="number" min={1} max={40} value={form.guests} onChange={(e) => set("guests", Math.max(1, Number(e.target.value) || 1))} />
+          </div>
         </div>
-      </fieldset>
-      <div className="ad-grid-3">
-        <div className="sv-input">
-          <label htmlFor="m-in">Check-in</label>
-          <input id="m-in" type="date" value={form.checkIn} min={today} onChange={(e) => set("checkIn", e.target.value)} />
-        </div>
-        <div className="sv-input">
-          <label htmlFor="m-out">Check-out</label>
-          <input id="m-out" type="date" value={form.checkOut} min={addDays(form.checkIn, 1)} onChange={(e) => set("checkOut", e.target.value)} />
-        </div>
-        <div className="sv-input">
-          <label htmlFor="m-guests">Jumlah tamu</label>
-          <input id="m-guests" type="number" min={1} max={40} value={form.guests} onChange={(e) => set("guests", Math.max(1, Number(e.target.value) || 1))} />
-        </div>
-      </div>
-      <div className="ad-grid-3">
+      </section>
+      <section className="ad-form-sec">
+        <h3>Tamu</h3>
         <div className="sv-input">
           <label htmlFor="m-name">Nama tamu</label>
           <input id="m-name" value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="off" />
         </div>
-        <div className="sv-input">
-          <label htmlFor="m-phone">Nomor WhatsApp</label>
-          <input id="m-phone" type="tel" inputMode="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="0812 3456 7890" />
+        <div className="ad-grid-2">
+          <div className="sv-input">
+            <label htmlFor="m-phone">Nomor WhatsApp</label>
+            <input id="m-phone" type="tel" inputMode="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="0812 3456 7890" />
+          </div>
+          <div className="sv-input">
+            <label htmlFor="m-email">Email (opsional)</label>
+            <input id="m-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+          </div>
         </div>
         <div className="sv-input">
-          <label htmlFor="m-email">Email (opsional)</label>
-          <input id="m-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+          <label htmlFor="m-notes">Catatan</label>
+          <textarea id="m-notes" rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
         </div>
-      </div>
-      <div className="sv-input">
-        <label htmlFor="m-notes">Catatan</label>
-        <textarea id="m-notes" rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} />
-      </div>
-      <label className="ad-check">
-        <input type="checkbox" checked={form.paid} onChange={(e) => set("paid", e.target.checked)} />
-        Sudah dibayar (transfer atau tunai). Langsung terkonfirmasi, dan email konfirmasi dikirim kalau emailnya diisi.
-      </label>
+      </section>
+      <section className="ad-form-sec">
+        <h3>Pembayaran</h3>
+        <div className="sv-input">
+          <label htmlFor="m-promo">Kode promo (opsional)</label>
+          <input id="m-promo" value={form.promo} onChange={(e) => set("promo", e.target.value.toUpperCase())} autoComplete="off" spellCheck={false} className="ad-code-input" />
+        </div>
+        <label className="ad-check">
+          <input type="checkbox" checked={form.paid} onChange={(e) => set("paid", e.target.checked)} />
+          Sudah dibayar (transfer atau tunai). Langsung terkonfirmasi, dan email konfirmasi dikirim kalau emailnya diisi.
+        </label>
+      </section>
       {error ? (
         <p className="sv-bk-alert" role="alert">
           {error}
         </p>
       ) : null}
-    </Dialog>
+    </Sheet>
   );
 }
