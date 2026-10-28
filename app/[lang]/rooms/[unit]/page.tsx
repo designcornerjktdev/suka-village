@@ -13,11 +13,12 @@ import { breadcrumbs, pageMetadata, roomMeta, roomSchema } from "@/lib/seo";
 
 /**
  * One room, reached from "Discover". As on the owner's reference
- * (adhisthanahotel.com/rooms/deluxe-king): every photograph in one wide
- * slider under the header, moved sideways, and the room's details below it,
- * the description and the two ways forward (Book now, or a question on
- * WhatsApp) on one side, what is in the room and the note on rates on the
- * other.
+ * (adhisthanahotel.com/rooms/deluxe-king): every photograph first, straight
+ * under the header, and the room's details below them, the description and
+ * the two ways forward (Book now, or a question on WhatsApp) on one side,
+ * what is in the room and the note on rates on the other. The photographs
+ * come one at a time, at 4:3 (MoM 26 Oct 2026), centred, with their number
+ * and buttons either side (`stage` in Slides).
  */
 
 export function generateStaticParams() {
@@ -52,7 +53,7 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
           </Link>
 
           <div className="sv-room-slider">
-            <Slides photos={all} locale={lang} name={found.name} sizes="(min-width: 900px) 70vw, 100vw" priority peek />
+            <Slides photos={all} locale={lang} name={found.name} sizes="(min-width: 900px) 62vw, 100vw" priority stage />
           </div>
 
           <div className="sv-room">

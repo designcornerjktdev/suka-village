@@ -267,7 +267,8 @@ export type EventId = (typeof events)[number]["id"];
    BRIEF names the first two places and the 21 October 2026 revision the third;
    the descriptions are ours and avoid distances
    the owner has not given. The photographs are of the landmarks, not the
-   property, and are credited beside them as their licences ask.
+   property. Only CC BY-SA ones are credited, in one line at the foot of the
+   Explore page (the owner asked for no credit under each place).
 -------------------------------------------------------------------------- */
 
 export type Credit = { by: string; source: string; license: string; href: string };

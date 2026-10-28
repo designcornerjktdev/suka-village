@@ -100,9 +100,15 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
   (`lib/booking/email.ts`), pratinjaunya di Pengaturan → Email otomatis.
 
 - Audit UI dan bug (28 Okt, lanjutan): footer selalu di dasar layar walau
-  halamannya pendek; detail kamar: foto 4:3 besar di tengah, sisi kiri dan
-  kanan menampilkan potongan foto sebelum/sesudahnya (`peek` di
-  `Slides.tsx`), hierarki teks dirapikan untuk HP dan desktop; 404 bermerek (`app/[lang]/not-found.tsx`); halaman Cek
+  halamannya pendek; detail kamar: latar putih, satu foto 4:3 di tengah
+  tanpa foto lain mengintip, nomor foto besar di kiri dan dua tombol kotak
+  berdampingan di kanan (di luar foto, sejajar dasar foto); di HP nomor dan
+  tombol satu baris di bawah foto (`stage` di `Slides.tsx`). Klik/tap foto
+  membuka layar penuh putih dengan zoom: tombol − +, klik/tap foto untuk
+  zoom di titik itu, geser untuk melihat bagian lain, panah dan swipe untuk
+  foto lain, Esc atau × untuk menutup (`components/PhotoViewer.tsx`); hierarki teks
+  dirapikan untuk HP dan desktop; Jelajah tanpa kredit di bawah tiap tempat
+  (kredit CC BY-SA yang wajib jadi satu baris kecil di kaki halaman); 404 bermerek (`app/[lang]/not-found.tsx`); halaman Cek
   pesanan diberi judul; "Pesanan tidak ditemukan" menampilkan pesanan terbaru
   di browser itu (demo); Reset data contoh di admin kini minta konfirmasi
   (sebelumnya langsung menghapus, dan link pesanan lama jadi tidak ditemukan);

@@ -2,10 +2,16 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import dynamic from "next/dynamic";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Photo } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import type { Locale } from "@/content/i18n";
+
+/* The full screen view loads when a photograph is first opened (or a moment
+   before, when the slider is hovered, touched or focused). */
+const loadViewer = () => import("./PhotoViewer");
+const PhotoViewer = dynamic(loadViewer, { ssr: false });
 
 /**
  * A photo slider, as the brief's references draw it: chevrons on either side
@@ -25,18 +31,28 @@ import type { Locale } from "@/content/i18n";
  * screen then has the bandwidth to itself, and the next ones are ready by the
  * time a thumb gets to them.
  *
- * `peek` (a room's own page) sets the slider on a stage: on a wide screen the
- * 4:3 frame stays centred and the space either side shows a sliver of the
- * previous and the next photograph, veiled, a click away. The sides are then
- * a filmstrip rather than empty paper. On a phone there is no room for them.
+ * `stage` (a room's own page) is the same scroller set out on the white page:
+ * one 4:3 photograph in the middle and nothing else of it showing, its number
+ * large on the left and the two buttons on the right, both outside the
+ * picture. A click or tap on the photograph opens it full screen, where it
+ * can be enlarged (PhotoViewer); closing it leaves the slider on the
+ * photograph last seen there.
  */
+
+/* From one slide to the next: the width of a slide. */
+const stepOf = (el: HTMLElement) => {
+  const a = el.children[0] as HTMLElement | undefined;
+  const b = el.children[1] as HTMLElement | undefined;
+  return a && b ? b.offsetLeft - a.offsetLeft : el.clientWidth || 1;
+};
+const pad = (n: number) => String(n).padStart(2, "0");
 export default function Slides({
   photos,
   locale,
   name,
   sizes,
   priority = false,
-  peek = false,
+  stage = false,
   className = "",
 }: {
   photos: readonly Photo[];
@@ -44,16 +60,20 @@ export default function Slides({
   name: string;
   sizes: string;
   priority?: boolean;
-  peek?: boolean;
+  stage?: boolean;
   className?: string;
 }) {
   const t = getDict(locale).common;
   const track = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<number | null>(null);
   const [index, setIndex] = useState(0);
   const [armed, setArmed] = useState(false);
   const count = photos.length;
   const many = count > 1;
-  const arm = () => setArmed(true);
+  const arm = () => {
+    setArmed(true);
+    if (stage) void loadViewer();
+  };
 
   useEffect(() => {
     if (!many || armed) return;
@@ -76,8 +96,7 @@ export default function Slides({
     const read = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const width = el.clientWidth || 1;
-        setIndex(Math.min(count - 1, Math.max(0, Math.round(el.scrollLeft / width))));
+        setIndex(Math.min(count - 1, Math.max(0, Math.round(el.scrollLeft / stepOf(el)))));
       });
     };
     el.addEventListener("scroll", read, { passive: true });
@@ -87,20 +106,20 @@ export default function Slides({
     };
   }, [count, many]);
 
-  const go = (to: number) => {
+  const go = (to: number, jump = false) => {
     const el = track.current;
     if (!el) return;
     arm();
     const next = (to + count) % count;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollTo({ left: next * el.clientWidth, behavior: still ? "auto" : "smooth" });
+    const still = jump || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ left: next * stepOf(el), behavior: still ? "auto" : "smooth" });
   };
 
   const label = fill(t.photosOf, { name });
 
   const slider = (
     <div
-      className={`sv-slides ${className}`}
+      className={`sv-slides ${stage ? "sv-slides--stage" : ""} ${className}`}
       role="region"
       aria-roledescription="carousel"
       aria-label={label}
@@ -128,11 +147,20 @@ export default function Slides({
                 className="sv-photo"
               />
             ) : null}
+            {stage ? (
+              <button
+                type="button"
+                className="sv-slide-open"
+                tabIndex={i === index ? 0 : -1}
+                onClick={() => setOpen(i)}
+                aria-label={fill(t.openPhoto, { n: i + 1 })}
+              />
+            ) : null}
           </div>
         ))}
       </div>
 
-      {many ? (
+      {many && !stage ? (
         <>
           <button type="button" className="sv-slides-arrow sv-slides-prev" onClick={() => go(index - 1)} aria-label={t.prevPhoto}>
             <ChevronLeft size={22} strokeWidth={1.6} aria-hidden="true" />
@@ -164,32 +192,41 @@ export default function Slides({
     </div>
   );
 
-  if (!peek) return slider;
-
-  /* The neighbours, wrapping like the chevrons. Decorative to assistive tech:
-     the chevrons and dots already do the same job. */
-  const side = (dir: -1 | 1) => {
-    if (!many) return <span aria-hidden="true" />;
-    const photo = photos[(index + dir + count) % count];
-    return (
-      <button
-        type="button"
-        className="sv-stage-peek"
-        data-side={dir < 0 ? "prev" : "next"}
-        tabIndex={-1}
-        aria-hidden="true"
-        onClick={() => go(index + dir)}
-      >
-        {armed ? <Image key={photo.src} src={photo.src} alt="" fill sizes="16vw" className="sv-photo" /> : null}
-      </button>
-    );
-  };
+  if (!stage) return slider;
 
   return (
-    <div className="sv-stage" onPointerEnter={many ? arm : undefined}>
-      {side(-1)}
-      <div className="sv-stage-frame">{slider}</div>
-      {side(1)}
+    <div className="sv-stage">
+      {many ? (
+        <p className="sv-stage-count tnum" aria-hidden="true">
+          <strong key={index}>{pad(index + 1)}</strong>
+          <span>/ {pad(count)}</span>
+        </p>
+      ) : null}
+      {slider}
+      {many ? (
+        <div className="sv-stage-nav">
+          <button type="button" className="sv-stage-btn" onClick={() => go(index - 1)} aria-label={t.prevPhoto}>
+            <ArrowLeft size={20} strokeWidth={1.5} aria-hidden="true" />
+          </button>
+          <button type="button" className="sv-stage-btn sv-stage-btn--next" onClick={() => go(index + 1)} aria-label={t.nextPhoto}>
+            <ArrowRight size={20} strokeWidth={1.5} aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
+      {open !== null ? (
+        <PhotoViewer
+          photos={photos}
+          locale={locale}
+          label={label}
+          start={open}
+          onClose={(at) => {
+            setOpen(null);
+            go(at, true);
+            const back = track.current?.children[at]?.querySelector("button");
+            back?.focus({ preventScroll: true });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

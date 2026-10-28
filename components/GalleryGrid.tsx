@@ -9,7 +9,8 @@ import { getDict } from "@/content/dict";
 import type { Locale } from "@/content/i18n";
 
 /**
- * The gallery, and the only lightbox on the site.
+ * The gallery, and its lightbox (a room's photographs open in their own,
+ * which zooms: PhotoViewer).
  *
  * Opening a photograph full screen is the one place a modal earns itself: the
  * task is looking at one image, and everything else on the page is in the way.

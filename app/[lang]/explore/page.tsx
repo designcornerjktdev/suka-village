@@ -11,10 +11,17 @@ import { breadcrumbs, pageMetadata } from "@/lib/seo";
 /**
  * Explore: three places near the estate (Situ Gunung, Gunung Padang, and
  * Bukit Sabak since the 21 October 2026 revision), in the same rows as every
- * other page. These are public landmarks, not the property, so each picture
- * is credited beside it as its licence asks. The estate's own address is on
- * the Contact page, so it is not repeated here.
+ * other page. The estate's own address is on the Contact page, so it is not
+ * repeated here.
+ *
+ * The photographs are public landmarks, not the property. The owner asked for
+ * no credit line under each place (revision of 28 October 2026), so the only
+ * credits left are the ones a licence requires (CC BY-SA), in one small line
+ * at the foot of the page. Unsplash and CC0 pictures need none.
  */
+
+type ExplorePhoto = (typeof explore)[number]["photos"][number];
+const mustCredit = explore.flatMap((spot): readonly ExplorePhoto[] => spot.photos).filter((p) => p.credit.license.startsWith("CC BY"));
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -57,18 +64,22 @@ export default async function ExplorePage({ params }: PageProps<"/[lang]/explore
                 <div className="sv-row-copy">
                   <p>{t.explore.copy[spot.id]}</p>
                 </div>
-                <ul className="sv-credits">
-                  {spot.photos.map((photo) => (
-                    <li key={photo.src}>
-                      <a href={photo.credit.href} target="_blank" rel="noopener noreferrer">
-                        {fill(t.common.photoBy, photo.credit)}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
               </Showcase>
             ))}
           </div>
+
+          {mustCredit.length ? (
+            <p className="sv-page-credits">
+              {mustCredit.map((photo, i) => (
+                <span key={photo.src}>
+                  {i ? " · " : null}
+                  <a href={photo.credit.href} target="_blank" rel="noopener noreferrer">
+                    {fill(t.common.photoBy, photo.credit)}
+                  </a>
+                </span>
+              ))}
+            </p>
+          ) : null}
         </div>
       </section>
       <JsonLd data={breadcrumbs(lang, [{ name: t.nav.explore, path: "explore" }])} />

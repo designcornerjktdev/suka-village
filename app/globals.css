@@ -361,9 +361,10 @@
 
 .sv-show-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.75rem; margin-top: 2rem; }
 
-.sv-credits { display: grid; gap: 0; margin-top: 1.25rem; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
-.sv-credits a { display: inline-flex; align-items: center; min-height: 2.75rem; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
-.sv-credits a:hover { color: var(--color-ink); }
+/* The licence credits a page must carry, as one quiet line at its foot. */
+.sv-page-credits { margin-top: clamp(3rem, 8vh, 5rem); padding-top: 1rem; border-top: 1px solid var(--color-rule); font-size: 0.75rem; line-height: 2.2; color: var(--color-ink-soft); }
+.sv-page-credits a { padding-block: 0.6rem; color: inherit; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.sv-page-credits a:hover { color: var(--color-ink); }
 
 /* No photographs yet: misty sage, a drawn icon and one word. */
 .sv-panel { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.9rem; padding: 2rem; text-align: center; background: var(--color-sage); }
@@ -1322,34 +1323,103 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
 /* --- One room: a wide slider of every photograph, the details below ------ */
 
-/* Photographs at 4:3, per the owner (MoM 26 Oct 2026). A phone shows the
-   frame edge to edge. A wide screen keeps it large and centred, as tall as
-   fits under the header, and fills the paper either side with a veiled
-   sliver of the previous and next photograph (the `peek` stage in Slides),
-   so the sides read as a filmstrip, not as empty space. */
-.sv-room-slider { position: relative; margin-top: 0.75rem; aspect-ratio: 4 / 3; }
-.sv-stage, .sv-stage-frame { height: 100%; }
-.sv-stage-peek { display: none; }
-@media (max-width: 899px) { .sv-room-slider { margin-inline: calc(-1 * var(--gutter)); } }
-@media (min-width: 900px) {
-  .sv-room-slider { aspect-ratio: auto; container-type: inline-size; }
-  .sv-stage { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0.75rem; height: auto; }
-  .sv-stage-frame {
-    width: clamp(30rem, calc((100svh - var(--head-h) - 9rem) * 4 / 3), min(calc(100cqw - 11.5rem), 72rem));
-    height: auto; aspect-ratio: 4 / 3;
-  }
-  .sv-stage-peek { position: relative; display: block; overflow: hidden; padding: 0; border: 0; background: var(--color-mist); cursor: pointer; }
-  .sv-stage-peek .sv-photo { animation: sv-fade 420ms var(--ease-soft) both; }
-  .sv-stage-peek[data-side="prev"] .sv-photo { object-position: right center; }
-  .sv-stage-peek[data-side="next"] .sv-photo { object-position: left center; }
-  .sv-stage-peek::after { content: ""; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.5); transition: background-color 300ms var(--ease-soft); }
-  .sv-stage-peek:hover::after { background: rgba(255, 255, 255, 0.25); }
+/* One photograph at a time, centred, at 4:3 (MoM 26 Oct 2026), on the white
+   page (`stage` in Slides). The space either side of it is put to use and
+   the picture itself is left clear: its number, large, on the left, the two
+   buttons side by side on the right, both level with its foot. A click or
+   tap on the picture opens it full screen (`.sv-viewer`). On a phone the
+   picture runs edge to edge, with the number and the buttons in one line
+   beneath it. */
+.sv-room-slider { margin-top: 0.75rem; }
+.sv-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "photo photo" "count nav";
+  align-items: center;
+  gap: 1rem;
 }
+@media (min-width: 900px) {
+  .sv-stage {
+    /* As tall as fits under the header, and never small. */
+    --stage-w: max(28rem, calc((100svh - var(--head-h) - 9rem) * 4 / 3));
+    grid-template-columns: minmax(7.5rem, 1fr) minmax(0, var(--stage-w)) minmax(7.5rem, 1fr);
+    grid-template-areas: "count photo nav";
+    align-items: end;
+    column-gap: clamp(1.25rem, 2.5vw, 2.5rem);
+  }
+}
+
+.sv-slides--stage { grid-area: photo; height: auto; aspect-ratio: 4 / 3; }
+@media (max-width: 899px) { .sv-slides--stage { margin-inline: calc(-1 * var(--gutter)); } }
+.sv-slide-open { position: absolute; inset: 0; z-index: 1; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.sv-slide-open:focus-visible { outline: 2px solid var(--color-paper); outline-offset: -6px; }
+
+.sv-stage-count { grid-area: count; display: flex; align-items: baseline; gap: 0.5rem; }
+.sv-stage-count strong {
+  font-family: var(--font-head); font-size: 2.75rem; font-weight: 400; line-height: 0.8; letter-spacing: -0.04em;
+  color: var(--color-forest);
+  animation: sv-fade 500ms var(--ease-soft) both;
+}
+.sv-stage-count span { font-size: 0.875rem; color: var(--color-ink-soft); }
+@media (min-width: 900px) {
+  /* The number as large as its side allows. */
+  .sv-stage-count { container-type: inline-size; flex-direction: column; align-items: flex-end; gap: 1rem; }
+  .sv-stage-count strong { font-size: min(9rem, 80cqi); font-weight: 300; }
+}
+
+.sv-stage-nav { grid-area: nav; display: flex; gap: 0.5rem; }
+@media (min-width: 900px) { .sv-stage-nav { justify-self: start; } }
+.sv-stage-btn {
+  display: grid; place-items: center;
+  width: 2.75rem; height: 2.75rem; padding: 0;
+  border: 1px solid var(--color-ink); background: var(--color-paper); color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 250ms var(--ease-soft), color 250ms var(--ease-soft);
+}
+.sv-stage-btn:hover:not(:disabled) { background: var(--color-cream); }
+.sv-stage-btn:disabled { opacity: 0.3; cursor: default; }
+.sv-stage-btn--next { border-color: var(--color-forest); background: var(--color-forest); color: var(--color-paper); }
+.sv-stage-btn--next:hover:not(:disabled) { background: var(--color-forest-deep); }
+.sv-stage-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+@media (min-width: 900px) { .sv-stage-btn { width: 3.5rem; height: 3.5rem; } }
+
+/* The photograph full screen (PhotoViewer), on the page's own white: the
+   number and the zoom and close buttons along the top, the photograph in the
+   middle as large as fits, the two arrows under it. Enlarged, the middle
+   scrolls both ways, without bars. */
+.sv-viewer {
+  width: 100%; max-width: none; height: 100dvh; max-height: none;
+  margin: 0; padding: 0; border: 0;
+  background: var(--color-paper); color: var(--color-ink);
+  overflow: hidden;
+}
+.sv-viewer[open] { display: flex; flex-direction: column; animation: sv-fade 300ms var(--ease-soft) both; }
+.sv-viewer::backdrop { background: var(--color-paper); }
+.sv-viewer-bar, .sv-viewer-foot { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem var(--gutter); }
+.sv-viewer-bar { justify-content: space-between; padding-top: max(0.75rem, env(safe-area-inset-top)); }
+.sv-viewer-foot { justify-content: center; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.sv-viewer-count { display: flex; align-items: baseline; gap: 0.4rem; }
+.sv-viewer-count strong { font-family: var(--font-head); font-size: 1.5rem; font-weight: 400; letter-spacing: -0.02em; color: var(--color-forest); }
+.sv-viewer-count span { font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-viewer-tools { display: flex; gap: 0.5rem; }
+.sv-viewer-close { margin-left: 0.75rem; }
+.sv-viewer-stage {
+  position: relative; flex: 1; min-height: 0;
+  overflow: hidden; scrollbar-width: none;
+  touch-action: pinch-zoom; user-select: none; -webkit-user-select: none;
+  cursor: zoom-in;
+}
+.sv-viewer-stage::-webkit-scrollbar { display: none; }
+.sv-viewer-stage[data-zoomed] { overflow: auto; touch-action: pan-x pan-y pinch-zoom; cursor: grab; }
+.sv-viewer-stage[data-zoomed]:active { cursor: grabbing; }
+.sv-viewer-canvas { display: grid; place-items: center; width: 100%; height: 100%; }
+.sv-viewer-frame { position: relative; width: 100%; height: 100%; }
+.sv-viewer-photo { object-fit: contain; -webkit-user-drag: none; animation: sv-fade 350ms var(--ease-soft) both; }
 
 /* The details, in one clear order of size: the name, then its facts, the
    description, the actions; then what is in the room as a quieter list, and
    the note on rates smallest of all. */
-.sv-room { display: grid; gap: 2.5rem; margin-top: clamp(1.75rem, 4vh, 3rem); }
+.sv-room { display: grid; gap: 2.5rem; margin-top: clamp(2.25rem, 6vh, 4rem); }
 @media (min-width: 900px) {
   .sv-room { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(3rem, 7vw, 7rem); align-items: start; }
 }

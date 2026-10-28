@@ -76,6 +76,9 @@ type Copy = {
     nextPhoto: string;
     goToPhoto: string;
     photosOf: string;
+    openPhoto: string;
+    zoomIn: string;
+    zoomOut: string;
     photoBy: string;
     openMap: string;
     waHello: string;
@@ -418,6 +421,9 @@ const id: Copy = {
     nextPhoto: "Foto berikutnya",
     goToPhoto: "Foto {n}",
     photosOf: "Foto {name}",
+    openPhoto: "Perbesar foto {n}",
+    zoomIn: "Perbesar",
+    zoomOut: "Perkecil",
     photoBy: "Foto: {by}, {source}, {license}",
     openMap: "Buka di peta",
     waHello: "Halo Suka Village, saya ingin bertanya tentang menginap di sana.",
@@ -854,6 +860,9 @@ const en: Copy = {
     nextPhoto: "Next photo",
     goToPhoto: "Photo {n}",
     photosOf: "Photos of {name}",
+    openPhoto: "Enlarge photo {n}",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
     photoBy: "Photo: {by}, {source}, {license}",
     openMap: "Open in maps",
     waHello: "Hello Suka Village, I would like to ask about staying with you.",
