@@ -12,8 +12,11 @@ import { breadcrumbs, pageMetadata } from "@/lib/seo";
  * Facilities, in the same alternating rows as the rooms (ref:
  * adhisthanahotel.com/facilities), with the owner's own copy for each. The
  * shop is listed in the brief as "kalau ada" and stays off the page until it
- * is confirmed (SHOP_CONFIRMED in content/site.ts).
+ * is confirmed (SHOP_CONFIRMED in content/site.ts). Facilities still being
+ * built (Padel Court, Equestrian House) are listed, marked "Segera hadir".
  */
+
+const soon = (f: (typeof listedFacilities)[number]) => "soon" in f && f.soon;
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -46,7 +49,8 @@ export default async function FacilitiesPage({ params }: PageProps<"/[lang]/faci
                 locale={lang}
                 name={t.facilities.names[f.id]}
                 photos={f.photos}
-                panel={{ Icon: facilityIcon[f.id], word: t.facilities.names[f.id], note: "" }}
+                panel={{ Icon: facilityIcon[f.id], word: t.facilities.names[f.id], note: soon(f) ? t.common.soon : "" }}
+                soon={soon(f) ? t.common.soon : undefined}
               >
                 <div className="sv-row-copy">
                   <p>{t.facilities.copy[f.id]}</p>

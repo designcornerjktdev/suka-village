@@ -41,22 +41,3 @@ export function startOfToday() {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-/**
- * How a day in a booking calendar reads, on top of being clickable or not:
- *   past  before today: faded, nothing to say about it
- *   full  every room in question is taken that night
- *   few   some rooms are taken, some still free (only when no room is picked)
- * Everything else is free. Kept apart from `disabled`, which also closes
- * free days that cannot end the stay being chosen, so each reads differently.
- */
-export function dayKinds(today: Date, full: (d: Date) => boolean, few?: (d: Date) => boolean) {
-  const past = (d: Date) => d < today;
-  return {
-    modifiers: {
-      past,
-      full: (d: Date) => !past(d) && full(d),
-      few: (d: Date) => !past(d) && !full(d) && !!few?.(d),
-    },
-    modifiersClassNames: { past: "sv-day-past", full: "sv-day-full", few: "sv-day-few" },
-  };
-}

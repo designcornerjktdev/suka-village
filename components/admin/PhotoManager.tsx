@@ -105,7 +105,9 @@ export default function PhotoManager({
   return (
     <div className="ad-pm">
       <div className="ad-photos-head">
-        <p className="ad-subtitle">Foto ({photos.length})</p>
+        <p className="ad-subtitle">
+          Foto <span className="ad-count tnum">{photos.length}</span>
+        </p>
         <button type="button" className="ad-btn ad-btn--ghost ad-btn--sm" onClick={() => setPicker(true)}>
           <ImagePlus size={14} strokeWidth={1.6} aria-hidden="true" />
           Dari galeri situs
@@ -141,13 +143,15 @@ export default function PhotoManager({
           </p>
         ) : (
           <>
+            <span className="ad-drop-icon" aria-hidden="true">
+              <Upload />
+            </span>
             <p className="ad-drop-text">
-              <Upload size={16} strokeWidth={1.6} aria-hidden="true" />
-              Tarik foto ke sini
+              Tarik foto ke sini, atau{" "}
+              <button type="button" className="ad-text-btn" onClick={() => input.current?.click()}>
+                pilih dari perangkat
+              </button>
             </p>
-            <button type="button" className="ad-btn ad-btn--primary ad-btn--sm" onClick={() => input.current?.click()}>
-              Pilih dari perangkat
-            </button>
             <p className="ad-hint">JPG, PNG, atau WebP. Otomatis diperkecil ke ukuran web.</p>
           </>
         )}
@@ -164,21 +168,23 @@ export default function PhotoManager({
       {photos.length ? (
         <ul className="ad-photos">
           {photos.map((src, i) => (
-            <li key={src}>
+            <li key={src} className="ad-photo-item">
               <button type="button" className="ad-photo ad-photo--btn" onClick={() => openDetail(src)} aria-label={`Detail foto ${i + 1}: ${altFor(src)}`}>
                 <StorePhoto src={src} alt="" sizes="180px" />
                 {i === 0 ? <span className="ad-photo-cover">Sampul</span> : null}
                 {isUpload(src) && !media[src]?.alt.id ? <span className="ad-photo-flag">Belum ada deskripsi</span> : null}
               </button>
+              {/* On the photo, top right: shown on hover or focus with a mouse,
+                  always on a touch screen. */}
               <span className="ad-photo-tools">
-                <button type="button" className="ad-icon-btn" onClick={() => move(i, i - 1)} disabled={i === 0} aria-label="Geser ke kiri">
-                  <ArrowLeft size={15} strokeWidth={1.6} aria-hidden="true" />
+                <button type="button" onClick={() => move(i, i - 1)} disabled={i === 0} aria-label={`Geser foto ${i + 1} ke kiri`} title="Geser ke kiri">
+                  <ArrowLeft aria-hidden="true" />
                 </button>
-                <button type="button" className="ad-icon-btn" onClick={() => move(i, i + 1)} disabled={i === photos.length - 1} aria-label="Geser ke kanan">
-                  <ArrowRight size={15} strokeWidth={1.6} aria-hidden="true" />
+                <button type="button" onClick={() => move(i, i + 1)} disabled={i === photos.length - 1} aria-label={`Geser foto ${i + 1} ke kanan`} title="Geser ke kanan">
+                  <ArrowRight aria-hidden="true" />
                 </button>
-                <button type="button" className="ad-icon-btn" onClick={() => onChange(photos.filter((p) => p !== src))} aria-label="Hapus foto">
-                  <X size={15} strokeWidth={1.6} aria-hidden="true" />
+                <button type="button" data-danger="true" onClick={() => onChange(photos.filter((p) => p !== src))} aria-label={`Hapus foto ${i + 1}`} title="Hapus">
+                  <X aria-hidden="true" />
                 </button>
               </span>
             </li>

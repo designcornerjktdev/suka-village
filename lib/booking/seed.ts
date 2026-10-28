@@ -2,7 +2,7 @@ import { events, experiences, explore, facilities, gallery, photos, place, SHOP_
 import { dict } from "@/content/dict";
 import type { Block, Booking, BookingStatus, Content, MediaMeta, PaymentMethodId, Promo, Room, Settings, UnitId, UnitRate } from "./types";
 import { addDays, iso, nightsOf } from "./format";
-import { DEFAULT_TEMPLATES } from "./notifications";
+import { DEFAULT_TEMPLATES, TEMPLATES_REV } from "./notifications";
 import { quote } from "./pricing";
 
 /**
@@ -21,6 +21,8 @@ export type DB = {
       from. When the site changes (CONTENT_REV), a stored demo refreshes them
       and keeps its bookings. */
   contentRev?: number;
+  /** Which edition of the default email texts the settings hold (TEMPLATES_REV). */
+  templatesRev?: number;
   bookings: Booking[];
   blocks: Block[];
   rooms: Room[];
@@ -158,6 +160,7 @@ export function seedContent(): Content {
       body: { id: id.facilities.copy[f.id], en: en.facilities.copy[f.id] },
       photos: f.photos.map((p) => p.src),
       visible: f.id !== "shop" || SHOP_CONFIRMED,
+      ...("soon" in f && f.soon ? { soon: true } : {}),
     })),
     experiences: experiences.map((x) => ({
       id: x.id,
@@ -208,7 +211,7 @@ export function seedContent(): Content {
 }
 
 /** Bump when the public site's content or room photographs change. */
-export const CONTENT_REV = 3;
+export const CONTENT_REV = 4;
 
 export function seedDB(now = new Date()): DB {
   const today = iso(now);
@@ -337,5 +340,5 @@ export function seedDB(now = new Date()): DB {
 
   bookings.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  return { version: 2, contentRev: CONTENT_REV, bookings, blocks, rooms: seedRooms(), rates, settings: seedSettings(), content: seedContent(), media: {}, promos: seedPromos(now) };
+  return { version: 2, contentRev: CONTENT_REV, templatesRev: TEMPLATES_REV, bookings, blocks, rooms: seedRooms(), rates, settings: seedSettings(), content: seedContent(), media: {}, promos: seedPromos(now) };
 }

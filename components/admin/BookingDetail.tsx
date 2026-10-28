@@ -7,7 +7,7 @@ import { ArrowUpRight, Check, Clock, Info, LoaderCircle, Mail, MessageCircle, Pe
 import StorePhoto from "../StorePhoto";
 import Decision from "./Decision";
 import MessagePreview from "../booking/MessagePreview";
-import { Card, ConfirmDelete, Dialog, Empty, PageHeader, Sheet, SheetFooter, StatusPill, toast } from "./ui";
+import { Card, ConfirmDelete, Dialog, Empty, PageHeader, Select, Sheet, SheetFooter, StatusPill, toast } from "./ui";
 import { useBooking, useRooms, useSettings } from "@/lib/booking/hooks";
 import { cancelBooking, DELETABLE, deleteBooking, markPaidManually, resendNotification, saveInternalNote, setBookingStatus, updateBooking } from "@/lib/booking/api";
 import { fmtDate, fmtDateTime, formatPhone, idr, isValidEmail, normalizePhone, todayISO } from "@/lib/booking/format";
@@ -261,13 +261,7 @@ function Detail({ booking: b }: { booking: Booking }) {
             <div className="ad-resend">
               <div className="sv-input">
                 <label htmlFor="tpl">Kirim ulang email</label>
-                <select id="tpl" value={template} onChange={(e) => setTemplate(e.target.value as TemplateId)}>
-                  {(Object.keys(TEMPLATE_LABELS) as TemplateId[]).map((k) => (
-                    <option key={k} value={k}>
-                      {TEMPLATE_LABELS[k]}
-                    </option>
-                  ))}
-                </select>
+                <Select id="tpl" value={template} onChange={setTemplate} options={(Object.keys(TEMPLATE_LABELS) as TemplateId[]).map((k) => ({ value: k, label: TEMPLATE_LABELS[k] }))} />
               </div>
               <button type="button" className="ad-btn ad-btn--ghost" disabled={!!busy || !b.guest.email} onClick={() => run("em", () => resendNotification(b.code, template), "Email dikirim ulang (simulasi)")}>
                 <Send size={14} strokeWidth={1.6} aria-hidden="true" />

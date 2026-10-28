@@ -202,6 +202,17 @@ WhatsApp needs the paid WhatsApp Business Platform and is out of scope.
 Templates, variables and rendering are in `notifications.ts`; the owner edits
 them in **Admin → Pengaturan → Email otomatis** (ID and EN, per template).
 
+The email itself is designed in `email.ts`: `bookingEmail({ booking, template,
+settings, locale, origin })` returns `{ subject, html, text }`. The owner's text
+sits inside a fixed layout (logo, status line, headline, a payment box while
+unpaid, the booking summary with the total marked "Termasuk pajak", one or two
+buttons, footer with address, WhatsApp and Instagram). It is email-client safe
+(tables, inline styles, system fonts, PNG logo at
+`/brand/suka-village-logo-green-email.png`) and has no browser code, so the
+server can call it as is. Send `html` with `text` as the plain-text part;
+`origin` is the production `SITE_URL`. The admin and the order page preview
+exactly this HTML (`MessagePreview.tsx`).
+
 | Template | Trigger |
 |---|---|
 | `awaiting_payment` | booking created |
@@ -217,6 +228,8 @@ them in **Admin → Pengaturan → Email otomatis** (ID and EN, per template).
   settings; verify the domain (SPF/DKIM).
 - Record every send in `notifications` with the provider's real status
   (`sent` / `failed`); the admin shows it.
+- Booking confirmation for the guest: the order page (`/[lang]/booking/SV-…`)
+  plus the `confirmed` email (MoM 26 Oct 2026).
 - The guest's WhatsApp number is still collected, as a contact. The booking
   page has a **"Chat tamu di WhatsApp"** button: a plain `wa.me` link with a
   pre-filled message that the admin sends from their own WhatsApp. No API, no

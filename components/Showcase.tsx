@@ -15,6 +15,9 @@ import type { Locale } from "@/content/i18n";
  *
  * Where there are no photographs yet the picture is replaced by a sage panel
  * with a drawn icon, rather than by a photograph of something else.
+ *
+ * Something not open yet (a facility being built) carries a "Segera hadir"
+ * label over its title, and the same words on its panel.
  */
 
 export type Panel = { Icon: LucideIcon; word: string; note: string };
@@ -28,6 +31,7 @@ export default function Showcase({
   photos,
   media,
   panel,
+  soon,
   children,
   actions,
 }: {
@@ -42,6 +46,8 @@ export default function Showcase({
   /** Something other than a slider in the picture's place (the rooms' mosaic). */
   media?: ReactNode;
   panel?: Panel;
+  /** Not open yet: this label ("Segera hadir") sits over the title. */
+  soon?: string;
   children?: ReactNode;
   actions?: ReactNode;
 }) {
@@ -74,6 +80,7 @@ export default function Showcase({
             {String(index + 1).padStart(2, "0")}
           </p>
         ) : null}
+        {soon ? <p className="sv-soon">{soon}</p> : null}
         <h2 className="sv-row-title">{name}</h2>
         {children}
         {actions ? <div className="sv-show-actions">{actions}</div> : null}

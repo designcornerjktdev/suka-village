@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Lock, Pencil, Trash2 } from "lucide-react";
-import { Card, ConfirmDelete, Dialog, Empty, PageHeader, RowActions, Sheet, SheetFooter, toast } from "./ui";
+import { Card, ConfirmDelete, Dialog, Empty, PageHeader, RowActions, Select, Sheet, SheetFooter, toast } from "./ui";
 import { useBlocks, useBookings, useRooms } from "@/lib/booking/hooks";
 import { createBlock, deleteBlock, updateBlock } from "@/lib/booking/api";
 import { addDays, day, fmtDate, iso, nightsOf, todayISO } from "@/lib/booking/format";
@@ -83,7 +83,7 @@ export default function AdminCalendar() {
     <>
       <PageHeader
         title="Kalender"
-        lead="Semua kamar dalam satu layar. Tanggal yang sudah terjual di Airbnb, Booking.com atau platform lain, atau kamar yang sedang diperbaiki: tutup di sini, dan tanggalnya tidak bisa dipesan lewat website. Klik tanggal kosong untuk langsung menutupnya."
+        lead="Semua kamar dalam satu layar. Tutup tanggal yang terjual di platform lain atau kamar yang sedang diperbaiki, dan website berhenti menawarkannya. Klik tanggal kosong untuk langsung menutupnya."
         actions={
           <button type="button" className="ad-btn ad-btn--primary" onClick={() => openDialog()}>
             <Lock size={15} strokeWidth={1.7} aria-hidden="true" />
@@ -356,13 +356,7 @@ function BlockDialog({
         <p className="ad-muted">Untuk kamar yang sudah terjual di Airbnb, Booking.com atau platform lain, sedang dalam perawatan, atau dipakai sendiri.</p>
         <div className="sv-input">
           <label htmlFor="b-unit">Kamar</label>
-          <select id="b-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
-            {rooms.map((r) => (
-              <option key={r.unit} value={r.unit}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+          <Select id="b-unit" value={unit} onChange={setUnit} options={rooms.map((r) => ({ value: r.unit, label: r.name }))} />
         </div>
         <div className="ad-grid-2">
           <div className="sv-input">
@@ -376,13 +370,7 @@ function BlockDialog({
         </div>
         <div className="sv-input">
           <label htmlFor="b-reason">Alasan</label>
-          <select id="b-reason" value={reason} onChange={(e) => setReason(e.target.value as BlockReason)}>
-            {(Object.keys(REASON_LABEL) as BlockReason[]).map((r) => (
-              <option key={r} value={r}>
-                {REASON_LABEL[r]}
-              </option>
-            ))}
-          </select>
+          <Select id="b-reason" value={reason} onChange={setReason} options={(Object.keys(REASON_LABEL) as BlockReason[]).map((r) => ({ value: r, label: REASON_LABEL[r] }))} />
         </div>
         <div className="sv-input">
           <label htmlFor="b-note">Catatan (opsional)</label>

@@ -169,7 +169,7 @@ export function siteGraph(locale: Locale) {
         },
         hasMap: place.mapHref,
         sameAs: [social.instagram],
-        amenityFeature: listedFacilities.map((f) => feature(t.facilities.names[f.id])),
+        amenityFeature: listedFacilities.filter((f) => !("soon" in f && f.soon)).map((f) => feature(t.facilities.names[f.id])),
         containsPlace: units.map((u) => ({
           "@type": "Accommodation",
           "@id": roomId(u.slug),

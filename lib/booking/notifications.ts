@@ -51,6 +51,14 @@ export const TEMPLATE_LABELS: Record<TemplateId, string> = {
   reminder: "Pengingat H-1",
 };
 
+/**
+ * The owner's words only. The email layout (email.ts) already shows the
+ * booking summary, the total, how to pay, and the buttons to the booking and
+ * the map, so the text does not repeat them. Bump TEMPLATES_REV when these
+ * change, so a stored demo takes the new wording.
+ */
+export const TEMPLATES_REV = 2;
+
 export const DEFAULT_TEMPLATES: Record<TemplateId, Template> = {
   awaiting_payment: {
     subject: {
@@ -58,8 +66,8 @@ export const DEFAULT_TEMPLATES: Record<TemplateId, Template> = {
       en: "Complete the payment for booking {kode}",
     },
     email: {
-      id: "Halo {nama},\n\nTerima kasih sudah memesan di Suka Village. Kamar Anda kami tahan sampai {batas}.\n\nPesanan: {kode}\nMenginap: {checkin} sampai {checkout} ({malam} malam)\nKamar: {kamar}\nTamu: {tamu} orang\nTotal: {total}\n\nCara bayar: {metode}\n{referensi}\n\nInstruksi lengkap dan status pesanan:\n{link}\n\nSalam hangat,\nSuka Village",
-      en: "Hello {nama},\n\nThank you for booking Suka Village. We are holding your room until {batas}.\n\nBooking: {kode}\nStay: {checkin} to {checkout} ({malam} nights)\nRooms: {kamar}\nGuests: {tamu}\nTotal: {total}\n\nPayment: {metode}\n{referensi}\n\nFull instructions and booking status:\n{link}\n\nWarm regards,\nSuka Village",
+      id: "Halo {nama},\n\nTerima kasih sudah memesan di Suka Village. Kamar Anda kami tahan sampai {batas}. Selesaikan pembayaran sebelum waktu itu, supaya pesanan tidak batal otomatis.\n\nSalam hangat,\nSuka Village",
+      en: "Hello {nama},\n\nThank you for booking Suka Village. We are holding your room until {batas}. Please complete the payment before then, so the booking is not cancelled automatically.\n\nWarm regards,\nSuka Village",
     },
   },
   payment_received: {
@@ -68,15 +76,15 @@ export const DEFAULT_TEMPLATES: Record<TemplateId, Template> = {
       en: "We have received your payment for booking {kode}",
     },
     email: {
-      id: "Halo {nama},\n\nPembayaran sebesar {total} untuk pesanan {kode} sudah kami terima. Terima kasih.\n\nTim kami sedang memeriksa pesanan Anda. Begitu dikonfirmasi, Anda akan menerima email berikutnya.\n\nMenginap: {checkin} sampai {checkout} ({malam} malam)\nKamar: {kamar}\nTamu: {tamu} orang\n\nStatus pesanan:\n{link}\n\nSalam hangat,\nSuka Village",
-      en: "Hello {nama},\n\nWe have received your payment of {total} for booking {kode}. Thank you.\n\nOur team is now reviewing your booking. You will get another email as soon as it is confirmed.\n\nStay: {checkin} to {checkout} ({malam} nights)\nRooms: {kamar}\nGuests: {tamu}\n\nBooking status:\n{link}\n\nWarm regards,\nSuka Village",
+      id: "Halo {nama},\n\nPembayaran sebesar {total} untuk pesanan {kode} sudah kami terima. Terima kasih.\n\nTim kami sedang memeriksa pesanan Anda. Begitu dikonfirmasi, Anda akan menerima email berikutnya.\n\nSalam hangat,\nSuka Village",
+      en: "Hello {nama},\n\nWe have received your payment of {total} for booking {kode}. Thank you.\n\nOur team is now reviewing your booking. You will get another email as soon as it is confirmed.\n\nWarm regards,\nSuka Village",
     },
   },
   confirmed: {
     subject: { id: "Pesanan {kode} terkonfirmasi", en: "Booking {kode} confirmed" },
     email: {
-      id: "Halo {nama},\n\nPesanan {kode} sudah dikonfirmasi. Kamar Anda siap.\n\nMenginap: {checkin} sampai {checkout} ({malam} malam)\nKamar: {kamar}\nTamu: {tamu} orang\nTotal dibayar: {total}\n\nPetunjuk arah: {peta}\nDetail pesanan: {link}\n\nSampai jumpa di Suka Village.",
-      en: "Hello {nama},\n\nBooking {kode} is confirmed. Your room is ready for you.\n\nStay: {checkin} to {checkout} ({malam} nights)\nRooms: {kamar}\nGuests: {tamu}\nTotal paid: {total}\n\nDirections: {peta}\nBooking details: {link}\n\nSee you at Suka Village.",
+      id: "Halo {nama},\n\nPesanan {kode} sudah dikonfirmasi. Kamar Anda siap, dan kami menantikan kedatangan Anda.\n\nSampai jumpa di Suka Village.",
+      en: "Hello {nama},\n\nBooking {kode} is confirmed. Your room is ready, and we look forward to welcoming you.\n\nSee you at Suka Village.",
     },
   },
   rejected: {
@@ -85,15 +93,15 @@ export const DEFAULT_TEMPLATES: Record<TemplateId, Template> = {
       en: "We could not confirm booking {kode}",
     },
     email: {
-      id: "Halo {nama},\n\nMohon maaf, pesanan {kode} untuk {checkin} sampai {checkout} tidak dapat kami konfirmasi.\n\nAlasan: {alasan}\n\nPembayaran Anda sebesar {total} akan kami kembalikan sepenuhnya. Tim kami akan menghubungi Anda untuk prosesnya.\n\nDetail pesanan: {link}\n\nSekali lagi mohon maaf,\nSuka Village",
-      en: "Hello {nama},\n\nWe are sorry: we could not confirm booking {kode} for {checkin} to {checkout}.\n\nReason: {alasan}\n\nYour payment of {total} will be refunded in full. Our team will be in touch about the refund.\n\nBooking details: {link}\n\nWith our apologies,\nSuka Village",
+      id: "Halo {nama},\n\nMohon maaf, pesanan {kode} untuk {checkin} sampai {checkout} tidak dapat kami konfirmasi.\n\nAlasan: {alasan}\n\nPembayaran Anda sebesar {total} akan kami kembalikan sepenuhnya. Tim kami akan menghubungi Anda untuk prosesnya.\n\nSekali lagi mohon maaf,\nSuka Village",
+      en: "Hello {nama},\n\nWe are sorry: we could not confirm booking {kode} for {checkin} to {checkout}.\n\nReason: {alasan}\n\nYour payment of {total} will be refunded in full. Our team will be in touch about the refund.\n\nWith our apologies,\nSuka Village",
     },
   },
   expired: {
     subject: { id: "Waktu pembayaran pesanan {kode} habis", en: "Payment time for booking {kode} has run out" },
     email: {
-      id: "Halo {nama},\n\nWaktu pembayaran untuk pesanan {kode} sudah habis, jadi kamar kami lepas. Kalau masih ingin menginap, tanggal yang sama mungkin masih kosong:\n{link}\n\nSuka Village",
-      en: "Hello {nama},\n\nThe payment time for booking {kode} has run out, so the room has been released. If you would still like to stay, the same dates may still be open:\n{link}\n\nSuka Village",
+      id: "Halo {nama},\n\nWaktu pembayaran untuk pesanan {kode} sudah habis, jadi kamar kami lepas. Kalau masih ingin menginap, tanggal yang sama mungkin masih kosong.\n\nSuka Village",
+      en: "Hello {nama},\n\nThe payment time for booking {kode} has run out, so the room has been released. If you would still like to stay, the same dates may still be open.\n\nSuka Village",
     },
   },
   cancelled: {
@@ -106,8 +114,8 @@ export const DEFAULT_TEMPLATES: Record<TemplateId, Template> = {
   reminder: {
     subject: { id: "Besok Anda menginap di Suka Village", en: "Your stay at Suka Village starts tomorrow" },
     email: {
-      id: "Halo {nama},\n\nBesok, {checkin}, Anda menginap di Suka Village.\n\nKamar: {kamar}\nPesanan: {kode}\nPetunjuk arah: {peta}\n\nSampai jumpa besok.",
-      en: "Hello {nama},\n\nTomorrow, {checkin}, you are staying at Suka Village.\n\nRooms: {kamar}\nBooking: {kode}\nDirections: {peta}\n\nSee you tomorrow.",
+      id: "Halo {nama},\n\nBesok, {checkin}, Anda menginap di Suka Village. Petunjuk arah ada di tombol di bawah.\n\nSampai jumpa besok.",
+      en: "Hello {nama},\n\nTomorrow, {checkin}, you are staying at Suka Village. Directions are on the button below.\n\nSee you tomorrow.",
     },
   },
 };

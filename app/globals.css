@@ -314,6 +314,16 @@
 
 .sv-row-body { max-width: 32rem; }
 .sv-row-index { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.16em; color: var(--color-wood); }
+/* Not open yet: a square tag between the number and the title. */
+.sv-soon {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  margin-top: 0.85rem; padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-clay);
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--color-clay);
+}
+.sv-soon::before { content: ""; width: 0.375rem; height: 0.375rem; background: currentColor; }
+.sv-soon + .sv-row-title { margin-top: 0.75rem; }
 .sv-row-title {
   margin-top: 0.85rem;
   font-family: var(--font-head);
@@ -367,112 +377,151 @@
 }
 .sv-demo svg { flex: none; margin-top: 0.15rem; color: var(--color-clay); }
 
-/* --- Calendar (react-day-picker, fully restyled) -------------------------- */
+/* --- Calendar (react-day-picker, fully restyled) --------------------------
+   The one place on the site with round shapes, by the owner's leave: days are
+   circles, and a stay is one continuous band from check in to check out with
+   the two ends filled, so five nights read as one thing, not five boxes.
 
-.sv-cal { --cell: 2.75rem; position: relative; font-size: 0.9375rem; }
+     free       a plain number; pointing at it rings it
+     few left   a small amber dot under the number (some rooms still free)
+     full       a clay tile, struck through
+     not for this stay   grey, struck through (past the next full night)
+     past       faded, nothing more
+   Each is also a word in the legend under the calendar (CalendarLegend).
+-------------------------------------------------------------------------- */
+
+.sv-cal {
+  --cell: 2.75rem;
+  --dot: calc(var(--cell) - 0.25rem);
+  --band: #e2ebdc;
+  --band-preview: #eef3ea;
+  --full-bg: #f7ebe5;
+  --full-ink: #9c4e2c;
+  --few: #c58a1f;
+  position: relative; font-size: 0.9375rem;
+}
 /* Holds the calendar's place for the moment it takes to load. */
 .sv-cal--loading { min-height: 19rem; }
-
 
 .sv-cal .rdp-months { display: flex; flex-wrap: wrap; gap: 2.5rem; }
 .sv-cal .rdp-month { position: relative; }
 
-.sv-cal .rdp-month_caption { display: flex; align-items: center; height: 2.75rem; padding-inline: 0.25rem; }
-.sv-cal .rdp-caption_label { font-size: 1.125rem; font-weight: 400; letter-spacing: -0.01em; text-transform: capitalize; }
+.sv-cal .rdp-month_caption { display: flex; align-items: center; height: 2.75rem; padding-inline: 0.5rem; }
+.sv-cal .rdp-caption_label { font-size: 1.0625rem; font-weight: 500; letter-spacing: -0.01em; text-transform: capitalize; }
 
-.sv-cal .rdp-nav { position: absolute; top: 0; right: 0; z-index: 1; display: flex; gap: 0.35rem; }
+.sv-cal .rdp-nav { position: absolute; top: 0; right: 0; z-index: 2; display: flex; gap: 0.375rem; }
 
 .sv-cal .rdp-button_previous,
 .sv-cal .rdp-button_next {
   display: grid; place-items: center;
   width: 2.75rem; height: 2.75rem;
-  border: 1px solid var(--color-rule);
+  border: 1px solid var(--color-rule); border-radius: 50%;
   background: var(--color-paper);
   cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
-
 .sv-cal .rdp-button_previous:hover:not(:disabled),
-.sv-cal .rdp-button_next:hover:not(:disabled) { background: var(--color-mist); }
-
+.sv-cal .rdp-button_next:hover:not(:disabled) { border-color: #c9c2b4; background: var(--color-mist); }
 .sv-cal .rdp-button_previous:disabled,
 .sv-cal .rdp-button_next:disabled { opacity: 0.3; cursor: default; }
-
 .sv-cal .rdp-chevron { width: 14px; height: 14px; fill: var(--color-ink); }
 
-.sv-cal .rdp-month_grid { border-collapse: collapse; margin-top: 0.5rem; }
+/* Separate cells with a little air between the weeks, so a stay that wraps
+   onto the next row reads as two bands, not one smeared block. */
+.sv-cal .rdp-month_grid { border-collapse: separate; border-spacing: 0 4px; margin-top: 0.25rem; }
 
 .sv-cal .rdp-weekday {
-  width: var(--cell); height: 2.25rem;
-  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  width: var(--cell); height: 2rem;
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--color-ink-soft);
 }
 
-/* Each day is a tile with a hairline of white around it, so free, few left
-   and full read as a pattern across the month at a glance. */
-.sv-cal .rdp-day { width: var(--cell); height: var(--cell); padding: 2px; text-align: center; }
+.sv-cal .rdp-day { position: relative; width: var(--cell); height: var(--dot); padding: 0; text-align: center; }
 
 .sv-cal .rdp-day_button {
-  width: calc(var(--cell) - 4px); height: calc(var(--cell) - 4px);
-  border: 0;  background: transparent;
+  position: relative; z-index: 1;
+  display: inline-grid; place-items: center;
+  width: var(--dot); height: var(--dot);
+  border: 0; border-radius: 50%; background: transparent;
+  font: inherit; font-weight: 500; color: var(--color-ink);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.sv-cal .rdp-day:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button:hover { background: #f2f6ef; box-shadow: inset 0 0 0 1.5px var(--color-forest); }
+.sv-cal .rdp-day_button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 1px; }
+
+/* Today: underlined, so it never competes with a selection. */
+.sv-cal .rdp-today .rdp-day_button { font-weight: 700; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+
+/* Few left: a small dot under the number. */
+.sv-cal .sv-day-few:not(.rdp-selected) .rdp-day_button::after {
+  content: ""; position: absolute; bottom: 0.3125rem; left: 50%;
+  width: 0.3125rem; height: 0.3125rem; margin-left: -0.15625rem;
+  border-radius: 50%; background: var(--few);
 }
 
-.sv-cal .rdp-today .rdp-day_button { box-shadow: inset 0 0 0 1px var(--color-ink); font-weight: 600; }
-
-.sv-cal .rdp-outside { opacity: 0.35; }
-
-/* Days from the neighbouring month are hidden, but they still receive the range
-   classes, so a stay that starts on 2 October painted an empty sand bar after
-   30 September. They carry no range fill of their own. */
-.sv-cal .rdp-outside,
-.sv-cal .rdp-hidden { background: none !important; }
-
-/* Free: a soft garden tile. Few left: sand. Full: clay, hatched and struck
-   through. A free day that cannot end the stay being chosen: plain, struck.
-   Past days: faded, with nothing more to say. Each is also a word in the
-   legend under the calendar, so colour is never the only signal. */
-.sv-cal .rdp-day:not(.rdp-disabled):not(.rdp-outside):not(.rdp-selected):not(.sv-day-full) .rdp-day_button { background: var(--day-free); color: var(--color-ink); font-weight: 500; }
-.sv-cal .rdp-day:not(.rdp-disabled):not(.rdp-outside):not(.rdp-selected):not(.sv-day-full) .rdp-day_button:hover { background: var(--day-free-hover); }
-.sv-cal .sv-day-few:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button { background: var(--day-few) !important; }
-.sv-cal .sv-day-few:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button:hover { background: var(--day-few-hover) !important; }
-
-.sv-cal .rdp-disabled .rdp-day_button { color: #a8a397; text-decoration: line-through; text-decoration-color: rgba(0, 0, 0, 0.25); cursor: not-allowed; }
-.sv-cal .sv-day-full:not(.rdp-selected) .rdp-day_button {
-  background: var(--day-full);
-  color: #9c4e2c;
-  text-decoration: line-through; text-decoration-color: rgba(156, 78, 44, 0.55);
-}
-/* Full that night, but the morning is free: still a valid check out. */
-.sv-cal .sv-day-full:not(.rdp-disabled) .rdp-day_button { cursor: pointer; }
-.sv-cal .sv-day-past .rdp-day_button { background: none !important; color: #c9c4b9; text-decoration: none; }
-
-.sv-cal {
-  --day-free: #e8f0e1;
-  --day-free-hover: #d5e4ca;
-  --day-few: #f7ead0;
-  --day-few-hover: #efdcb5;
-  --day-full: repeating-linear-gradient(135deg, #f6e8e1 0 5px, #edd6cb 5px 6px);
+/* Full: a clay tile, struck through. Softer square corners set it apart
+   from the round days a guest can pick. */
+.sv-cal .sv-day-full .rdp-day_button {
+  width: calc(var(--dot) - 0.25rem); height: calc(var(--dot) - 0.25rem);
+  border-radius: 0.75rem;
+  background: var(--full-bg); color: var(--full-ink);
+  text-decoration: line-through; text-decoration-color: rgba(156, 78, 44, 0.5);
+  cursor: not-allowed;
 }
 
-.sv-cal-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
-.sv-cal-legend li { display: inline-flex; align-items: center; gap: 0.5rem; }
-.sv-cal-legend i { display: inline-block; flex: none; width: 1rem; height: 1rem; }
-.sv-cal-legend i[data-kind="free"] { background: #e8f0e1; }
-.sv-cal-legend i[data-kind="few"] { background: #f7ead0; }
-.sv-cal-legend i[data-kind="full"] { background: repeating-linear-gradient(135deg, #f6e8e1 0 3px, #e3c2b3 3px 4px); }
-.sv-cal-legend i[data-kind="picked"] { background: var(--color-forest); }
+/* Free, but not for the stay being chosen (past the next full night). */
+.sv-cal .rdp-disabled:not(.sv-day-full):not(.sv-day-past) .rdp-day_button { color: #aca79b; text-decoration: line-through; text-decoration-color: rgba(31, 42, 36, 0.2); cursor: not-allowed; }
+.sv-cal .sv-day-past .rdp-day_button { color: #cdc8bd; font-weight: 400; text-decoration: none; cursor: default; }
 
-/* The nights in between: the same green as the ends, lighter, so the whole
-   stay reads as one block. A full night inside (the check out morning) keeps
-   its own look. */
-.sv-cal .rdp-range_middle .rdp-day_button { background: #bcd5b2; color: var(--color-forest-deep); font-weight: 600; }
+/* Days from the neighbouring month are hidden, but they still receive the
+   range classes. They carry no band of their own. */
+.sv-cal .rdp-outside .rdp-day_button { visibility: hidden; }
+
+/* The stay: one band behind the circles, half a cell into the two ends,
+   rounded where a week row starts or ends. While the check out is being
+   chosen, the same band, lighter, follows the pointer. */
+.sv-cal .rdp-range_middle::before,
+.sv-cal .rdp-range_start:not(.rdp-range_end)::before,
+.sv-cal .rdp-range_end:not(.rdp-range_start)::before,
+.sv-cal .sv-day-preview::before,
+.sv-cal .sv-day-preview-start::before,
+.sv-cal .sv-day-preview-end::before {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  background: var(--band);
+}
+.sv-cal .sv-day-preview::before,
+.sv-cal .sv-day-preview-start::before,
+.sv-cal .sv-day-preview-end::before { background: var(--band-preview); }
+.sv-cal .rdp-range_start::before, .sv-cal .sv-day-preview-start::before { left: 50%; }
+.sv-cal .rdp-range_end::before, .sv-cal .sv-day-preview-end::before { right: 50%; }
+.sv-cal .rdp-week > .rdp-day:first-child::before,
+.sv-cal .rdp-outside + .rdp-day::before { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.sv-cal .rdp-week > .rdp-day:last-child::before,
+.sv-cal .rdp-day:has(+ .rdp-outside)::before { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+.sv-cal .rdp-outside::before { display: none; }
+
+.sv-cal .rdp-range_middle .rdp-day_button,
+.sv-cal .sv-day-preview .rdp-day_button { color: var(--color-forest-deep); }
+.sv-cal .rdp-range_middle .rdp-day_button:hover { background: rgba(255, 255, 255, 0.7); }
 
 .sv-cal .rdp-range_start .rdp-day_button,
 .sv-cal .rdp-range_end .rdp-day_button,
 .sv-cal .rdp-selected:not(.rdp-range_middle) .rdp-day_button {
   background: var(--color-forest); color: var(--color-paper); font-weight: 600;
+  box-shadow: 0 2px 6px -2px rgba(23, 70, 52, 0.5);
 }
+.sv-cal .sv-day-preview-end .rdp-day_button { background: var(--color-paper); box-shadow: inset 0 0 0 1.5px var(--color-forest); color: var(--color-forest-deep); }
+
+.sv-cal-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-cal-legend li { display: inline-flex; align-items: center; gap: 0.5rem; }
+.sv-cal-legend i { position: relative; display: inline-block; flex: none; width: 1rem; height: 1rem; border-radius: 50%; }
+.sv-cal-legend i[data-kind="free"] { box-shadow: inset 0 0 0 1.5px #8f9a91; }
+.sv-cal-legend i[data-kind="few"] { box-shadow: inset 0 0 0 1.5px #8f9a91; }
+.sv-cal-legend i[data-kind="few"]::after { content: ""; position: absolute; bottom: -0.3125rem; left: 50%; width: 0.3125rem; height: 0.3125rem; margin-left: -0.15625rem; border-radius: 50%; background: #c58a1f; }
+.sv-cal-legend i[data-kind="full"] { border-radius: 0.3125rem; background: #f7ebe5; box-shadow: inset 0 0 0 1px #e7c9bb; }
+.sv-cal-legend i[data-kind="picked"] { width: 1.75rem; border-radius: 999px; background: linear-gradient(to right, var(--color-forest) 0 1rem, #e2ebdc 1rem); }
 
 /* --- Stepper (dock and availability page) ------------------------------ */
 
@@ -596,7 +645,7 @@
 .sv-bk-room-why { font-size: 0.875rem; line-height: 1.45; color: var(--color-clay); }
 .sv-bk-room-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.4rem; margin-top: 0.3rem; }
 .sv-bk-room-price strong { font-size: 1.0625rem; font-weight: 500; }
-.sv-bk-room-price small { font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-bk-room-price small { font-size: 0.8125rem; color: var(--color-ink-soft); white-space: nowrap; }
 
 .sv-bk-room-check {
   display: grid; place-items: center;
@@ -683,6 +732,7 @@
 .sv-bk-breakdown li small { display: block; font-size: 0.8125rem; color: var(--color-ink-soft); }
 .sv-bk-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--color-ink); }
 .sv-bk-total strong { font-size: 1.375rem; font-weight: 500; }
+.sv-bk-total > span small { display: block; margin-top: 0.1rem; font-size: 0.8125rem; color: var(--color-ink-soft); }
 
 .sv-bk-breakdown li.sv-bk-sub { color: var(--color-ink-soft); }
 .sv-bk-breakdown li.sv-bk-discount { color: var(--color-forest); font-weight: 500; }
@@ -883,6 +933,7 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-msg { overflow: hidden; margin: 0; border: 1px solid var(--color-rule); background: var(--color-paper); font-size: 0.875rem; }
 .sv-msg figcaption { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--color-rule); font-size: 0.8125rem; color: var(--color-ink-soft); word-break: break-all; }
 .sv-msg-subject { padding: 0.75rem 0.9rem 0; font-weight: 600; }
+.sv-msg-frame { display: block; width: 100%; margin-top: 0.75rem; border: 0; border-top: 1px solid var(--color-rule); background: #f3eee4; }
 .sv-msg pre { margin: 0; padding: 0.5rem 0.9rem 0.9rem; font-family: var(--font-sans); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
 
 .sv-demo-panel { margin-top: 1.5rem; padding: 1.1rem 1.25rem; border: 1.5px dashed color-mix(in srgb, var(--color-clay) 55%, transparent); background: color-mix(in srgb, var(--color-clay) 5%, var(--color-paper)); }
@@ -1241,8 +1292,13 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
 /* --- One room: a wide slider of every photograph, the details below ------ */
 
-.sv-room-slider { position: relative; margin-top: 0.75rem; height: clamp(20rem, calc(100svh - var(--head-h) - 8.5rem), 52rem); }
-@media (max-width: 899px) { .sv-room-slider { height: auto; aspect-ratio: 4 / 3; margin-inline: calc(-1 * var(--gutter)); } }
+/* 4:3 everywhere, per the owner (MoM 26 Oct 2026). On a wide screen the
+   frame is as wide as it can be while still fitting under the header. */
+.sv-room-slider { position: relative; margin-top: 0.75rem; aspect-ratio: 4 / 3; }
+@media (min-width: 900px) {
+  .sv-room-slider { width: min(100%, calc((100svh - var(--head-h) - 8.5rem) * 4 / 3), 72rem); min-width: min(100%, 36rem); margin-inline: auto; }
+}
+@media (max-width: 899px) { .sv-room-slider { margin-inline: calc(-1 * var(--gutter)); } }
 
 .sv-room { display: grid; gap: 2.75rem; margin-top: clamp(2rem, 5vh, 3.25rem); }
 @media (min-width: 900px) { .sv-room { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(3rem, 7vw, 7rem); align-items: start; } }

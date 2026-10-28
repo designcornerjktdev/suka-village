@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DayPicker, type DateRange } from "react-day-picker";
-import { id as idLocale, enUS } from "react-day-picker/locale";
+import type { DateRange } from "react-day-picker";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Info, LoaderCircle, Minus, Plus, TicketPercent, Users, X } from "lucide-react";
 import { photos, waHref } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
@@ -12,7 +11,7 @@ import { localePath, type Locale } from "@/content/i18n";
 import { DEMO } from "@/lib/booking/config";
 import { checkPromo, createBooking } from "@/lib/booking/api";
 import { useOccupancy, usePromo, useRates, useRoomName, useRooms, useSellableRooms, useSettings } from "@/lib/booking/hooks";
-import { anyTaken, fullFor, someTaken, stayMatcher, unitStatus } from "@/lib/booking/occupancy";
+import { anyTaken, fullFor, someTaken, unitStatus } from "@/lib/booking/occupancy";
 import { fromRate, quote } from "@/lib/booking/pricing";
 import { applyPromo, promoProblem } from "@/lib/booking/promo";
 import { GUEST_GROUPS, METHODS } from "@/lib/booking/payments";
@@ -21,8 +20,8 @@ import type { PaymentMethodId, UnitId } from "@/lib/booking/types";
 import { useMedia } from "../useMedia";
 import StorePhoto from "../StorePhoto";
 import MethodMark from "./MethodMark";
-import { dayKinds, startOfToday } from "../dates";
-import CalendarLegend from "../CalendarLegend";
+import { startOfToday } from "../dates";
+import RangeCalendar from "../RangeCalendar";
 
 /**
  * The booking, as four short steps instead of one long form.
@@ -152,8 +151,7 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
      it is full when every room on sale is taken, and "few left" when some are. */
   const sellableUnits = sellable.map((r) => r.unit);
   const isTaken = picked.length ? anyTaken(occ, picked) : fullFor(occ, sellableUnits);
-  const matcher = stayMatcher(range, today, isTaken);
-  const kinds = dayKinds(today, isTaken, picked.length ? undefined : someTaken(occ, sellableUnits));
+  const isFew = picked.length ? undefined : someTaken(occ, sellableUnits);
 
   /* --- Navigation ---------------------------------------------------------- */
 
@@ -276,7 +274,10 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
         ) : null}
       </ul>
       <p className="sv-bk-total">
-        <span>{c.total}</span>
+        <span>
+          {c.total}
+          <small>{c.taxIncluded}</small>
+        </span>
         <strong className="tnum">{idr(q.total)}</strong>
       </p>
       {DEMO ? <p className="sv-bk-demo">{c.demoPrice}</p> : null}
@@ -329,22 +330,16 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
         {nightsCount ? <span className="sv-dock-nights tnum">{fill(c.nightsN, { n: nightsCount })}</span> : null}
       </div>
 
-      <DayPicker
-        mode="range"
-        selected={range}
+      <RangeCalendar
+        locale={locale}
+        range={range}
         onSelect={selectRange}
-        numberOfMonths={wide ? 2 : 1}
-        startMonth={today}
-        disabled={matcher}
-        modifiers={kinds.modifiers}
-        modifiersClassNames={kinds.modifiersClassNames}
-        resetOnSelect
-        min={1}
-        weekStartsOn={1}
-        locale={locale === "id" ? idLocale : enUS}
+        months={wide ? 2 : 1}
+        today={today}
+        isTaken={isTaken}
+        isFew={isFew}
         className="sv-cal sv-cal--wide"
       />
-      <CalendarLegend locale={locale} few={!picked.length} />
 
       {DEMO ? (
         <p className="sv-demo" role="note">
@@ -417,12 +412,16 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
                       {ok && subtotal ? (
                         <>
                           <strong>{idr(subtotal)}</strong>
-                          <small>{fill(c.nightsN, { n: nightsCount })}</small>
+                          <small>
+                            {fill(c.nightsN, { n: nightsCount })} · {c.taxIncluded.toLowerCase()}
+                          </small>
                         </>
                       ) : (
                         <>
                           <strong>{idr(fromRate(rate))}</strong>
-                          <small>{c.perNight}</small>
+                          <small>
+                            {c.perNight} · {c.taxIncluded.toLowerCase()}
+                          </small>
                         </>
                       )}
                     </span>

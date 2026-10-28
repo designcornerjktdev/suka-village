@@ -274,6 +274,9 @@ export type ContentItem = {
   body: Bilingual;
   photos: string[];
   visible: boolean;
+  /** Shown, but not open yet: the page labels it "Segera hadir" (Coming
+      soon). For a facility, experience or event still being built. */
+  soon?: boolean;
   /** What the item's button opens: Google Maps for a place (Jelajah, and
       Kontak's location), the Instagram profile for Kontak's reservation row. */
   link?: string;

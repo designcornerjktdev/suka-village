@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, ArrowUpRight, Eye, EyeOff, ImageOff, Info, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpRight, CircleCheck, Clock, Eye, EyeOff, ImageOff, Info, Plus } from "lucide-react";
 import StorePhoto from "../StorePhoto";
 import PhotoManager from "./PhotoManager";
-import { Badge, Card, ConfirmDelete, Empty, PageHeader, RowActions, SaveBar, Sheet, SheetFooter, Toggle, toast } from "./ui";
+import { Badge, Card, ConfirmDelete, Empty, PageHeader, RowActions, SaveBar, Select, Sheet, SheetFooter, Toggle, toast } from "./ui";
 import { useContent } from "@/lib/booking/hooks";
 import { saveContent } from "@/lib/booking/api";
 import { DEMO } from "@/lib/booking/config";
@@ -23,6 +23,8 @@ import type { ContentItem, ContentSection } from "@/lib/booking/types";
  *            added, edited (in a panel), hidden, moved and deleted on its
  *            own, saved as soon as it is done; Jelajah also has its map link
  *            and photo credits
+ *            Fasilitas, Pengalaman and Acara items can also be marked
+ *            "Segera hadir": listed, with that label, before they are open
  *   contact  Kontak: its two fixed rows, Reservasi and Lokasi, edited the same
  *            way; the page always has exactly these two, so none is added
  *
@@ -32,13 +34,13 @@ import type { ContentItem, ContentSection } from "@/lib/booking/types";
 
 type Kind = "photos" | "list" | "contact";
 
-type Meta = { id: ContentSection; label: string; page: string; hint: string; kind: Kind; noun?: string; empty?: string };
+type Meta = { id: ContentSection; label: string; page: string; hint: string; kind: Kind; noun?: string; empty?: string; soon?: boolean };
 
 const SECTIONS: Meta[] = [
   { id: "home", label: "Beranda", page: "", kind: "photos", hint: "Satu foto Main Villa di halaman utama, di bawah header. Yang tampil adalah foto pertama.", empty: "Belum ada foto. Halaman utama butuh satu foto." },
-  { id: "facilities", label: "Fasilitas", page: "facilities", kind: "list", hint: "Kolam renang, restoran, ruang pertemuan, taman bermain, toko.", noun: "fasilitas" },
-  { id: "experiences", label: "Pengalaman", page: "experience", kind: "list", hint: "Kegiatan untuk tamu yang menginap.", noun: "pengalaman" },
-  { id: "events", label: "Acara", page: "event", kind: "list", hint: "Corporate dan family gathering.", noun: "acara" },
+  { id: "facilities", label: "Fasilitas", page: "facilities", kind: "list", hint: "Kolam renang, restoran, ruang pertemuan, taman bermain, dan yang segera hadir.", noun: "fasilitas", soon: true },
+  { id: "experiences", label: "Pengalaman", page: "experience", kind: "list", hint: "Kegiatan untuk tamu yang menginap.", noun: "pengalaman", soon: true },
+  { id: "events", label: "Acara", page: "event", kind: "list", hint: "Corporate dan family gathering.", noun: "acara", soon: true },
   { id: "explore", label: "Jelajah", page: "explore", kind: "list", hint: "Tempat menarik di sekitar Suka Village, masing-masing dengan link peta.", noun: "tempat" },
   { id: "gallery", label: "Galeri", page: "gallery", kind: "photos", hint: "Foto saja, tanpa keterangan. Urutan di sini sama dengan urutan di halaman Galeri.", empty: "Belum ada foto di galeri." },
   { id: "contact", label: "Kontak", page: "contact", kind: "contact", hint: "Dua baris di halaman Kontak: Reservasi dan Lokasi. Nomor WhatsApp diatur di Pengaturan, bagian Kontak." },
@@ -64,7 +66,7 @@ export default function ContentEditor() {
         </p>
       ) : null}
 
-      <div className="ad-tabs" role="tablist" aria-label="Bagian situs">
+      <div className="ad-tabs ad-tabs--line" role="tablist" aria-label="Bagian situs">
         {SECTIONS.map((s) => (
           <button key={s.id} type="button" role="tab" aria-selected={section === s.id} className="ad-tab" onClick={() => setSection(s.id)}>
             {s.label}
@@ -163,6 +165,17 @@ function Field({ id, label, value, onChange, placeholder, type = "text" }: { id:
 
 const NO_DASH = "Hindari tanda pisah panjang; pakai koma atau titik.";
 
+/* An item's one status, as the owner thinks of it. Stored as two flags so a
+   hidden item that was coming soon is still coming soon when shown again. */
+type Status = "live" | "soon" | "hidden";
+const statusOf = (x: ContentItem): Status => (!x.visible ? "hidden" : x.soon ? "soon" : "live");
+const STATUS: Record<Status, { label: string; tone: "ok" | "warn" | "off"; hint: string }> = {
+  live: { label: "Tampil", tone: "ok", hint: "Terlihat di situs seperti biasa." },
+  soon: { label: "Segera hadir", tone: "warn", hint: "Terlihat di situs dengan label Segera hadir, untuk yang belum buka." },
+  hidden: { label: "Disembunyikan", tone: "off", hint: "Tidak terlihat oleh pengunjung." },
+};
+const withStatus = (x: ContentItem, s: Status): ContentItem => ({ ...x, visible: s !== "hidden", soon: s === "hidden" ? x.soon : s === "soon" });
+
 /* --- Beranda, Galeri: photographs only ------------------------------------- */
 
 function PhotosEditor({ section, items, meta }: { section: ContentSection; items: ContentItem[]; meta: Meta }) {
@@ -225,43 +238,53 @@ function ListEditor({ section, items, meta }: { section: ContentSection; items: 
             const title = item.name.id || "(tanpa judul)";
             return (
               <li key={item.id} className="ad-record" data-hidden={item.visible ? undefined : "true"}>
-                {fixed ? null : (
-                  <div className="ad-record-order">
-                    <button type="button" className="ad-icon-btn ad-icon-btn--quiet" onClick={() => move(index, -1)} disabled={index === 0 || busy} aria-label={`Naikkan ${title}`}>
-                      <ArrowUp size={15} strokeWidth={1.7} aria-hidden="true" />
-                    </button>
-                    <button type="button" className="ad-icon-btn ad-icon-btn--quiet" onClick={() => move(index, 1)} disabled={index === items.length - 1 || busy} aria-label={`Turunkan ${title}`}>
-                      <ArrowDown size={15} strokeWidth={1.7} aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
                 <button type="button" className="ad-record-main" onClick={() => open(item)}>
                   <span className="ad-record-thumb">
-                    {item.photos[0] ? <StorePhoto src={item.photos[0]} alt="" sizes="72px" /> : <ImageOff size={18} strokeWidth={1.4} aria-hidden="true" />}
+                    {item.photos[0] ? <StorePhoto src={item.photos[0]} alt="" sizes="72px" /> : <ImageOff aria-hidden="true" />}
                   </span>
                   <span className="ad-record-text">
                     <strong>{title}</strong>
                     <small>
-                      {item.id === "location" ? item.body.id.split("\n")[0] : item.name.en || "Judul Inggris belum diisi"}
-                      {item.id === "location" ? "" : ` · ${item.photos.length} foto`}
+                      {item.id === "location"
+                        ? item.body.id.split("\n")[0]
+                        : [item.name.en || "Judul Inggris belum diisi", `${item.photos.length} foto`].join(" · ")}
                     </small>
                   </span>
                 </button>
-                <span className="ad-record-state">{fixed ? null : <Badge tone={item.visible ? "ok" : "off"}>{item.visible ? "Tampil" : "Disembunyikan"}</Badge>}</span>
-                <RowActions label={title} onEdit={() => open(item)} onDelete={fixed ? undefined : () => setRemoving(item)}>
-                  {fixed ? null : (
-                    <button
-                      type="button"
-                      className="ad-icon-btn"
-                      disabled={busy}
-                      onClick={() => commit(items.map((x) => (x.id === item.id ? { ...x, visible: !x.visible } : x)), item.visible ? `${title} disembunyikan` : `${title} ditampilkan`)}
-                      aria-label={item.visible ? `Sembunyikan ${title}` : `Tampilkan ${title}`}
-                      title={item.visible ? "Sembunyikan" : "Tampilkan"}
-                    >
-                      {item.visible ? <EyeOff size={16} strokeWidth={1.6} aria-hidden="true" /> : <Eye size={16} strokeWidth={1.6} aria-hidden="true" />}
-                    </button>
-                  )}
-                </RowActions>
+                {fixed ? null : (
+                  <span className="ad-record-state">
+                    <Badge tone={STATUS[statusOf(item)].tone}>{STATUS[statusOf(item)].label}</Badge>
+                  </span>
+                )}
+                <RowActions
+                  label={title}
+                  onEdit={() => open(item)}
+                  onDelete={fixed ? undefined : () => setRemoving(item)}
+                  extra={
+                    fixed
+                      ? []
+                      : [
+                          {
+                            label: item.visible ? "Sembunyikan dari situs" : "Tampilkan di situs",
+                            icon: item.visible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />,
+                            onSelect: () => commit(items.map((x) => (x.id === item.id ? { ...x, visible: !x.visible } : x)), item.visible ? `${title} disembunyikan` : `${title} ditampilkan`),
+                            disabled: busy,
+                          },
+                          ...(meta.soon && item.visible
+                            ? [
+                                {
+                                  label: item.soon ? "Tandai sudah buka" : "Tandai Segera hadir",
+                                  icon: item.soon ? <CircleCheck aria-hidden="true" /> : <Clock aria-hidden="true" />,
+                                  onSelect: () => commit(items.map((x) => (x.id === item.id ? withStatus(x, x.soon ? "live" : "soon") : x)), item.soon ? `${title} ditandai sudah buka` : `${title} ditandai Segera hadir`),
+                                  disabled: busy,
+                                },
+                              ]
+                            : []),
+                          { label: "Pindah ke atas", icon: <ArrowUp aria-hidden="true" />, onSelect: () => move(index, -1), disabled: index === 0 || busy },
+                          { label: "Pindah ke bawah", icon: <ArrowDown aria-hidden="true" />, onSelect: () => move(index, 1), disabled: index === items.length - 1 || busy },
+                        ]
+                  }
+                />
               </li>
             );
           })}
@@ -398,7 +421,21 @@ function ItemSheet({
         </section>
       )}
 
-      {meta.kind === "list" ? (
+      {meta.kind === "list" && meta.soon ? (
+        <section className="ad-form-sec">
+          <h3>Status</h3>
+          <div className="sv-input">
+            <label htmlFor="it-status">Di situs</label>
+            <Select
+              id="it-status"
+              value={statusOf(draft)}
+              onChange={(s) => setDraft((d) => withStatus(d, s))}
+              options={(Object.keys(STATUS) as Status[]).map((s) => ({ value: s, label: STATUS[s].label, hint: STATUS[s].hint }))}
+            />
+          </div>
+          <p className="ad-hint">{STATUS[statusOf(draft)].hint}</p>
+        </section>
+      ) : meta.kind === "list" ? (
         <section className="ad-form-sec">
           <Toggle checked={draft.visible} onChange={(v) => patch({ visible: v })} label="Tampilkan di situs" hint={draft.visible ? "Terlihat oleh pengunjung" : "Disembunyikan dari pengunjung"} />
         </section>

@@ -5,7 +5,7 @@ import { Mail } from "lucide-react";
 import type { Locale } from "@/content/i18n";
 import MessagePreview from "../booking/MessagePreview";
 import MethodMark from "../booking/MethodMark";
-import { Card, PageHeader, SaveBar, Toggle, toast } from "./ui";
+import { Card, PageHeader, SaveBar, Select, Toggle, toast } from "./ui";
 import { useBookings, useSettings } from "@/lib/booking/hooks";
 import { saveSettings } from "@/lib/booking/api";
 import { METHODS } from "@/lib/booking/payments";
@@ -53,7 +53,7 @@ export default function SettingsEditor() {
     <>
       <PageHeader title="Pengaturan" lead="Cara bayar, email otomatis ke tamu, kebijakan, dan kontak." />
 
-      <div className="ad-tabs" role="tablist" aria-label="Pengaturan">
+      <div className="ad-tabs ad-tabs--line" role="tablist" aria-label="Pengaturan">
         {(
           [
             ["payment", "Pembayaran"],
@@ -187,13 +187,7 @@ function NotifyTab({ draft, update }: TabProps) {
 
       <Card title="Isi email">
         <div className="ad-toolbar">
-          <select className="ad-select" value={template} onChange={(e) => setTemplate(e.target.value as TemplateId)} aria-label="Pesan">
-            {(Object.keys(TEMPLATE_LABELS) as TemplateId[]).map((k) => (
-              <option key={k} value={k}>
-                {TEMPLATE_LABELS[k]}
-              </option>
-            ))}
-          </select>
+          <Select ariaLabel="Pesan" value={template} onChange={setTemplate} options={(Object.keys(TEMPLATE_LABELS) as TemplateId[]).map((k) => ({ value: k, label: TEMPLATE_LABELS[k] }))} />
           <div className="ad-segmented ad-segmented--sm" role="radiogroup" aria-label="Bahasa">
             {(["id", "en"] as Locale[]).map((l) => (
               <label key={l} data-checked={lang === l ? "true" : undefined}>

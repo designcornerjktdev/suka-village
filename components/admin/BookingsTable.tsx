@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Clock, Plus, Search } from "lucide-react";
 import Decision from "./Decision";
-import { Empty, PageHeader, Sheet, SheetFooter, StatusPill, toast } from "./ui";
+import { Empty, PageHeader, Select, Sheet, SheetFooter, StatusPill, toast } from "./ui";
 import { dict } from "@/content/dict";
 import { useBookings, useNow, useRoomName, useRooms } from "@/lib/booking/hooks";
 import { createBooking } from "@/lib/booking/api";
@@ -113,14 +113,13 @@ export default function BookingsTable() {
           <span className="sr-only">Cari</span>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari kode, nama, email, atau nomor" />
         </label>
-        <select className="ad-select" value={unit} onChange={(e) => setUnit(e.target.value as typeof unit)} aria-label="Kamar">
-          <option value="all">Semua kamar</option>
-          {rooms.map((r) => (
-            <option key={r.unit} value={r.unit}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        <Select
+          className="ad-toolbar-select"
+          ariaLabel="Kamar"
+          value={unit}
+          onChange={setUnit}
+          options={[{ value: "all", label: "Semua kamar" }, ...rooms.map((r) => ({ value: r.unit, label: r.name }))]}
+        />
       </div>
 
       {rows.length ? (

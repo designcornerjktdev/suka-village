@@ -1,16 +1,18 @@
 "use client";
 
 import { Mail } from "lucide-react";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { Locale } from "@/content/i18n";
 import type { Booking, Settings, TemplateId } from "@/lib/booking/types";
-import { render, variablesFor } from "@/lib/booking/notifications";
+import { bookingEmail } from "@/lib/booking/email";
 import { useRoomName } from "@/lib/booking/hooks";
 
 /**
- * The email the guest actually receives, rendered from the same template the
- * admin edits. Shown to the guest on the order page (so the owner can see
- * what goes out) and in the admin.
+ * The email the guest actually receives: the template the admin edits, inside
+ * the HTML layout of email.ts, drawn in a frame so its own styles stay its
+ * own. Shown to the guest on the order page (so the owner can see what goes
+ * out) and in the admin. The frame grows to the email's height; links open in
+ * a new tab.
  */
 
 const noop = () => () => {};
@@ -28,8 +30,9 @@ export default function MessagePreview({
 }) {
   const origin = useSyncExternalStore(noop, () => window.location.origin, () => "");
   const roomName = useRoomName();
-  const tpl = settings.templates[template];
-  const vars = variablesFor(booking, locale, origin, roomName);
+  const [height, setHeight] = useState(640);
+  const mail = bookingEmail({ booking, template, settings, locale, origin, roomName });
+  const doc = mail.html.replace("<head>", '<head><base target="_blank">');
 
   return (
     <figure className="sv-msg sv-msg--email">
@@ -37,8 +40,20 @@ export default function MessagePreview({
         <Mail size={14} strokeWidth={1.6} aria-hidden="true" />
         <span>{booking.guest.email || "(tanpa email)"}</span>
       </figcaption>
-      <p className="sv-msg-subject">{render(tpl.subject[locale], vars)}</p>
-      <pre>{render(tpl.email[locale], vars)}</pre>
+      <p className="sv-msg-subject">{mail.subject}</p>
+      {origin ? (
+        <iframe
+          className="sv-msg-frame"
+          title={mail.subject}
+          srcDoc={doc}
+          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          style={{ height }}
+          onLoad={(e) => {
+            const body = e.currentTarget.contentDocument?.body;
+            if (body) setHeight(body.scrollHeight);
+          }}
+        />
+      ) : null}
     </figure>
   );
 }

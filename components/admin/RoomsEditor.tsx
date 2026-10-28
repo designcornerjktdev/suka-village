@@ -298,6 +298,7 @@ function RoomSheet({ room, rate, onClose }: { room: Room; rate: UnitRate; onClos
           {money("Harga weekend (Jum–Sab)", price.weekend, (n) => setP("weekend", n), `we-${u}`)}
           {number("Minimal malam", price.minNights, (n) => setP("minNights", n), `mn-${u}`, 30)}
         </div>
+        <p className="ad-hint">Isi harga per malam yang sudah termasuk pajak. Di website, setiap harga dan total diberi keterangan Termasuk pajak.</p>
         <Toggle
           checked={price.bookable}
           onChange={(v) => setP("bookable", v)}

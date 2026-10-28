@@ -137,7 +137,7 @@ that presents Suka Village as lodging with amenities has misread it.
   slideshow, no caption, and only WhatsApp and Instagram in the line at its foot. Every other page
   starts straight on its content. Rooms, Facilities, Experience, Event and Explore share one row
   layout (photographs on one side, words on the other, alternating), with no cut-outs in the
-  photographs. No rounded corners on the site. Motion is calm: a page's first row is there at
+  photographs. No rounded corners on the site, except the booking calendar (round days and a rounded stay band, allowed by the owner on 28 October 2026). Motion is calm: a page's first row is there at
   once and the rows below fade in as they scroll into view (on a phone only the words fade, the
   photographs are simply there); no zooms, no hover micro-movements. The Rooms page shows each
   room's first three photographs in a slider, as on Facilities, with Book now beside Discover. A

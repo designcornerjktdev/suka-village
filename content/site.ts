@@ -214,11 +214,16 @@ export const totalBedrooms = units.reduce((n, u) => n + u.bedrooms, 0);
 
 export const SHOP_CONFIRMED = false;
 
+/* Padel Court and Equestrian House are being built (MoM 26 Oct 2026): listed
+   as coming soon, with their icon until there are photographs of them. */
+
 export const facilities = [
   { id: "pool", photos: photos.pool },
   { id: "dining", photos: [photos.dining[0], photos.dining[6], photos.dining[4]] },
   { id: "meeting", photos: photos.meeting },
   { id: "playground", photos: photos.playground },
+  { id: "padel", photos: [] as Photo[], soon: true },
+  { id: "equestrian", photos: [] as Photo[], soon: true },
   { id: "shop", photos: [] as Photo[] },
 ] as const;
 

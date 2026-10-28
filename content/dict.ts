@@ -64,6 +64,8 @@ type Copy = {
     menu: string;
     close: string;
     bookNow: string;
+    /** The label on a facility (or anything else) that is not open yet. */
+    soon: string;
     bookShort: string;
     details: string;
     prev: string;
@@ -154,6 +156,8 @@ type Copy = {
     roomsTitle: string;
     roomsLead: string;
     perNight: string;
+    /** Under every price a guest sees (MoM 26 Oct 2026: prices include tax). */
+    taxIncluded: string;
     choose: string;
     chosen: string;
     taken: string;
@@ -398,6 +402,7 @@ const id: Copy = {
     menu: "Menu",
     close: "Tutup",
     bookNow: "Pesan sekarang",
+    soon: "Segera hadir",
     bookShort: "Pesan",
     details: "Lihat detail",
     prev: "Sebelumnya",
@@ -460,6 +465,8 @@ const id: Copy = {
       dining: "Restoran",
       meeting: "Ruang Pertemuan",
       playground: "Taman Bermain",
+      padel: "Lapangan Padel",
+      equestrian: "Equestrian House",
       shop: "Toko",
     },
     copy: {
@@ -467,6 +474,8 @@ const id: Copy = {
       dining: "Nikmati hidangan rumahan dari bahan segar, dengan sayuran yang dipetik dari kebun kami dan langsung dibawa ke dapur.",
       meeting: "Ruang yang privat dan nyaman untuk rapat, diskusi, dan pertemuan kecil, jauh dari suasana kantor yang biasa.",
       playground: "Ruang bermain terbuka tempat si kecil bisa berlari, memanjat, dan menikmati petualangan kecilnya sendiri selama menginap.",
+      padel: "Lapangan padel di dalam kawasan Suka Village. Sedang disiapkan dan segera bisa dipakai tamu.",
+      equestrian: "Equestrian House di dalam kawasan Suka Village. Sedang disiapkan dan segera bisa dikunjungi tamu.",
       shop: "Temukan kebutuhan sehari-hari, produk lokal, dan kenang-kenangan kecil untuk melengkapi masa menginap di Suka Village.",
     },
   },
@@ -556,6 +565,7 @@ const id: Copy = {
     roomsTitle: "Pilih kamar",
     roomsLead: "Untuk rombongan, pilih lebih dari satu.",
     perNight: "/ malam",
+    taxIncluded: "Termasuk pajak",
     choose: "Pilih",
     chosen: "Dipilih",
     taken: "Penuh di tanggal ini",
@@ -824,6 +834,7 @@ const en: Copy = {
     menu: "Menu",
     close: "Close",
     bookNow: "Book now",
+    soon: "Coming soon",
     bookShort: "Book",
     details: "View details",
     prev: "Previous",
@@ -886,6 +897,8 @@ const en: Copy = {
       dining: "Dining",
       meeting: "Meeting Room",
       playground: "Playground",
+      padel: "Padel Court",
+      equestrian: "Equestrian House",
       shop: "Shop",
     },
     copy: {
@@ -893,6 +906,8 @@ const en: Copy = {
       dining: "Enjoy comforting dishes made with fresh ingredients, with vegetables picked from our garden and brought straight to the kitchen.",
       meeting: "A private and comfortable space for meetings, discussions, and small gatherings away from the usual office setting.",
       playground: "A playful outdoor space where little ones can run, climb, and enjoy their own little adventures during the stay.",
+      padel: "A padel court within the grounds of Suka Village. Being prepared now, and open to guests soon.",
+      equestrian: "An Equestrian House within the grounds of Suka Village. Being prepared now, and open to guests soon.",
       shop: "Discover everyday essentials, local products, and little keepsakes to complete your stay at Suka Village.",
     },
   },
@@ -982,6 +997,7 @@ const en: Copy = {
     roomsTitle: "Choose your rooms",
     roomsLead: "For a group, choose more than one.",
     perNight: "/ night",
+    taxIncluded: "Tax included",
     choose: "Choose",
     chosen: "Chosen",
     taken: "Full on these dates",

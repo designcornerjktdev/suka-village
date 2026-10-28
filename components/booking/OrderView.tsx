@@ -570,7 +570,10 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
               ) : null}
             </ul>
             <p className="sv-bk-total">
-              <span>{c.total}</span>
+              <span>
+                {c.total}
+                <small>{c.taxIncluded}</small>
+              </span>
               <strong className="tnum">{idr(booking.quote.total)}</strong>
             </p>
           </div>

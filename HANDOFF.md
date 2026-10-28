@@ -47,7 +47,8 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
 - Tanpa tanda pisah panjang (em dash) di teks situs.
 - Mobile first, target sentuh minimal 44px, kontras WCAG AA.
 - Data contoh selalu diberi label.
-- Situs publik bersudut kotak (tanpa radius); admin boleh membulat.
+- Situs publik bersudut kotak (tanpa radius); admin boleh membulat. Pengecualian:
+  kalender booking boleh bulat (izin Reza, 28 Oktober 2026).
 - Animasi tenang: fade saja, tanpa zoom, tanpa gerak saat hover.
 - Font: judul Helvetica (dari sistem pengunjung), teks Poppins.
 - Revisi klien datang sebagai Google Slides berisi tangkapan layar, catatan,
@@ -84,6 +85,19 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
   booking batal/kedaluwarsa/ditolak bisa dihapus. Kalender: tanggal ditutup
   bisa diubah dan ada daftarnya. Sidebar admin dikelompokkan (Operasional,
   Website, Sistem).
+- Audit dan rapikan UI admin (28 Okt): satu sistem di `app/admin/admin.css`
+  (Poppins saja, ukuran teks 12 sampai 24px, ikon 16px stroke 1.75, kontrol
+  40px atau 44px di layar sentuh). Dropdown sendiri (`Select`), menu tindakan
+  "⋯" per baris (`RowActions`/`Menu`), checkbox digambar, tab garis untuk
+  bagian halaman. Kalender booking: hari bulat, masa menginap satu pita
+  utuh, pratinjau saat memilih check-out (`components/RangeCalendar.tsx`).
+
+- MoM 26 Oktober (28 Okt): foto halaman kamar 4:3; setiap harga dan total
+  diberi "Termasuk pajak" (booking, halaman pesanan, email); Padel Court dan
+  Equestrian House di Fasilitas sebagai "Segera hadir". Status "Segera hadir"
+  bisa diatur sendiri di CMS untuk Fasilitas, Pengalaman, dan Acara (Status di
+  panel edit, atau menu ⋯). Desain email HTML untuk semua pesan otomatis
+  (`lib/booking/email.ts`), pratinjaunya di Pengaturan → Email otomatis.
 
 ## Menunggu
 
@@ -91,8 +105,13 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
   kamar tidur Main Villa (3 atau 4), toko ada atau tidak, foto Family
   Gathering, lisensi web Helvetica (kalau ingin sama di semua perangkat),
   domain asli.
-- **Ke produksi** (BOOKING.md): database, payment gateway, email, login admin
-  sungguhan; lalu isi `SITE_URL` dan daftarkan ke Google Search Console.
+- **Ke produksi, oleh developer** (BOOKING.md): database, payment gateway,
+  pengiriman email, login admin sungguhan, integrasi channel manager/OTA lewat
+  API (tim SV sedang memintanya); lalu isi `SITE_URL` dan daftarkan ke Google
+  Search Console. Reza adalah product designer; bagian ini bukan
+  pekerjaannya.
+- **Dari owner, MoM 26 Okt:** tarif pajak (kalau ingin ditampilkan terpisah),
+  foto dan deskripsi Padel Court dan Equestrian House saat sudah buka.
 
 ## Peta kode
 

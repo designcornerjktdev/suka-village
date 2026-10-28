@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { CONTENT_REV, DEMO_RATES, seedContent, seedDB, seedPromos, seedRooms, seedSettings, type DB } from "./seed";
 import { effectiveStatus } from "./occupancy";
+import { DEFAULT_TEMPLATES, TEMPLATES_REV } from "./notifications";
 
 /**
  * THE MOCK BACKEND. Prototype only; replaced by the developer.
@@ -27,6 +28,7 @@ const KEY = "sv-demo-db-v2";
 const EMPTY: DB = {
   version: 2,
   contentRev: CONTENT_REV,
+  templatesRev: TEMPLATES_REV,
   bookings: [],
   blocks: [],
   rooms: seedRooms(),
@@ -60,6 +62,13 @@ function read(): DB {
       parsed.content = seedContent();
       parsed.rooms = parsed.rooms.map((r) => ({ ...r, photos: rooms.find((s) => s.unit === r.unit)?.photos ?? r.photos }));
       parsed.contentRev = CONTENT_REV;
+      persist(parsed);
+    }
+    /* Email texts from before the email layout repeated the booking details
+       the layout now shows: take the new defaults. */
+    if (parsed?.version === 2 && parsed.templatesRev !== TEMPLATES_REV) {
+      parsed.settings = { ...parsed.settings, templates: structuredClone(DEFAULT_TEMPLATES) };
+      parsed.templatesRev = TEMPLATES_REV;
       persist(parsed);
     }
     state = parsed?.version === 2 ? parsed : seedDB();
