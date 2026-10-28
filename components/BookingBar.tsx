@@ -5,12 +5,12 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import type { DateRange } from "react-day-picker";
-import { ArrowRight, CalendarDays, RotateCcw, X } from "lucide-react";
+import { ArrowRight, CalendarDays, X } from "lucide-react";
 import { getDict } from "@/content/dict";
 import { localePath, type Locale } from "@/content/i18n";
 import { lockScroll, unlockScroll } from "./scroll";
 import { useMedia } from "./useMedia";
-import { nightsBetween, toISO } from "./dates";
+import { toISO } from "./dates";
 
 /* The calendar loads when it is first wanted (or a moment before: on hover,
    focus or touch of the button that opens it), not with every page. */
@@ -76,8 +76,6 @@ export default function BookingBar({ locale }: { locale: Locale }) {
 
   const fmt = (d?: Date) =>
     d ? d.toLocaleDateString(locale === "id" ? "id-ID" : "en-GB", { day: "numeric", month: "short" }) : null;
-  const nights = range?.from && range?.to ? nightsBetween(range.from, range.to) : 0;
-  const choosingOut = !!range?.from && !range?.to;
 
   const select = (next: DateRange | undefined) => {
     setRange(next);
@@ -96,25 +94,10 @@ export default function BookingBar({ locale }: { locale: Locale }) {
     router.push(`${localePath(locale, "booking")}${query ? `?${query}` : ""}`);
   };
 
-  const calendar = (months: number) => <BookingDates locale={locale} range={range} onSelect={select} months={months} />;
-  const warm = () => void loadDates();
-
-  const hint = (
-    <div className="sv-dock-hint">
-      <span className="sv-label">{choosingOut ? t.bar.checkOut : t.bar.checkIn}</span>
-      {nights ? (
-        <span className="sv-dock-nights tnum">
-          {nights} {nights === 1 ? t.bar.night : t.bar.nights}
-        </span>
-      ) : null}
-      {range?.from ? (
-        <button type="button" className="sv-dock-clear" onClick={() => setRange(undefined)}>
-          <RotateCcw size={13} strokeWidth={1.6} aria-hidden="true" />
-          {t.avail.clear}
-        </button>
-      ) : null}
-    </div>
+  const calendar = (months: number, stacked = false) => (
+    <BookingDates locale={locale} range={range} onSelect={select} months={months} stacked={stacked} />
   );
+  const warm = () => void loadDates();
 
   /* --- Phone: one button, and a bottom sheet ----------------------------- */
   if (!wide) {
@@ -139,23 +122,7 @@ export default function BookingBar({ locale }: { locale: Locale }) {
                       </button>
                     </div>
 
-                    <div className="sv-sheet-dates">
-                      <div data-active={!choosingOut ? "true" : undefined}>
-                        <span className="sv-dock-seg-label">{t.bar.checkIn}</span>
-                        <span className="tnum" data-empty={range?.from ? undefined : "true"}>
-                          {fmt(range?.from) ?? t.bar.pick}
-                        </span>
-                      </div>
-                      <div data-active={choosingOut ? "true" : undefined}>
-                        <span className="sv-dock-seg-label">{t.bar.checkOut}</span>
-                        <span className="tnum" data-empty={range?.to ? undefined : "true"}>
-                          {fmt(range?.to) ?? t.bar.pick}
-                        </span>
-                      </div>
-                    </div>
-
-                    {hint}
-                    <div className="sv-sheet-cal">{calendar(1)}</div>
+                    <div className="sv-sheet-cal">{calendar(1, true)}</div>
 
                     <div className="sv-sheet-foot">
                       <button type="button" className="sv-btn sv-btn--primary sv-sheet-go" onClick={go}>
@@ -205,10 +172,7 @@ export default function BookingBar({ locale }: { locale: Locale }) {
       </button>
 
       {open ? (
-        <div className="sv-book-panel">
-          {hint}
-          {calendar(2)}
-        </div>
+        <div className="sv-book-panel">{calendar(2)}</div>
       ) : null}
     </div>
   );

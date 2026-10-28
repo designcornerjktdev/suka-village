@@ -66,6 +66,8 @@
   --ad-ctl: 2.5rem;
   --ad-ctl-sm: 2rem;
   --ad-gutter: clamp(1rem, 3vw, 2rem);
+  /* The page uses the whole frame up to this, and centres beyond it. */
+  --ad-max: 100rem;
 
   background: var(--ad-ground);
   color: var(--ad-ink);
@@ -175,7 +177,7 @@
 .ad-demo {
   --ad-icon: 15px;
   display: flex; align-items: center; gap: 0.625rem;
-  max-width: 80rem; margin: 1rem var(--ad-gutter) 0;
+  margin-top: 1rem;
   padding: 0.375rem 0.375rem 0.375rem 0.75rem;
   border: 1px solid var(--ad-warn-line); border-radius: var(--ad-r);
   background: var(--ad-warn-soft); color: var(--ad-warn);
@@ -202,7 +204,10 @@
   .ad-demo-short { display: inline; }
 }
 
-.ad-main { max-width: 80rem; padding: 1.75rem var(--ad-gutter) 4rem; }
+/* The notice and the page share one measure, so their edges line up: the
+   frame's full width less the gutters, up to --ad-max, centred past it. */
+.ad-demo, .ad-main { width: min(calc(100% - 2 * var(--ad-gutter)), var(--ad-max)); margin-inline: auto; }
+.ad-main { padding: 1.75rem 0 4rem; }
 
 .ad-gate { --ad-icon: 20px; display: flex; align-items: center; justify-content: center; gap: 0.625rem; min-height: 100vh; color: var(--ad-ink-3); }
 
@@ -587,7 +592,7 @@
 .ad-body .sv-pill[data-status="pending"] { background: #f7ecd2; color: #6b4a12; }
 .ad-body .sv-pill[data-status="paid"] { background: #fbe3d2; color: #7a3413; }
 .ad-body .sv-pill[data-status="confirmed"] { background: var(--ad-brand-soft); color: var(--ad-brand); }
-.ad-body .sv-pill[data-status="checked_in"] { background: #dde9d6; color: var(--ad-brand-deep); }
+.ad-body .sv-pill[data-status="checked_in"] { background: #e2ecf4; color: #24537a; }
 .ad-body .sv-pill[data-status="completed"] { background: #f1eee6; color: #545850; }
 .ad-body .sv-pill[data-status="rejected"] { background: #f8e2dc; color: #8a2414; }
 .ad-body .sv-pill[data-status="cancelled"], .ad-body .sv-pill[data-status="expired"] { background: #efede8; color: #5f635d; }
@@ -596,18 +601,28 @@
 
 .ad-table-wrap { overflow-x: auto; border: 1px solid var(--ad-line); border-radius: var(--ad-r-lg); background: var(--ad-surface); box-shadow: var(--ad-shadow); }
 .ad-table { width: 100%; border-collapse: collapse; }
+/* Rows with air in them: each cell is a value and, under it, its detail, so
+   the two lines need room above and below to read as one row. */
 .ad-table th {
-  height: 2.5rem; padding: 0 1rem;
+  height: 2.75rem; padding: 0 1.25rem;
   border-bottom: 1px solid var(--ad-line);
   background: var(--ad-sunk);
   font-size: 0.75rem; font-weight: 500; text-align: left; white-space: nowrap; color: var(--ad-ink-3);
 }
-.ad-table td { padding: 0.75rem 1rem; border-top: 1px solid var(--ad-line-soft); vertical-align: middle; line-height: 1.4; }
+.ad-table td { padding: 1.125rem 1.25rem; border-top: 1px solid var(--ad-line-soft); vertical-align: middle; line-height: 1.4; }
+.ad-table th:first-child, .ad-table td:first-child { padding-left: 1.5rem; }
+.ad-table th:last-child, .ad-table td:last-child { padding-right: 1.5rem; }
 .ad-table tbody tr { transition: background-color 120ms ease; }
 .ad-table tbody tr:first-child td { border-top: 0; }
 .ad-table tbody tr:hover { background: #fbfaf7; }
 .ad-table td strong { font-weight: 500; }
-.ad-table td small { display: block; margin-top: 0.125rem; font-size: 0.75rem; color: var(--ad-ink-3); }
+.ad-table td small { display: block; margin-top: 0.25rem; font-size: 0.75rem; color: var(--ad-ink-3); }
+/* Several facts in one cell (a status and how long it has waited): one under
+   the other, never side by side. */
+.ad-cell-stack { display: grid; justify-items: start; gap: 0.375rem; }
+.ad-table .ad-cell-stack > small { margin-top: 0; }
+.ad-end { text-align: right !important; }
+.ad-end > * { margin-left: auto; }
 /* Codes, money, dates and phone numbers never break mid value. */
 .ad-table td small, .ad-table .ad-code, .ad-table .ad-num, .ad-table td.tnum { white-space: nowrap; }
 .ad-table td small.ad-wrap { max-width: 28ch; white-space: normal; }
@@ -618,7 +633,7 @@
 .ad-code--btn { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; cursor: pointer; }
 .ad-table tr[data-waiting="true"] { background: #fffbf6; }
 .ad-table tr[data-waiting="true"]:hover { background: #fff6ec; }
-.ad-wait { --ad-icon: 12px; display: inline-flex !important; align-items: center; gap: 0.25rem; margin-top: 0.25rem !important; color: #8a4518 !important; }
+.ad-wait { --ad-icon: 12px; display: inline-flex !important; align-items: center; gap: 0.25rem; color: #8a4518 !important; }
 
 @media (max-width: 799px) {
   .ad-table thead { display: none; }
@@ -629,6 +644,9 @@
      second, so a name and its phone number read as one value. */
   .ad-table td { display: grid; grid-template-columns: 6rem minmax(0, 1fr); column-gap: 1rem; padding: 0.25rem 0; border: 0; text-align: right; }
   .ad-table td > *, .ad-table td::after { grid-column: 2; justify-self: end; }
+  .ad-table td:first-child { padding-left: 0; }
+  .ad-table td:last-child { padding-right: 0; }
+  .ad-cell-stack { justify-items: end; }
   .ad-table td::before { content: attr(data-label); grid-column: 1; grid-row: 1 / span 3; font-size: 0.75rem; font-weight: 500; text-align: left; color: var(--ad-ink-3); }
   .ad-table td[data-label="Tindakan"] { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.625rem; }
   .ad-table td[data-label="Tindakan"]::before { content: none; }
@@ -940,15 +958,30 @@
 
 /* --- Calendar -------------------------------------------------------------- */
 
-.ad-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-top: 1rem; font-size: 0.75rem; color: var(--ad-ink-3); }
-.ad-legend span { display: inline-flex; align-items: center; gap: 0.375rem; }
-.ad-legend i { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 3px; background: #ececec; }
-.ad-legend i[data-kind="confirmed"] { background: var(--ad-brand); }
-.ad-legend i[data-kind="paid"] { background: #f4c4a3; box-shadow: inset 0 0 0 1px #d48a5a; }
-.ad-legend i[data-kind="pending"] { background: #f5e7c6; box-shadow: inset 0 0 0 1px #d1aa55; }
-.ad-legend i[data-kind="checked_in"] { background: var(--ad-brand-deep); }
-.ad-legend i[data-kind="completed"] { background: var(--color-sage); }
-.ad-legend i[data-kind="block"] { background: repeating-linear-gradient(135deg, #e7e5df 0 3px, #d3cfc5 3px 6px); }
+/* One colour per state, set once and used by the bars, the legend and the
+   status pills: each a different hue, not shades of one. */
+.ad-body {
+  --st-paid: #b4501a;
+  --st-pending-line: #c9971f;
+  --st-pending-bg: #fff7e6;
+  --st-pending-ink: #6b4a12;
+  --st-confirmed: var(--ad-brand);
+  --st-in: #2f6690;
+  --st-done-bg: #e6e3dc;
+  --st-done-ink: #4f544e;
+  --st-block: repeating-linear-gradient(135deg, #efece6 0 5px, #dcd7cc 5px 10px);
+}
+
+.ad-legend { display: flex; flex-wrap: wrap; gap: 0.625rem 1.5rem; margin: 1.125rem 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--ad-ink-2); }
+.ad-legend li { display: inline-flex; align-items: center; gap: 0.5rem; }
+.ad-legend i { --ad-icon: 12px; display: inline-grid; place-items: center; width: 1.375rem; height: 1.375rem; border-radius: 5px; color: #fff; }
+.ad-legend i .lucide { stroke-width: 2.25; }
+.ad-legend i[data-kind="paid"] { background: var(--st-paid); }
+.ad-legend i[data-kind="pending"] { outline: 1.5px dashed var(--st-pending-line); outline-offset: -1.5px; background: var(--st-pending-bg); color: var(--st-pending-ink); }
+.ad-legend i[data-kind="confirmed"] { background: var(--st-confirmed); }
+.ad-legend i[data-kind="checked_in"] { background: var(--st-in); }
+.ad-legend i[data-kind="completed"] { background: var(--st-done-bg); color: var(--st-done-ink); }
+.ad-legend i[data-kind="block"] { background: var(--st-block); color: var(--ad-ink); }
 
 .ad-cal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
 .ad-cal-bar .ad-btn--sm { min-height: var(--ad-ctl); }
@@ -972,35 +1005,39 @@
 .ad-cal-day small { font-size: 0.625rem; color: var(--ad-ink-3); }
 .ad-cal-day[data-weekend="true"] small { color: var(--color-wood); }
 .ad-cal-day[data-today="true"] span { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--ad-brand); color: #fff; font-weight: 600; }
+/* Days gone by are a flat tint, so hatching means one thing only: closed. */
 .ad-cal-cell { border-left: 1px solid #f3f1ec; }
 .ad-cal-cell[data-weekend="true"] { background: #faf9f6; }
-.ad-cal-cell[data-past="true"] { background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(31, 42, 36, 0.025) 6px 7px); }
+.ad-cal-cell[data-past="true"] { background: #f6f5f1; }
 button.ad-cal-cell { padding: 0; border: 0; border-left: 1px solid #f3f1ec; background: transparent; cursor: pointer; transition: background-color 120ms ease; }
 button.ad-cal-cell[data-weekend="true"] { background: #faf9f6; }
+button.ad-cal-cell[data-today="true"] { background: rgba(31, 92, 68, 0.06); box-shadow: inset 2px 0 0 var(--ad-brand); }
 button.ad-cal-cell:hover { background: var(--ad-brand-soft); }
 button.ad-cal-cell:focus-visible { outline: 2px solid var(--ad-brand); outline-offset: -2px; }
 
 .ad-cal-bar-item {
+  --ad-icon: 13px;
   position: relative; z-index: 1;
-  display: flex; align-items: center; align-self: center;
+  display: flex; align-items: center; gap: 0.375rem; align-self: center;
   min-width: 0; height: 2.25rem; margin: 0 3px; padding: 0 0.5rem;
   overflow: hidden;
   border: 0; border-radius: var(--ad-r-sm);
-  background: var(--ad-brand); color: #fff;
-  font: inherit; font-size: 0.75rem; font-weight: 500; text-align: left; text-decoration: none; white-space: nowrap;
+  background: var(--st-confirmed); color: #fff;
+  font: inherit; font-size: 0.75rem; font-weight: 600; text-align: left; text-decoration: none; white-space: nowrap;
   cursor: pointer;
   transition: filter 150ms ease, box-shadow 150ms ease;
 }
+.ad-cal-bar-item .lucide { stroke-width: 2.25; }
 .ad-cal-bar-item span { overflow: hidden; text-overflow: ellipsis; }
 .ad-cal-bar-item:hover { filter: brightness(1.08); box-shadow: 0 4px 12px -6px rgba(31, 42, 36, 0.45); }
-.ad-cal-bar-item[data-status="pending"] { background: #f5e7c6; color: #5c4210; box-shadow: inset 0 0 0 1px #d1aa55; }
-.ad-cal-bar-item[data-status="paid"] { background: #f4c4a3; color: #4d1f09; box-shadow: inset 0 0 0 1px #d48a5a; }
-.ad-cal-bar-item[data-status="checked_in"] { background: var(--ad-brand-deep); }
-.ad-cal-bar-item[data-status="completed"] { background: var(--color-sage); color: var(--ad-ink); }
+.ad-cal-bar-item[data-status="paid"] { background: var(--st-paid); box-shadow: 0 2px 6px -2px rgba(180, 80, 26, 0.55); }
+.ad-cal-bar-item[data-status="pending"] { outline: 1.5px dashed var(--st-pending-line); outline-offset: -1.5px; background: var(--st-pending-bg); color: var(--st-pending-ink); }
+.ad-cal-bar-item[data-status="checked_in"] { background: var(--st-in); }
+.ad-cal-bar-item[data-status="completed"] { background: var(--st-done-bg); color: var(--st-done-ink); font-weight: 500; }
 .ad-cal-bar-item[data-cut-start="true"] { margin-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .ad-cal-bar-item[data-cut-end="true"] { margin-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.ad-cal-block { background: repeating-linear-gradient(135deg, #ebe8e1 0 6px, #ddd9cf 6px 12px); color: var(--ad-ink); }
-.ad-cal-block:hover { filter: brightness(0.98); }
+.ad-cal-block { background: var(--st-block); color: var(--ad-ink); font-weight: 500; }
+.ad-cal-block:hover { filter: brightness(0.97); }
 
 /* --- Login ----------------------------------------------------------------- */
 

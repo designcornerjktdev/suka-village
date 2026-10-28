@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import JsonLd from "@/components/JsonLd";
+import PageNav from "@/components/PageNav";
 import Showcase from "@/components/Showcase";
 import { photos, place, social, waHref, whatsapp } from "@/content/site";
 import { getDict } from "@/content/dict";
@@ -47,9 +48,18 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
     <>
       <section className="sv-page">
         <h1 className="sr-only">{t.seo.contact.title}</h1>
+        <PageNav
+          title={t.nav.contact}
+          label={t.common.onThisPage}
+          items={[
+            { id: "reservasi", label: c.reserveTitle },
+            { id: "lokasi", label: c.location },
+          ]}
+        />
         <div className="sv-wrap">
           <div className="sv-rows">
             <Showcase
+              id="reservasi"
               index={0}
               numbered={false}
               locale={lang}
@@ -87,6 +97,7 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
             </Showcase>
 
             <Showcase
+              id="lokasi"
               index={1}
               numbered={false}
               locale={lang}

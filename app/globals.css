@@ -308,7 +308,7 @@
 
 .sv-rows { display: grid; gap: clamp(4.5rem, 12vh, 8.5rem); }
 
-.sv-row { display: grid; gap: clamp(1.75rem, 4vw, 5rem); align-items: center; scroll-margin-top: calc(var(--head-h) + 1.5rem); view-timeline: --row block; }
+.sv-row { display: grid; gap: clamp(1.75rem, 4vw, 5rem); align-items: center; scroll-margin-top: calc(var(--head-h) + var(--pnav-h, 0px) + 1rem); view-timeline: --row block; }
 @media (min-width: 900px) {
   .sv-row { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
   .sv-row[data-flip="true"] { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
@@ -385,26 +385,32 @@
 .sv-demo svg { flex: none; margin-top: 0.15rem; color: var(--color-clay); }
 
 /* --- Calendar (react-day-picker, fully restyled) --------------------------
-   The one place on the site with round shapes, by the owner's leave: days are
-   circles, and a stay is one continuous band from check in to check out with
-   the two ends filled, so five nights read as one thing, not five boxes.
+   The one place on the site with round shapes, by the owner's leave (28
+   October 2026). Every day is a circle, and a stay is one capsule from check
+   in to check out: the band is rounded at its two ends exactly where the two
+   circles sit, so circle and band are one shape, and the two ends are lifted
+   on a soft shadow. Five nights read as one thing.
 
-     free       a plain number; pointing at it rings it
-     few left   a small amber dot under the number (some rooms still free)
-     full       a clay tile, struck through
+     free        a plain number; pointing at it rings it
+     full        a soft clay circle, struck through
      not for this stay   grey, struck through (past the next full night)
-     past       faded, nothing more
-   Each is also a word in the legend under the calendar (CalendarLegend).
+     past        faded, nothing more
+
+   How many rooms are left is not marked day by day: with three rooms nearly
+   every day carried a mark, and the marks were noise. It is said once, in
+   words, over the calendar, for the dates chosen (StayEnds).
 -------------------------------------------------------------------------- */
 
 .sv-cal {
   --cell: 2.75rem;
   --dot: calc(var(--cell) - 0.25rem);
-  --band: #e2ebdc;
-  --band-preview: #eef3ea;
-  --full-bg: #f7ebe5;
+  /* From the edge of a cell to the edge of its circle. */
+  --inset: calc((var(--cell) - var(--dot)) / 2);
+  --band: #e1ebdb;
+  --band-preview: #edf3e9;
+  --full-bg: #f8ece6;
   --full-ink: #9c4e2c;
-  --few: #c58a1f;
+  --lift: 0 8px 16px -6px rgba(23, 70, 52, 0.5), 0 2px 4px rgba(23, 70, 52, 0.22);
   position: relative; font-size: 0.9375rem;
 }
 /* Holds the calendar's place for the moment it takes to load. */
@@ -434,8 +440,8 @@
 .sv-cal .rdp-chevron { width: 14px; height: 14px; fill: var(--color-ink); }
 
 /* Separate cells with a little air between the weeks, so a stay that wraps
-   onto the next row reads as two bands, not one smeared block. */
-.sv-cal .rdp-month_grid { border-collapse: separate; border-spacing: 0 4px; margin-top: 0.25rem; }
+   onto the next row reads as two capsules, not one smeared block. */
+.sv-cal .rdp-month_grid { border-collapse: separate; border-spacing: 0 6px; margin-top: 0.25rem; }
 
 .sv-cal .rdp-weekday {
   width: var(--cell); height: 2rem;
@@ -453,28 +459,18 @@
   font: inherit; font-weight: 500; color: var(--color-ink);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 .sv-cal .rdp-day:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button:hover { background: #f2f6ef; box-shadow: inset 0 0 0 1.5px var(--color-forest); }
-.sv-cal .rdp-day_button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 1px; }
+.sv-cal .rdp-day_button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 
 /* Today: underlined, so it never competes with a selection. */
 .sv-cal .rdp-today .rdp-day_button { font-weight: 700; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 
-/* Few left: a small dot under the number. */
-.sv-cal .sv-day-few:not(.rdp-selected) .rdp-day_button::after {
-  content: ""; position: absolute; bottom: 0.3125rem; left: 50%;
-  width: 0.3125rem; height: 0.3125rem; margin-left: -0.15625rem;
-  border-radius: 50%; background: var(--few);
-}
-
-/* Full: a clay tile, struck through. Softer square corners set it apart
-   from the round days a guest can pick. */
+/* Full: a soft clay circle, struck through. */
 .sv-cal .sv-day-full .rdp-day_button {
-  width: calc(var(--dot) - 0.25rem); height: calc(var(--dot) - 0.25rem);
-  border-radius: 0.75rem;
   background: var(--full-bg); color: var(--full-ink);
-  text-decoration: line-through; text-decoration-color: rgba(156, 78, 44, 0.5);
+  text-decoration: line-through; text-decoration-color: rgba(156, 78, 44, 0.55);
   cursor: not-allowed;
 }
 
@@ -486,9 +482,11 @@
    range classes. They carry no band of their own. */
 .sv-cal .rdp-outside .rdp-day_button { visibility: hidden; }
 
-/* The stay: one band behind the circles, half a cell into the two ends,
-   rounded where a week row starts or ends. While the check out is being
-   chosen, the same band, lighter, follows the pointer. */
+/* The stay: one band behind the circles. Across a whole cell in the middle;
+   at the two ends it stops at the circle's own edge and takes its curve, so
+   the end circle and the band are one capsule. A stay that wraps onto the
+   next week is rounded off the same way where the row breaks. While the
+   check out is being chosen, the same capsule, lighter, follows the pointer. */
 .sv-cal .rdp-range_middle::before,
 .sv-cal .rdp-range_start:not(.rdp-range_end)::before,
 .sv-cal .rdp-range_end:not(.rdp-range_start)::before,
@@ -501,34 +499,100 @@
 .sv-cal .sv-day-preview::before,
 .sv-cal .sv-day-preview-start::before,
 .sv-cal .sv-day-preview-end::before { background: var(--band-preview); }
-.sv-cal .rdp-range_start::before, .sv-cal .sv-day-preview-start::before { left: 50%; }
-.sv-cal .rdp-range_end::before, .sv-cal .sv-day-preview-end::before { right: 50%; }
+.sv-cal .rdp-range_start::before, .sv-cal .sv-day-preview-start::before,
 .sv-cal .rdp-week > .rdp-day:first-child::before,
-.sv-cal .rdp-outside + .rdp-day::before { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.sv-cal .rdp-outside + .rdp-day::before { left: var(--inset); border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.sv-cal .rdp-range_end::before, .sv-cal .sv-day-preview-end::before,
 .sv-cal .rdp-week > .rdp-day:last-child::before,
-.sv-cal .rdp-day:has(+ .rdp-outside)::before { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+.sv-cal .rdp-day:has(+ .rdp-outside)::before { right: var(--inset); border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
 .sv-cal .rdp-outside::before { display: none; }
 
 .sv-cal .rdp-range_middle .rdp-day_button,
 .sv-cal .sv-day-preview .rdp-day_button { color: var(--color-forest-deep); }
-.sv-cal .rdp-range_middle .rdp-day_button:hover { background: rgba(255, 255, 255, 0.7); }
+.sv-cal .rdp-range_middle .rdp-day_button:hover { background: rgba(255, 255, 255, 0.75); }
 
+/* The two ends: filled, and lifted off the band. */
 .sv-cal .rdp-range_start .rdp-day_button,
 .sv-cal .rdp-range_end .rdp-day_button,
 .sv-cal .rdp-selected:not(.rdp-range_middle) .rdp-day_button {
   background: var(--color-forest); color: var(--color-paper); font-weight: 600;
-  box-shadow: 0 2px 6px -2px rgba(23, 70, 52, 0.5);
+  box-shadow: var(--lift);
 }
-.sv-cal .sv-day-preview-end .rdp-day_button { background: var(--color-paper); box-shadow: inset 0 0 0 1.5px var(--color-forest); color: var(--color-forest-deep); }
+.sv-cal .sv-day-preview-end .rdp-day_button {
+  background: var(--color-paper); color: var(--color-forest-deep);
+  box-shadow: inset 0 0 0 1.5px var(--color-forest), 0 6px 14px -6px rgba(23, 70, 52, 0.4);
+}
 
-.sv-cal-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
+.sv-cal-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--color-ink-soft); }
 .sv-cal-legend li { display: inline-flex; align-items: center; gap: 0.5rem; }
 .sv-cal-legend i { position: relative; display: inline-block; flex: none; width: 1rem; height: 1rem; border-radius: 50%; }
 .sv-cal-legend i[data-kind="free"] { box-shadow: inset 0 0 0 1.5px #8f9a91; }
-.sv-cal-legend i[data-kind="few"] { box-shadow: inset 0 0 0 1.5px #8f9a91; }
-.sv-cal-legend i[data-kind="few"]::after { content: ""; position: absolute; bottom: -0.3125rem; left: 50%; width: 0.3125rem; height: 0.3125rem; margin-left: -0.15625rem; border-radius: 50%; background: #c58a1f; }
-.sv-cal-legend i[data-kind="full"] { border-radius: 0.3125rem; background: #f7ebe5; box-shadow: inset 0 0 0 1px #e7c9bb; }
-.sv-cal-legend i[data-kind="picked"] { width: 1.75rem; border-radius: 999px; background: linear-gradient(to right, var(--color-forest) 0 1rem, #e2ebdc 1rem); }
+.sv-cal-legend i[data-kind="full"] { background: linear-gradient(transparent calc(50% - 0.75px), #b77757 calc(50% - 0.75px) calc(50% + 0.75px), transparent calc(50% + 0.75px)), #f8ece6; }
+.sv-cal-legend i[data-kind="picked"] { width: 1.75rem; border-radius: 999px; background: radial-gradient(circle at 0.5rem 50%, var(--color-forest) 0.5rem, transparent calc(0.5rem + 0.5px)), #e1ebdb; }
+
+/* --- The two ends of the stay (StayEnds), over the calendar ---------------
+   Square, like every field on the site. The end the calendar is waiting for
+   carries a light tint and a green bar along its foot; a chosen date is set
+   in ink, an empty one in the soft grey. The line under them says what to
+   do next, then what the dates mean; it turns amber for the last room and
+   clay when no one room is free for every night. */
+
+.sv-ends { display: grid; gap: 0.75rem; margin-bottom: 1.25rem; }
+.sv-ends-pair { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--color-rule); background: #fff; }
+.sv-ends-seg {
+  position: relative;
+  display: grid; align-content: center; gap: 0.25rem;
+  min-height: 4rem; padding: 0.75rem 1rem;
+  border: 0; background: transparent;
+  text-align: left; cursor: pointer;
+  transition: background-color 200ms var(--ease-soft);
+}
+.sv-ends-seg + .sv-ends-seg { border-left: 1px solid var(--color-rule); }
+.sv-ends-seg::after { content: ""; position: absolute; inset: auto 0 -1px; height: 2px; background: var(--color-forest); opacity: 0; transition: opacity 200ms var(--ease-soft); }
+.sv-ends-seg:hover:not(:disabled) { background: #fbfaf6; }
+.sv-ends-seg:disabled { cursor: default; }
+.sv-ends-seg:focus-visible { outline: 2px solid var(--color-ink); outline-offset: -2px; }
+.sv-ends-seg[data-active="true"] { background: #f2f6ef; }
+.sv-ends-seg[data-active="true"]::after { opacity: 1; }
+.sv-ends-label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-soft); }
+.sv-ends-seg[data-active="true"] .sv-ends-label { color: var(--color-forest); }
+.sv-ends-value { font-size: 1.0625rem; font-weight: 500; letter-spacing: -0.005em; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-ends-value[data-empty="true"] { font-weight: 400; color: var(--color-ink-soft); }
+.sv-ends-seg[data-active="true"] .sv-ends-value[data-empty="true"] { color: var(--color-forest); }
+
+.sv-ends-status { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; }
+.sv-ends-status p { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.9375rem; font-weight: 400; line-height: 1.45; color: var(--color-ink); }
+.sv-ends-status p[data-tone]::before { content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%; translate: 0 -0.1em; }
+.sv-ends-status p[data-tone="warn"] { color: #7a4e0e; }
+.sv-ends-status p[data-tone="warn"]::before { background: #c58a1f; }
+.sv-ends-status p[data-tone="stop"] { color: #8a3418; }
+.sv-ends-status p[data-tone="stop"]::before { background: var(--color-clay); }
+.sv-ends-clear {
+  display: inline-flex; flex: none; align-items: center; gap: 0.375rem;
+  min-height: 2.75rem; margin-right: -0.5rem; padding-inline: 0.5rem;
+  border: 0; background: none; cursor: pointer;
+  font-size: 0.875rem; color: var(--color-ink-soft);
+}
+.sv-ends-clear:hover { color: var(--color-ink); }
+
+/* The phone's calendar: months one under another, each as wide as the
+   screen allows, scrolled with the thumb. The legend sits over them. */
+.sv-cal--stacked { --cell: min(3rem, calc((100vw - 2 * var(--gutter)) / 7)); }
+.sv-cal--stacked .rdp-months { flex-direction: column; flex-wrap: nowrap; gap: 1.5rem; }
+.sv-cal--stacked .rdp-month_caption { padding-inline: 0.25rem; }
+.sv-cal--stacked .rdp-caption_label { font-family: var(--font-head); font-size: 1.25rem; font-weight: 400; letter-spacing: -0.02em; }
+/* Weeks already gone are left out, so this month starts at today's week
+   rather than with rows of faded numbers. */
+.sv-cal--stacked .rdp-week:not(:has(.rdp-day:not(.sv-day-past):not(.rdp-outside))) { display: none; }
+.sv-rc[data-stacked] .sv-cal-legend { margin: 0 0 0.75rem; }
+.sv-rc-more {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  width: 100%; min-height: 3rem; margin-top: 1.25rem;
+  border: 1px solid var(--color-rule); background: #fff;
+  font-size: 0.9375rem; font-weight: 500; color: var(--color-forest);
+  cursor: pointer;
+}
+.sv-rc-more:hover { background: var(--color-cream); }
 
 /* --- Stepper (dock and availability page) ------------------------------ */
 
@@ -613,15 +677,8 @@
 .sv-bk-lead { max-width: 52ch; margin-top: 0.5rem; font-weight: 300; color: var(--color-ink-soft); }
 .sv-bk-demo { margin-top: 0.85rem; font-size: 0.8125rem; line-height: 1.5; color: #6e3a21; }
 
-.sv-bk-ends { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 1.25rem 0 1.5rem; }
-.sv-bk-ends > div {
-  display: grid; gap: 0.2rem; min-width: 9.5rem;
-  padding: 0.7rem 1rem;
-  border: 1px solid var(--color-rule);  background: #fff;
-}
-.sv-bk-ends > div[data-active="true"] { border-color: var(--color-forest); box-shadow: inset 0 0 0 1px var(--color-forest); }
-.sv-bk-ends .tnum[data-empty="true"] { color: var(--color-ink-soft); }
 
+.sv-bk-cal { margin-top: 1.25rem; }
 .sv-bk-guests { max-width: 30rem; margin-top: 1.75rem; }
 .sv-bk-guests .sv-stepper { padding: 0.75rem 0.75rem 0.75rem 1.1rem; border: 1px solid var(--color-rule); background: #fff; }
 .sv-stepper-label small { display: block; font-size: 0.8125rem; font-weight: 300; color: var(--color-ink-soft); }
@@ -1013,20 +1070,6 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-gallery-btn { display: block; width: 100%; padding: 0; background: none; border: 0; cursor: zoom-in; }
 .sv-gallery-frame { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-mist); }
 
-.sv-lightbox { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: clamp(1rem, 4vw, 3rem); }
-.sv-lightbox-backdrop { position: absolute; inset: 0; width: 100%; border: 0; cursor: zoom-out; background: rgba(17, 17, 17, 0.94); }
-.sv-lightbox-figure { position: relative; margin: 0; max-width: min(96rem, 100%); display: grid; gap: 1rem; }
-.sv-lightbox-img { width: 100%; height: auto; max-height: 76svh; object-fit: contain; }
-.sv-lightbox-cap { justify-self: center; color: rgba(255, 255, 255, 0.72); font-size: 0.8125rem; letter-spacing: 0.08em; }
-.sv-lightbox-close, .sv-lightbox-nav {
-  position: absolute; z-index: 1; display: grid; place-items: center;
-  width: 3rem; height: 3rem;  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(0, 0, 0, 0.45); color: var(--color-paper); cursor: pointer;
-}
-.sv-lightbox-close:hover, .sv-lightbox-nav:hover { background: rgba(255, 255, 255, 0.16); }
-.sv-lightbox-close { top: clamp(1rem, 4vw, 2rem); right: clamp(1rem, 4vw, 2rem); }
-.sv-lightbox-prev { left: clamp(0.5rem, 3vw, 2rem); top: 50%; translate: 0 -50%; }
-.sv-lightbox-next { right: clamp(0.5rem, 3vw, 2rem); top: 50%; translate: 0 -50%; }
 
 /* --- Header ---------------------------------------------------------------
    A plain white bar on every page, the home page included (the owner's
@@ -1134,17 +1177,6 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 }
 .sv-book-panel .sv-cal .rdp-months { flex-wrap: nowrap; justify-content: space-between; gap: 2rem; }
 
-.sv-dock-hint { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; margin-bottom: 0.5rem; }
-.sv-dock-hint .sv-label { color: var(--color-wood); }
-.sv-dock-nights { padding: 0.25rem 0.65rem; background: var(--color-cream); font-size: 0.8125rem; }
-.sv-dock-clear {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  margin-left: auto; min-height: 2.75rem; padding-inline: 0.5rem;
-  border: 0; background: none; cursor: pointer;
-  font-size: 0.875rem; color: var(--color-ink-soft);
-}
-.sv-dock-clear:hover { color: var(--color-ink); }
-.sv-dock-seg-label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink); }
 
 .sv-menu-btn { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; margin-inline-end: -0.5rem; cursor: pointer; background: none; border: 0; color: inherit; }
 .sv-menu-bars { display: grid; gap: 5px; width: 20px; }
@@ -1185,26 +1217,24 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
 .sv-menu-nav { display: grid; align-content: start; padding: 0.5rem var(--gutter) 1rem; }
 
+/* The pages as large words, the way a phone's own settings list them: no
+   numbers, no arrows, the current one in green with the small tea square
+   the header's tabs use. */
+.sv-menu-nav { padding-top: 1rem; }
 .sv-menu-nav a {
-  display: grid;
-  grid-template-columns: 2rem 1fr auto;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 3.25rem;
-  border-bottom: 1px solid var(--color-rule);
+  display: flex; align-items: center; gap: 0.75rem;
+  min-height: 3.5rem;
   text-decoration: none;
-  font-size: clamp(1.375rem, 6vw, 1.75rem);
-  font-weight: 300;
-  letter-spacing: -0.02em;
+  font-family: var(--font-head);
+  font-size: clamp(1.75rem, 8vw, 2.25rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
   line-height: 1.1;
   color: var(--color-ink);
 }
-
-
-.sv-menu-num { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; color: var(--color-wood); }
-.sv-menu-arrow { color: var(--color-ink-soft); }
-.sv-menu-nav a[data-current="true"] { color: var(--color-forest); font-weight: 400; }
-.sv-menu-nav a[data-current="true"] .sv-menu-arrow { color: var(--color-tea); }
+.sv-menu-nav a:active { color: var(--color-forest); }
+.sv-menu-nav a[data-current="true"] { color: var(--color-forest); }
+.sv-menu-nav a[data-current="true"]::after { content: ""; flex: none; width: 0.5rem; height: 0.5rem; background: var(--color-tea); }
 
 .sv-menu-foot { display: grid; gap: 0.6rem; padding: 0.85rem var(--gutter) calc(0.85rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-rule); }
 .sv-menu-foot .sv-btn { width: 100%; min-height: 2.75rem; font-size: 0.9375rem; }
@@ -1218,35 +1248,37 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
 .sv-sheet-scrim { position: fixed; inset: 0; z-index: 70; width: 100%; border: 0; background: rgba(17, 17, 17, 0.4); cursor: pointer; }
 
+/* An app's sheet: its title, the stay's two ends and the Book now button
+   stay put, and only the months scroll between them. */
 .sv-sheet {
   position: fixed;
   left: 0; right: 0; bottom: 0;
   z-index: 71;
-  display: grid;
-  gap: 1rem;
-  max-height: 92svh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  display: flex; flex-direction: column;
+  gap: 0.75rem;
+  height: 92svh;
+  overflow: hidden;
   padding: 0.75rem var(--gutter) calc(1rem + env(safe-area-inset-bottom));
   background: var(--color-paper);
   color: var(--color-ink);
   box-shadow: 0 -1px 0 var(--color-rule);
 }
 
-.sv-sheet-grab { justify-self: center; width: 2.5rem; height: 4px; background: var(--color-rule); }
+.sv-sheet-grab { align-self: center; flex: none; width: 2.5rem; height: 4px; background: var(--color-rule); }
 .sv-sheet-head { display: flex; align-items: center; justify-content: space-between; }
 .sv-sheet-title { font-family: var(--font-head); font-size: 1.5rem; font-weight: 400; letter-spacing: -0.02em; }
 .sv-sheet-close { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 1px solid var(--color-rule); background: transparent; cursor: pointer; }
 
-.sv-sheet-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-.sv-sheet-dates > div { display: grid; gap: 0.2rem; padding: 0.75rem 1rem; border: 1px solid var(--color-rule); }
-.sv-sheet-dates > div[data-active="true"] { border-color: var(--color-forest); background: #fff; }
-.sv-sheet-dates .tnum { font-size: 0.9375rem; }
-.sv-sheet-dates .tnum[data-empty="true"] { color: var(--color-ink-soft); }
 
-.sv-sheet-cal { display: grid; justify-items: center; }
-.sv-sheet-cal .sv-cal { --cell: min(2.75rem, calc((100vw - 2 * var(--gutter)) / 7)); }
-.sv-sheet-foot { position: sticky; bottom: 0; padding-top: 0.5rem; background: var(--color-paper); }
+.sv-sheet-cal, .sv-sheet .sv-rc { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.sv-sheet .sv-ends { margin-bottom: 0; }
+.sv-sheet .sv-rc-scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  margin-inline: calc(-1 * var(--gutter)); padding: 0.25rem var(--gutter) 1rem;
+  border-top: 1px solid var(--color-rule);
+}
+.sv-sheet-foot { flex: none; padding-top: 0.25rem; background: var(--color-paper); }
 .sv-sheet-go { width: 100%; }
 
 /* --- Footer --------------------------------------------------------------
@@ -1491,6 +1523,132 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 /* The one circle. A square radio dot reads as a checkbox. */
 .sv-pay-radio, .sv-pay-radio::after { border-radius: 50%; }
 
+/* --- Phone and tablet ------------------------------------------------------
+   Not the desktop page made smaller. Below 1100px the header's tabs fold into
+   the menu button, so each page carries its own short menu under the header
+   (PageNav). Below 900px the rows stack, and the page is re-set for a thumb
+   and a small screen, the way a product page reads on a phone:
+
+     - the numbers over the titles go, the title leads, the words are set a
+       touch larger and at regular weight for a small, bright screen;
+     - a room's three key facts are set large, side by side (KeySpecs), and
+       its full list waits on the room's own page;
+     - the actions share one row, equal in width, each a full thumb tall;
+     - photographs are swiped, not clicked through: no arrows on a touch
+       screen, the counter folds into the dots;
+     - lists that run sideways (other rooms) scroll sideways, the next one
+       showing at the edge so the gesture is obvious;
+     - every control answers a press, since there is no hover to answer.
+-------------------------------------------------------------------------- */
+
+.sv-pnav { display: none; }
+@media (max-width: 1099px) {
+  :root { --pnav-h: 3rem; }
+  .sv-pnav {
+    position: sticky; top: var(--head-h); z-index: 20;
+    display: flex; align-items: stretch;
+    height: var(--pnav-h);
+    margin-top: calc(-1 * clamp(1.5rem, 4vh, 3rem));
+    margin-bottom: clamp(1rem, 2.5vh, 1.5rem);
+    border-bottom: 1px solid var(--color-rule);
+    background: var(--color-paper);
+  }
+  .sv-pnav-title {
+    display: flex; flex: none; align-items: center; gap: 0.875rem;
+    padding-left: var(--gutter);
+    font-family: var(--font-head); font-size: 1.125rem; letter-spacing: -0.02em;
+    color: var(--color-forest);
+  }
+  .sv-pnav-title:not(:only-child)::after { content: ""; width: 1px; height: 1.25rem; background: var(--color-rule); }
+  .sv-pnav-list {
+    position: relative;
+    display: flex; flex: 1; min-width: 0;
+    margin: 0; padding: 0 var(--gutter) 0 0.25rem;
+    list-style: none;
+    overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 0.75rem, #000 calc(100% - 2.5rem), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 0.75rem, #000 calc(100% - 2.5rem), transparent);
+  }
+  .sv-pnav-list::-webkit-scrollbar { display: none; }
+  .sv-pnav-list a {
+    position: relative;
+    display: flex; align-items: center;
+    height: 100%; padding-inline: 0.75rem;
+    font-size: 0.875rem; white-space: nowrap; text-decoration: none;
+    color: var(--color-ink-soft);
+    transition: color 250ms var(--ease-soft);
+  }
+  .sv-pnav-list li:last-child a { margin-right: 1.5rem; }
+  .sv-pnav-list a::after { content: ""; position: absolute; left: 0.75rem; right: 0.75rem; bottom: 0; height: 2px; background: var(--color-forest); opacity: 0; transition: opacity 250ms var(--ease-soft); }
+  .sv-pnav-list a[aria-current="true"] { color: var(--color-ink); font-weight: 500; }
+  .sv-pnav-list a[aria-current="true"]::after { opacity: 1; }
+  .sv-pnav-list a:focus-visible { outline-offset: -4px; }
+}
+
+/* A room's key facts, large: shown on a phone only. */
+.sv-keyspecs { display: none; }
+
+@media (max-width: 899px) {
+  .sv-rows { gap: 3.5rem; }
+  .sv-row { gap: 1.25rem; }
+  .sv-row-index { display: none; }
+  .sv-soon { margin-top: 0; }
+  .sv-row-title { margin-top: 0; font-size: 2rem; }
+  .sv-row-copy { gap: 0.75rem; margin-top: 0.75rem; font-size: 1.0625rem; font-weight: 400; line-height: 1.6; }
+  .sv-row-copy p:first-child:not(:only-child) { color: var(--color-ink-soft); }
+
+  .sv-keyspecs {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 1.25rem 0 0;
+    border-block: 1px solid var(--color-rule);
+  }
+  .sv-keyspecs > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 0.2rem; min-width: 0; padding: 0.9rem 0.5rem 0.9rem 0; }
+  .sv-keyspecs > div + div { padding-left: 0.875rem; border-left: 1px solid var(--color-rule); }
+  .sv-keyspecs dd { margin: 0; font-family: var(--font-head); font-size: 1.625rem; line-height: 1.1; letter-spacing: -0.02em; color: var(--color-forest); }
+  .sv-keyspecs dt { overflow: hidden; font-size: 0.8125rem; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; color: var(--color-ink-soft); }
+  /* The rooms list keeps to the key facts; the full list is one tap on. */
+  .sv-row-body .sv-specs { display: none; }
+  /* A room's page: the facts are in the strip, the list keeps the rest. */
+  .sv-room-facts, .sv-room-side .sv-specs li[data-key] { display: none; }
+  .sv-room-main .sv-keyspecs { margin-top: 1.25rem; }
+
+  /* Actions: one row, equal widths, a thumb tall. Two buttons drop their
+     arrows to keep their words whole. */
+  .sv-show-actions { display: flex; flex-wrap: wrap; gap: 0.625rem 1.25rem; margin-top: 1.5rem; }
+  .sv-show-actions .sv-btn { flex: 1 1 0; min-height: 3rem; padding-inline: 0.875rem; }
+  .sv-show-actions:has(> .sv-btn ~ .sv-btn) { gap: 0.625rem; }
+  .sv-row-body .sv-show-actions:has(> .sv-btn ~ .sv-btn) .sv-btn svg { display: none; }
+
+  /* Photographs: the counter folds into the dots. */
+  .sv-slides-count { display: none; }
+
+  /* Other rooms: a rail, the next one at the edge. */
+  .sv-around {
+    display: flex; gap: 0.75rem;
+    margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter);
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+  }
+  .sv-around::-webkit-scrollbar { display: none; }
+  .sv-around > li { flex: 0 0 84%; scroll-snap-align: start; }
+  .sv-tile-media { aspect-ratio: 4 / 3; }
+}
+
+/* On a touch screen photographs are swiped; arrows over them only hide the
+   picture. */
+@media (hover: none) and (pointer: coarse) {
+  .sv-slides-arrow { display: none; }
+}
+
+/* No hover on a touch screen, so a press answers instead: a brief dim, the
+   same on every control. */
+@media (hover: none) {
+  .sv-btn:active, .sv-book-mini:active, .sv-stage-btn:active, .sv-rc-more:active { opacity: 0.82; }
+  .sv-tile:active .sv-tile-media, .sv-gallery-btn:active { opacity: 0.88; }
+  .sv-btn, .sv-book-mini, .sv-stage-btn, .sv-tile-media, .sv-gallery-btn { transition-property: background-color, color, border-color, opacity; transition-duration: 160ms; }
+}
+
 /* --- Motion ------------------------------------------------------------------
    Few things move, and each one shows where something came from: a page's
    first row is simply there, the rows after it fade in as they scroll into
@@ -1527,7 +1685,7 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
   /* Overlays come in from where they live */
   .sv-menu { animation: sv-fade 280ms var(--ease-soft) both; }
-  .sv-menu-nav a { animation: sv-rise 640ms var(--ease-soft) both; animation-delay: calc(var(--i, 0) * 45ms + 60ms); }
+  .sv-menu-nav a { animation: sv-fade 520ms var(--ease-soft) both; animation-delay: calc(var(--i, 0) * 40ms + 60ms); }
   .sv-book-panel { animation: sv-pop 300ms var(--ease-soft) both; }
   .sv-sheet, .sv-room-dock { animation: sv-up 440ms var(--ease-soft) both; }
   /* A room page on a phone: the bar at the foot steps aside while the
@@ -1538,8 +1696,7 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
     .sv-room-main .sv-show-actions { view-timeline: --book block; }
     .sv-room-dock { animation: sv-dock linear both; animation-timeline: --book; animation-range: entry 0% exit 100%; }
   }
-  .sv-sheet-scrim, .sv-lightbox { animation: sv-fade 300ms ease both; }
-  .sv-lightbox-figure { animation: sv-rise 520ms var(--ease-soft) both; }
+  .sv-sheet-scrim { animation: sv-fade 300ms ease both; }
   .sv-step-in { animation: sv-rise 520ms var(--ease-soft) both; }
   .sv-order-tick path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: sv-draw 700ms var(--ease-soft) 200ms forwards; }
 

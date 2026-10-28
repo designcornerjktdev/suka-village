@@ -133,7 +133,7 @@ export default function BookingsTable() {
                 <th scope="col">Menginap</th>
                 <th scope="col" className="ad-num">Total</th>
                 <th scope="col">Status</th>
-                <th scope="col">Tindakan</th>
+                <th scope="col" className="ad-end">Tindakan</th>
               </tr>
             </thead>
             <tbody>
@@ -161,15 +161,17 @@ export default function BookingsTable() {
                     {b.quote.promo ? <small>promo {b.quote.promo.code}</small> : null}
                   </td>
                   <td data-label="Status">
-                    <StatusPill status={b.status} />
-                    {b.status === "paid" && b.payment.paidAt ? (
-                      <small className="ad-wait tnum">
-                        <Clock size={12} strokeWidth={1.8} aria-hidden="true" />
-                        menunggu {since(b.payment.paidAt, now)}
-                      </small>
-                    ) : null}
+                    <div className="ad-cell-stack">
+                      <StatusPill status={b.status} />
+                      {b.status === "paid" && b.payment.paidAt ? (
+                        <small className="ad-wait tnum">
+                          <Clock size={12} strokeWidth={1.8} aria-hidden="true" />
+                          menunggu {since(b.payment.paidAt, now)}
+                        </small>
+                      ) : null}
+                    </div>
                   </td>
-                  <td data-label="Tindakan">
+                  <td data-label="Tindakan" className="ad-end">
                     {b.status === "paid" ? (
                       <Decision booking={b} compact />
                     ) : (

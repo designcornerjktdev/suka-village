@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Info } from "lucide-react";
-import RoomSpecs from "@/components/RoomSpecs";
+import RoomSpecs, { KeySpecs } from "@/components/RoomSpecs";
 import Slides from "@/components/Slides";
 import JsonLd from "@/components/JsonLd";
 import { units, waHref } from "@/content/site";
@@ -65,6 +65,7 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
               <div className="sv-row-copy">
                 <p>{t.rooms.notes[found.id]}</p>
               </div>
+              <KeySpecs unit={found} locale={lang} />
               <div className="sv-show-actions">
                 <Link href={`${localePath(lang, "booking")}?unit=${found.id}`} className="sv-btn sv-btn--primary">
                   <span>{t.common.bookNow}</span>

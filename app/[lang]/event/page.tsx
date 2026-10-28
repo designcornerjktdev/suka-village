@@ -7,6 +7,7 @@ import { events, waHref } from "@/content/site";
 import { getDict } from "@/content/dict";
 import { isLocale, localePath, locales } from "@/content/i18n";
 import JsonLd from "@/components/JsonLd";
+import PageNav from "@/components/PageNav";
 import { breadcrumbs, pageMetadata } from "@/lib/seo";
 
 /**
@@ -34,8 +35,9 @@ export default async function EventPage({ params }: PageProps<"/[lang]/event">) 
   return (
     <>
       <section className="sv-page">
+        <h1 className="sr-only">{t.seo.event.title}</h1>
+        <PageNav title={t.nav.event} label={t.common.onThisPage} items={events.map((e) => ({ id: e.id, label: t.event.names[e.id] }))} />
         <div className="sv-wrap">
-          <h1 className="sr-only">{t.seo.event.title}</h1>
 
           <div className="sv-rows">
             {events.map((e, i) => (

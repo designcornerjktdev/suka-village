@@ -79,6 +79,7 @@ type Copy = {
     openPhoto: string;
     zoomIn: string;
     zoomOut: string;
+    onThisPage: string;
     photoBy: string;
     openMap: string;
     waHello: string;
@@ -94,6 +95,10 @@ type Copy = {
     bathroomsMany: string;
     bedroomsShort: string;
     bedroomShortOne: string;
+    /* The three facts set large on a phone: the number over its word. */
+    keySize: string;
+    keyBedrooms: string;
+    keyBathrooms: string;
     features: Record<Feature, string>;
     notes: Record<UnitId, string>;
     specsTitle: string;
@@ -146,9 +151,16 @@ type Copy = {
     demo: string;
     clear: string;
     free: string;
-    few: string;
     full: string;
     picked: string;
+    /* Above the calendar: what to pick next, then what the dates mean. */
+    pickIn: string;
+    pickOut: string;
+    allFree: string;
+    someFree: string;
+    lastRoom: string;
+    noneFree: string;
+    moreMonths: string;
   };
   checkout: {
     title: string;
@@ -424,6 +436,7 @@ const id: Copy = {
     openPhoto: "Perbesar foto {n}",
     zoomIn: "Perbesar",
     zoomOut: "Perkecil",
+    onThisPage: "Di halaman ini",
     photoBy: "Foto: {by}, {source}, {license}",
     openMap: "Buka di peta",
     waHello: "Halo Suka Village, saya ingin bertanya tentang menginap di sana.",
@@ -443,6 +456,9 @@ const id: Copy = {
     bathroomsMany: "{n} kamar mandi",
     bedroomsShort: "kamar tidur",
     bedroomShortOne: "kamar tidur",
+    keySize: "Luas",
+    keyBedrooms: "Kamar tidur",
+    keyBathrooms: "Kamar mandi",
     features: {
       living: "Ruang keluarga",
       balcony: "Balkon",
@@ -563,9 +579,15 @@ const id: Copy = {
     demo: "Ketersediaan di halaman ini masih contoh, bukan data sebenarnya. Pesanan di prototipe ini tidak memesan kamar dan tidak menagih apa pun.",
     clear: "Ulangi",
     free: "Tersedia",
-    few: "Sisa sedikit",
     full: "Penuh",
     picked: "Tanggal Anda",
+    pickIn: "Pilih tanggal check-in",
+    pickOut: "Sekarang pilih tanggal check-out",
+    allFree: "Semua kamar tersedia",
+    someFree: "{n} dari {total} kamar tersedia",
+    lastRoom: "Tinggal 1 kamar untuk tanggal ini",
+    noneFree: "Tidak ada kamar yang kosong di semua malam ini. Coba geser tanggalnya.",
+    moreMonths: "Tampilkan bulan berikutnya",
   },
   checkout: {
     title: "Pesan *menginap*",
@@ -863,6 +885,7 @@ const en: Copy = {
     openPhoto: "Enlarge photo {n}",
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
+    onThisPage: "On this page",
     photoBy: "Photo: {by}, {source}, {license}",
     openMap: "Open in maps",
     waHello: "Hello Suka Village, I would like to ask about staying with you.",
@@ -882,6 +905,9 @@ const en: Copy = {
     bathroomsMany: "{n} Bathrooms",
     bedroomsShort: "bedrooms",
     bedroomShortOne: "bedroom",
+    keySize: "Size",
+    keyBedrooms: "Bedrooms",
+    keyBathrooms: "Bathrooms",
     features: {
       living: "Living room",
       balcony: "Balcony",
@@ -1002,9 +1028,15 @@ const en: Copy = {
     demo: "Availability on this page is an example, not live data. Bookings in this prototype reserve nothing and charge nothing.",
     clear: "Start over",
     free: "Available",
-    few: "Few left",
     full: "Fully booked",
     picked: "Your dates",
+    pickIn: "Choose your check-in date",
+    pickOut: "Now choose your check-out date",
+    allFree: "Every room is available",
+    someFree: "{n} of {total} rooms available",
+    lastRoom: "Only 1 room left for these dates",
+    noneFree: "No single room is free for all of these nights. Try moving the dates.",
+    moreMonths: "Show more months",
   },
   checkout: {
     title: "Book your *stay*",

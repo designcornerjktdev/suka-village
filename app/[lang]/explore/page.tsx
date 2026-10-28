@@ -6,6 +6,7 @@ import { explore } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import { isLocale, locales } from "@/content/i18n";
 import JsonLd from "@/components/JsonLd";
+import PageNav from "@/components/PageNav";
 import { breadcrumbs, pageMetadata } from "@/lib/seo";
 
 /**
@@ -42,8 +43,9 @@ export default async function ExplorePage({ params }: PageProps<"/[lang]/explore
   return (
     <>
       <section className="sv-page">
+        <h1 className="sr-only">{t.seo.explore.title}</h1>
+        <PageNav title={t.nav.explore} label={t.common.onThisPage} items={explore.map((spot) => ({ id: spot.id, label: spot.name }))} />
         <div className="sv-wrap">
-          <h1 className="sr-only">{t.seo.explore.title}</h1>
 
           <div className="sv-rows">
             {explore.map((spot, i) => (

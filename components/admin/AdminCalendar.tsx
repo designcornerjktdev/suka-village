@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Lock, Pencil, Trash2 } from "lucide-react";
+import { BellRing, Check, CheckCheck, ChevronLeft, ChevronRight, Hourglass, KeyRound, Lock, Pencil, Trash2, type LucideIcon } from "lucide-react";
 import { Card, ConfirmDelete, Dialog, Empty, PageHeader, RowActions, Select, Sheet, SheetFooter, toast } from "./ui";
 import { useBlocks, useBookings, useRooms } from "@/lib/booking/hooks";
 import { createBlock, deleteBlock, updateBlock } from "@/lib/booking/api";
@@ -32,6 +32,21 @@ export const REASON_LABEL: Record<BlockReason, string> = {
 
 const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 const WEEK = ["M", "S", "S", "R", "K", "J", "S"];
+
+/* Each state on the calendar has its own hue AND its own mark, so two bars
+   never read alike at a glance, and a one night bar too narrow for a name
+   still says what it is. Needs a decision: solid clay, the loudest. Waiting
+   for payment: a dashed outline, not yet a stay. Confirmed: solid green. In
+   the house now: solid blue. Done: quiet grey. Closed by hand: hatched. */
+const KINDS: { kind: string; label: string; Icon: LucideIcon }[] = [
+  { kind: "paid", label: "Perlu dikonfirmasi", Icon: BellRing },
+  { kind: "pending", label: "Menunggu bayar", Icon: Hourglass },
+  { kind: "confirmed", label: "Terkonfirmasi", Icon: Check },
+  { kind: "checked_in", label: "Sedang menginap", Icon: KeyRound },
+  { kind: "completed", label: "Selesai", Icon: CheckCheck },
+  { kind: "block", label: "Ditutup manual", Icon: Lock },
+];
+const iconOf = (kind: string) => KINDS.find((k) => k.kind === kind)?.Icon ?? Check;
 
 type Prefill = { unit?: UnitId; from?: string; block?: Block; n: number };
 
@@ -131,6 +146,7 @@ export default function AdminCalendar() {
                 {days.map((d, i) => {
                   const w = day(d).getDay();
                   const weekend = w === 0 || w === 6 ? "true" : undefined;
+                  const now = d === today ? "true" : undefined;
                   return d < today ? (
                     <span key={d} className="ad-cal-cell" style={{ gridColumn: i + 2 }} data-weekend={weekend} data-past="true" aria-hidden="true" />
                   ) : (
@@ -140,35 +156,43 @@ export default function AdminCalendar() {
                       className="ad-cal-cell"
                       style={{ gridColumn: i + 2 }}
                       data-weekend={weekend}
+                      data-today={now}
                       onClick={() => openDialog(row.room.unit, d)}
                       aria-label={`Tutup ${row.room.name}, ${fmtDate(d, "id", "day")}`}
                     />
                   );
                 })}
-                {row.bookings.map(({ b, pos }) => (
-                  <Link
-                    key={b.code}
-                    href={`/admin/bookings/${b.code}`}
-                    className="ad-cal-bar-item"
-                    data-status={b.status}
-                    data-cut-start={pos!.cutStart ? "true" : undefined}
-                    data-cut-end={pos!.cutEnd ? "true" : undefined}
-                    style={{ gridColumn: `${pos!.col} / span ${pos!.span}` }}
-                    title={`${b.code} · ${b.guest.name} · ${fmtDate(b.checkIn, "id", "short")} sampai ${fmtDate(b.checkOut, "id", "short")}`}
-                  >
-                    <span>{b.guest.name.split(" ")[0]}</span>
-                  </Link>
-                ))}
+                {row.bookings.map(({ b, pos }) => {
+                  const Icon = iconOf(b.status);
+                  return (
+                    <Link
+                      key={b.code}
+                      href={`/admin/bookings/${b.code}`}
+                      className="ad-cal-bar-item"
+                      data-status={b.status}
+                      data-cut-start={pos!.cutStart ? "true" : undefined}
+                      data-cut-end={pos!.cutEnd ? "true" : undefined}
+                      style={{ gridColumn: `${pos!.col} / span ${pos!.span}` }}
+                      title={`${b.code} · ${b.guest.name} · ${fmtDate(b.checkIn, "id", "short")} sampai ${fmtDate(b.checkOut, "id", "short")}`}
+                    >
+                      <Icon aria-hidden="true" />
+                      <span>{b.guest.name.split(" ")[0]}</span>
+                    </Link>
+                  );
+                })}
                 {row.blocks.map(({ k, pos }) => (
                   <button
                     key={k.id}
                     type="button"
                     className="ad-cal-bar-item ad-cal-block"
                     data-reason={k.reason}
+                    data-cut-start={pos!.cutStart ? "true" : undefined}
+                    data-cut-end={pos!.cutEnd ? "true" : undefined}
                     style={{ gridColumn: `${pos!.col} / span ${pos!.span}` }}
                     onClick={() => setSelected(k)}
                     title={`${REASON_LABEL[k.reason]} · ${fmtDate(k.from, "id", "short")} sampai ${fmtDate(k.to, "id", "short")}`}
                   >
+                    <Lock aria-hidden="true" />
                     <span>{REASON_LABEL[k.reason]}</span>
                   </button>
                 ))}
@@ -177,14 +201,16 @@ export default function AdminCalendar() {
           </div>
         </div>
 
-        <p className="ad-legend">
-          <span><i data-kind="paid" /> Perlu dikonfirmasi</span>
-          <span><i data-kind="confirmed" /> Terkonfirmasi</span>
-          <span><i data-kind="pending" /> Menunggu bayar</span>
-          <span><i data-kind="checked_in" /> Sedang menginap</span>
-          <span><i data-kind="completed" /> Selesai</span>
-          <span><i data-kind="block" /> Ditutup manual</span>
-        </p>
+        <ul className="ad-legend">
+          {KINDS.map(({ kind, label, Icon }) => (
+            <li key={kind}>
+              <i data-kind={kind}>
+                <Icon aria-hidden="true" />
+              </i>
+              {label}
+            </li>
+          ))}
+        </ul>
       </Card>
 
       <div className="ad-section-head">

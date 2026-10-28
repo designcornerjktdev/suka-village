@@ -1,21 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { gallery } from "@/content/site";
-import { lockScroll, unlockScroll } from "./scroll";
-import { getDict } from "@/content/dict";
+import { fill, getDict } from "@/content/dict";
 import type { Locale } from "@/content/i18n";
 
+/* The full screen view loads when a photograph is first opened (or a moment
+   before, when a thumbnail is pressed or focused). */
+const loadViewer = () => import("./PhotoViewer");
+const PhotoViewer = dynamic(loadViewer, { ssr: false });
+
 /**
- * The gallery, and its lightbox (a room's photographs open in their own,
- * which zooms: PhotoViewer).
- *
- * Opening a photograph full screen is the one place a modal earns itself: the
- * task is looking at one image, and everything else on the page is in the way.
- * It closes on Escape, on the backdrop, and on the close control, and arrow
- * keys move through the set, so the keyboard can do everything the pointer can.
+ * The gallery: a tight grid, and a tap opens a photograph full screen in the
+ * same viewer a room's photographs use (PhotoViewer): white, swiped through
+ * on a phone, enlarged with a tap or a pinch, arrows and Escape on a
+ * keyboard. Closing it puts focus back on the photograph last seen.
  *
  * Every frame is the property's own, from the owner's Drive folders. Photos
  * only, no captions, as the owner asked (21 October 2026): what each picture
@@ -24,40 +25,22 @@ import type { Locale } from "@/content/i18n";
 export default function GalleryGrid({ locale }: { locale: Locale }) {
   const t = getDict(locale);
   const [open, setOpen] = useState<number | null>(null);
-
-  const move = useCallback(
-    (delta: number) =>
-      setOpen((current) =>
-        current === null
-          ? null
-          : (current + delta + gallery.length) % gallery.length,
-      ),
-    [],
-  );
-
-  useEffect(() => {
-    if (open === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(null);
-      if (e.key === "ArrowRight") move(1);
-      if (e.key === "ArrowLeft") move(-1);
-    };
-    document.addEventListener("keydown", onKey);
-    lockScroll();
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      unlockScroll();
-    };
-  }, [open, move]);
-
-  const current = open === null ? null : gallery[open];
+  const grid = useRef<HTMLUListElement>(null);
+  const warm = () => void loadViewer();
 
   return (
     <>
-      <ul className="sv-gallery">
+      <ul ref={grid} className="sv-gallery">
         {gallery.map((photo, i) => (
           <li key={photo.src} className="sv-gallery-item">
-            <button type="button" onClick={() => setOpen(i)} className="sv-gallery-btn">
+            <button
+              type="button"
+              onClick={() => setOpen(i)}
+              onPointerDown={warm}
+              onFocus={warm}
+              className="sv-gallery-btn"
+              aria-label={fill(t.common.openPhoto, { n: i + 1 })}
+            >
               <span className="sv-gallery-frame">
                 <Image
                   src={photo.src}
@@ -74,41 +57,17 @@ export default function GalleryGrid({ locale }: { locale: Locale }) {
         ))}
       </ul>
 
-      {current ? (
-        <div className="sv-lightbox" role="dialog" aria-modal="true" aria-label={current.alt[locale]}>
-          <button
-            type="button"
-            className="sv-lightbox-backdrop"
-            aria-label={t.common.close}
-            onClick={() => setOpen(null)}
-          />
-
-          <figure className="sv-lightbox-figure">
-            <Image
-              src={current.src}
-              alt={current.alt[locale]}
-              width={1600}
-              height={1000}
-              className="sv-lightbox-img"
-            />
-            <figcaption className="sv-lightbox-cap tnum" aria-hidden="true">
-              {open! + 1} / {gallery.length}
-            </figcaption>
-          </figure>
-
-          <button type="button" className="sv-lightbox-close" onClick={() => setOpen(null)}>
-            <X size={20} strokeWidth={1.5} aria-hidden="true" />
-            <span className="sr-only">{t.common.close}</span>
-          </button>
-          <button type="button" className="sv-lightbox-nav sv-lightbox-prev" onClick={() => move(-1)}>
-            <ChevronLeft size={22} strokeWidth={1.5} aria-hidden="true" />
-            <span className="sr-only">{t.common.prevPhoto}</span>
-          </button>
-          <button type="button" className="sv-lightbox-nav sv-lightbox-next" onClick={() => move(1)}>
-            <ChevronRight size={22} strokeWidth={1.5} aria-hidden="true" />
-            <span className="sr-only">{t.common.nextPhoto}</span>
-          </button>
-        </div>
+      {open !== null ? (
+        <PhotoViewer
+          photos={gallery}
+          locale={locale}
+          label={t.nav.gallery}
+          start={open}
+          onClose={(at) => {
+            setOpen(null);
+            grid.current?.children[at]?.querySelector("button")?.focus({ preventScroll: true });
+          }}
+        />
       ) : null}
     </>
   );

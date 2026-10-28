@@ -3,7 +3,7 @@
 import type { DateRange } from "react-day-picker";
 import type { Locale } from "@/content/i18n";
 import { useOccupancy, useSellableRooms } from "@/lib/booking/hooks";
-import { fullFor, someTaken } from "@/lib/booking/occupancy";
+import { freeFor, fullFor } from "@/lib/booking/occupancy";
 import { startOfToday } from "./dates";
 import RangeCalendar from "./RangeCalendar";
 
@@ -21,11 +21,13 @@ export default function BookingDates({
   range,
   onSelect,
   months,
+  stacked = false,
 }: {
   locale: Locale;
   range: DateRange | undefined;
   onSelect: (next: DateRange | undefined) => void;
   months: number;
+  stacked?: boolean;
 }) {
   const occ = useOccupancy();
   const units = useSellableRooms().map((r) => r.unit);
@@ -36,9 +38,10 @@ export default function BookingDates({
       range={range}
       onSelect={onSelect}
       months={months}
+      stacked={stacked}
       today={startOfToday()}
       isTaken={fullFor(occ, units)}
-      isFew={someTaken(occ, units)}
+      freeRooms={freeFor(occ, units)}
     />
   );
 }

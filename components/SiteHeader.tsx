@@ -150,11 +150,7 @@ export default function SiteHeader({ locale }: { locale: Locale }) {
                 aria-current={isCurrent(item.href) ? "page" : undefined}
                 onClick={close}
               >
-                <span className="sv-menu-num tnum" aria-hidden="true">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span>{item.label}</span>
-                <ArrowRight className="sv-menu-arrow" size={22} strokeWidth={1.3} aria-hidden="true" />
+                {item.label}
               </Link>
             ))}
           </nav>

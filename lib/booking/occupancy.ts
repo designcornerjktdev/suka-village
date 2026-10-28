@@ -67,12 +67,13 @@ export function fullFor(occ: Occupancy, among: UnitId[]) {
   };
 }
 
-/** Some of the rooms in `among` are taken that night, but not all: "few left". */
-export function someTaken(occ: Occupancy, among: UnitId[]) {
-  return (date: Date) => {
-    const k = iso(date);
-    const taken = among.filter((u) => isTaken(occ, u, k)).length;
-    return taken > 0 && taken < among.length;
+/** How many of the rooms in `among` are free on every night of a stay, for
+    the line above the calendar ("2 dari 3 kamar tersedia"). */
+export function freeFor(occ: Occupancy, among: UnitId[]) {
+  return (from: Date, to: Date) => {
+    const nights = nightsOf(iso(from), iso(to));
+    const free = among.filter((u) => nights.every((n) => !isTaken(occ, u, n))).length;
+    return { free, total: among.length };
   };
 }
 

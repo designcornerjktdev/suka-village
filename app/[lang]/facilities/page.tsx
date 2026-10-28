@@ -6,6 +6,7 @@ import { listedFacilities } from "@/content/site";
 import { getDict } from "@/content/dict";
 import { isLocale, locales } from "@/content/i18n";
 import JsonLd from "@/components/JsonLd";
+import PageNav from "@/components/PageNav";
 import { breadcrumbs, pageMetadata } from "@/lib/seo";
 
 /**
@@ -37,8 +38,13 @@ export default async function FacilitiesPage({ params }: PageProps<"/[lang]/faci
   return (
     <>
       <section className="sv-page">
+        <h1 className="sr-only">{t.seo.facilities.title}</h1>
+        <PageNav
+          title={t.nav.facilities}
+          label={t.common.onThisPage}
+          items={listedFacilities.map((f) => ({ id: f.id, label: t.facilities.names[f.id] }))}
+        />
         <div className="sv-wrap">
-          <h1 className="sr-only">{t.seo.facilities.title}</h1>
 
           <div className="sv-rows">
             {listedFacilities.map((f, i) => (

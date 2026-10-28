@@ -1,6 +1,6 @@
 # Handoff: Suka Village
 
-Status per 28 Oktober 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
+Status per 29 Oktober 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
 melanjutkan proyek ini: baca ini dulu, lalu PRODUCT.md.
 
 ## Ringkas
@@ -114,6 +114,47 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
   (sebelumnya langsung menghapus, dan link pesanan lama jadi tidak ditemukan);
   tinggi kolom form admin seragam; toolbar, bar Simpan, kartu tabel di HP,
   target sentuh 44px dirapikan.
+
+- Revisi 29 Okt:
+  - **CMS:** isi halaman memakai lebar penuh sampai 100rem lalu ke tengah
+    (`--ad-max`), tepi kanan sejajar dengan banner demo. Tabel booking lebih
+    lega; status dan "menunggu x jam" bertumpuk, bukan berdampingan.
+  - **Kalender CMS:** tiap status beda warna dan ikon (dipakai juga di
+    legenda):
+    - Perlu dikonfirmasi: oranye tanah.
+    - Menunggu bayar: garis putus-putus.
+    - Terkonfirmasi: hijau.
+    - Sedang menginap: biru.
+    - Selesai: abu-abu.
+    - Ditutup manual: arsir.
+    Hari yang sudah lewat jadi warna datar, jadi arsir hanya berarti ditutup.
+  - **Kalender booking:**
+    - Tanpa titik "sisa sedikit" per hari. Gantinya satu baris di atas
+      kalender: "4 malam · 2 dari 3 kamar tersedia", "Tinggal 1 kamar", atau
+      "Tidak ada kamar yang kosong di semua malam ini".
+    - Check-in dan check-out sebagai dua tombol (`components/StayEnds.tsx`).
+    - Rentang tanggal berbentuk kapsul bulat; kedua ujungnya diberi bayangan.
+    - Tanggal penuh berupa lingkaran tanah liat dengan coretan.
+    - Di HP, bulan disusun ke bawah: 3 bulan dulu, tombol "Tampilkan bulan
+      berikutnya" sampai 12 bulan. Minggu yang sudah lewat disembunyikan.
+    - Sheet Pesan di HP: judul, check-in/out, dan tombol tetap di tempat;
+      hanya bulan yang di-scroll.
+  - **HP (di bawah 900px) dan tablet:**
+    - Navigasi halaman di bawah header (`components/PageNav.tsx`), tampil di
+      bawah 1100px: nama halaman, lalu bagian-bagiannya yang bisa digeser.
+      Ikut menandai bagian yang sedang dibaca, dan sekali ketuk langsung ke
+      bagian itu.
+    - Nomor 01/02 di atas judul hilang di HP. Teks sedikit lebih besar dan
+      tidak setipis desktop.
+    - Kamar: tiga fakta besar (Luas, Kamar tidur, Kamar mandi, `KeySpecs`).
+      Daftar fasilitas lengkap ada di halaman kamar.
+    - Dua tombol sejajar sama lebar.
+    - Di layar sentuh foto di-swipe, tanpa panah.
+    - "Kamar lain" berupa rel geser.
+    - Menu berupa kata besar tanpa nomor.
+    - Setiap tombol memberi umpan balik saat ditekan.
+  - **Galeri:** memakai viewer yang sama dengan halaman kamar (putih, swipe,
+    zoom); lightbox gelap lama dihapus.
 
 ## Menunggu
 

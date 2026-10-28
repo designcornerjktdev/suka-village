@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Info } from "lucide-react";
-import RoomSpecs from "@/components/RoomSpecs";
+import PageNav from "@/components/PageNav";
+import RoomSpecs, { KeySpecs } from "@/components/RoomSpecs";
 import Showcase from "@/components/Showcase";
 import JsonLd from "@/components/JsonLd";
 import { units } from "@/content/site";
@@ -43,6 +44,7 @@ export default async function RoomsPage({ params }: PageProps<"/[lang]/rooms">) 
     <>
       <section className="sv-page">
         <h1 className="sr-only">{t.seo.rooms.title}</h1>
+        <PageNav title={t.nav.rooms} label={t.common.onThisPage} items={units.map((u) => ({ id: u.slug, label: u.name }))} />
 
         <div className="sv-wrap">
           <div className="sv-rows">
@@ -74,6 +76,7 @@ export default async function RoomsPage({ params }: PageProps<"/[lang]/rooms">) 
                   <div className="sv-row-copy">
                     <p>{t.rooms.notes[unit.id]}</p>
                   </div>
+                  <KeySpecs unit={unit} locale={lang} />
                   <RoomSpecs unit={unit} locale={lang} />
                 </Showcase>
               );

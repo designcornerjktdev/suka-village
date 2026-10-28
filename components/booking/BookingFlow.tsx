@@ -11,7 +11,7 @@ import { localePath, type Locale } from "@/content/i18n";
 import { DEMO } from "@/lib/booking/config";
 import { checkPromo, createBooking } from "@/lib/booking/api";
 import { useOccupancy, usePromo, useRates, useRoomName, useRooms, useSellableRooms, useSettings } from "@/lib/booking/hooks";
-import { anyTaken, fullFor, someTaken, unitStatus } from "@/lib/booking/occupancy";
+import { anyTaken, freeFor, fullFor, unitStatus } from "@/lib/booking/occupancy";
 import { fromRate, quote } from "@/lib/booking/pricing";
 import { applyPromo, promoProblem } from "@/lib/booking/promo";
 import { GUEST_GROUPS, METHODS } from "@/lib/booking/payments";
@@ -148,10 +148,11 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
   const enabledMethods = METHODS.filter((m) => m.group !== "manual" && settings.methods[m.id]);
 
   /* With rooms picked, a night is full if any of them is taken. Before that,
-     it is full when every room on sale is taken, and "few left" when some are. */
+     it is full when every room on sale is taken, and the line over the
+     calendar says how many rooms are free for the dates chosen. */
   const sellableUnits = sellable.map((r) => r.unit);
   const isTaken = picked.length ? anyTaken(occ, picked) : fullFor(occ, sellableUnits);
-  const isFew = picked.length ? undefined : someTaken(occ, sellableUnits);
+  const freeRooms = picked.length ? undefined : freeFor(occ, sellableUnits);
 
   /* --- Navigation ---------------------------------------------------------- */
 
@@ -316,32 +317,19 @@ export default function BookingFlow({ locale }: { locale: Locale }) {
     /* 1. Dates ------------------------------------------------------------ */
     <div key="dates" className="sv-bk-step">
       <h2 className="sv-bk-title">{c.datesTitle}</h2>
-      <div className="sv-bk-ends">
-        <div data-active={!range?.from || range?.to ? "true" : undefined}>
-          <span className="sv-dock-seg-label">{t.bar.checkIn}</span>
-          <span className="tnum" data-empty={checkIn ? undefined : "true"}>
-            {checkIn ? fmtDate(checkIn, locale, "day") : t.bar.pick}
-          </span>
-        </div>
-        <div data-active={range?.from && !range?.to ? "true" : undefined}>
-          <span className="sv-dock-seg-label">{t.bar.checkOut}</span>
-          <span className="tnum" data-empty={checkOut ? undefined : "true"}>
-            {checkOut ? fmtDate(checkOut, locale, "day") : t.bar.pick}
-          </span>
-        </div>
-        {nightsCount ? <span className="sv-dock-nights tnum">{fill(c.nightsN, { n: nightsCount })}</span> : null}
+      <div className="sv-bk-cal">
+        <RangeCalendar
+          locale={locale}
+          range={range}
+          onSelect={selectRange}
+          months={2}
+          stacked={!wide}
+          today={today}
+          isTaken={isTaken}
+          freeRooms={freeRooms}
+          className="sv-cal sv-cal--wide"
+        />
       </div>
-
-      <RangeCalendar
-        locale={locale}
-        range={range}
-        onSelect={selectRange}
-        months={wide ? 2 : 1}
-        today={today}
-        isTaken={isTaken}
-        isFew={isFew}
-        className="sv-cal sv-cal--wide"
-      />
 
       {DEMO ? (
         <p className="sv-demo" role="note">
