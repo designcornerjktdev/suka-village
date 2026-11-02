@@ -1,6 +1,6 @@
 # Handoff: Suka Village
 
-Status per 29 Oktober 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
+Status per 31 Oktober 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
 melanjutkan proyek ini: baca ini dulu, lalu PRODUCT.md.
 
 ## Ringkas
@@ -155,6 +155,17 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
     - Setiap tombol memberi umpan balik saat ditekan.
   - **Galeri:** memakai viewer yang sama dengan halaman kamar (putih, swipe,
     zoom); lightbox gelap lama dihapus.
+
+- Revisi 31 Okt (detail kamar, menggantikan susunan 4:3 di tengah):
+  - Foto kamar selebar halaman, rasio 16:9 dan boleh terpotong. Panah ada di
+    dalam foto, titik di bawahnya. Di HP foto tetap 4:3 dari tepi ke tepi,
+    di-swipe, dengan titik.
+  - Diklik, foto terbuka utuh dalam bentuk aslinya (kebanyakan 3:2; beberapa
+    foto Single Cabin potret 4:5). Panah menempel di dalam tepi foto, juga
+    saat di-zoom.
+  - Di layar sentuh tidak ada panah: foto di-swipe, titik di bawah
+    menunjukkan posisi. Kalau foto lebih dari 13 (galeri), deretan titik ikut
+    bergeser.
 
 ## Menunggu
 

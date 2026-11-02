@@ -17,8 +17,8 @@ import { breadcrumbs, pageMetadata, roomMeta, roomSchema } from "@/lib/seo";
  * under the header, and the room's details below them, the description and
  * the two ways forward (Book now, or a question on WhatsApp) on one side,
  * what is in the room and the note on rates on the other. The photographs
- * come one at a time, at 4:3 (MoM 26 Oct 2026), centred, with their number
- * and buttons either side (`stage` in Slides).
+ * run the full width of the page at 16:9, cropped, and open whole, in their
+ * own shape, when clicked (`stage` in Slides).
  */
 
 export function generateStaticParams() {
@@ -53,7 +53,7 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
           </Link>
 
           <div className="sv-room-slider">
-            <Slides photos={all} locale={lang} name={found.name} sizes="(min-width: 900px) 62vw, 100vw" priority stage />
+            <Slides photos={all} locale={lang} name={found.name} sizes="(min-width: 900px) 92vw, 100vw" priority stage />
           </div>
 
           <div className="sv-room">

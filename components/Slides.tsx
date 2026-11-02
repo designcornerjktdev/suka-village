@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Photo } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import type { Locale } from "@/content/i18n";
@@ -31,12 +31,10 @@ const PhotoViewer = dynamic(loadViewer, { ssr: false });
  * screen then has the bandwidth to itself, and the next ones are ready by the
  * time a thumb gets to them.
  *
- * `stage` (a room's own page) is the same scroller set out on the white page:
- * one 4:3 photograph in the middle and nothing else of it showing, its number
- * large on the left and the two buttons on the right, both outside the
- * picture. A click or tap on the photograph opens it full screen, where it
- * can be enlarged (PhotoViewer); closing it leaves the slider on the
- * photograph last seen there.
+ * `stage` (a room's own page) is the same slider the full width of the page,
+ * at 16:9, so the photographs are cropped (Reza, 31 Oct 2026). A click or tap
+ * on one opens it whole, in its own shape, full screen (PhotoViewer); closing
+ * it leaves the slider on the photograph last seen there.
  */
 
 /* From one slide to the next: the width of a slide. */
@@ -45,7 +43,7 @@ const stepOf = (el: HTMLElement) => {
   const b = el.children[1] as HTMLElement | undefined;
   return a && b ? b.offsetLeft - a.offsetLeft : el.clientWidth || 1;
 };
-const pad = (n: number) => String(n).padStart(2, "0");
+
 export default function Slides({
   photos,
   locale,
@@ -160,7 +158,7 @@ export default function Slides({
         ))}
       </div>
 
-      {many && !stage ? (
+      {many ? (
         <>
           <button type="button" className="sv-slides-arrow sv-slides-prev" onClick={() => go(index - 1)} aria-label={t.prevPhoto}>
             <ChevronLeft size={22} strokeWidth={1.6} aria-hidden="true" />
@@ -195,24 +193,8 @@ export default function Slides({
   if (!stage) return slider;
 
   return (
-    <div className="sv-stage">
-      {many ? (
-        <p className="sv-stage-count tnum" aria-hidden="true">
-          <strong key={index}>{pad(index + 1)}</strong>
-          <span>/ {pad(count)}</span>
-        </p>
-      ) : null}
+    <>
       {slider}
-      {many ? (
-        <div className="sv-stage-nav">
-          <button type="button" className="sv-stage-btn" onClick={() => go(index - 1)} aria-label={t.prevPhoto}>
-            <ArrowLeft size={20} strokeWidth={1.5} aria-hidden="true" />
-          </button>
-          <button type="button" className="sv-stage-btn sv-stage-btn--next" onClick={() => go(index + 1)} aria-label={t.nextPhoto}>
-            <ArrowRight size={20} strokeWidth={1.5} aria-hidden="true" />
-          </button>
-        </div>
-      ) : null}
       {open !== null ? (
         <PhotoViewer
           photos={photos}
@@ -227,6 +209,6 @@ export default function Slides({
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }

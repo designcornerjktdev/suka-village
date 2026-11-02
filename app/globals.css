@@ -1355,52 +1355,24 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 
 /* --- One room: a wide slider of every photograph, the details below ------ */
 
-/* One photograph at a time, centred, at 4:3 (MoM 26 Oct 2026), on the white
-   page (`stage` in Slides). The space either side of it is put to use and
-   the picture itself is left clear: its number, large, on the left, the two
-   buttons side by side on the right, both level with its foot. A click or
-   tap on the picture opens it full screen (`.sv-viewer`). On a phone the
-   picture runs edge to edge, with the number and the buttons in one line
-   beneath it. */
+/* Every photograph, flush with the page's edges at 16:9 and so cropped, the
+   arrows inside it, the dots along its foot (`stage` in Slides; Reza,
+   31 Oct 2026). Never taller than the screen under the header, so on a very
+   wide window it crops a little more rather than running off the foot. A
+   click or tap on it opens the whole picture full screen (`.sv-viewer`). On
+   a phone it runs edge to edge at 4:3, swiped, with the dots to show where
+   it is. */
 .sv-room-slider { margin-top: 0.75rem; }
-.sv-stage {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "photo photo" "count nav";
-  align-items: center;
-  gap: 1rem;
-}
-@media (min-width: 900px) {
-  .sv-stage {
-    /* As tall as fits under the header, and never small. */
-    --stage-w: max(28rem, calc((100svh - var(--head-h) - 9rem) * 4 / 3));
-    grid-template-columns: minmax(7.5rem, 1fr) minmax(0, var(--stage-w)) minmax(7.5rem, 1fr);
-    grid-template-areas: "count photo nav";
-    align-items: end;
-    column-gap: clamp(1.25rem, 2.5vw, 2.5rem);
-  }
-}
-
-.sv-slides--stage { grid-area: photo; height: auto; aspect-ratio: 4 / 3; }
+.sv-slides--stage { height: auto; aspect-ratio: 4 / 3; }
 @media (max-width: 899px) { .sv-slides--stage { margin-inline: calc(-1 * var(--gutter)); } }
+@media (min-width: 900px) {
+  .sv-slides--stage { aspect-ratio: 16 / 9; max-height: calc(100svh - var(--head-h)); }
+  .sv-slides--stage .sv-slides-arrow { width: 3.5rem; height: 3.5rem; }
+}
 .sv-slide-open { position: absolute; inset: 0; z-index: 1; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
 .sv-slide-open:focus-visible { outline: 2px solid var(--color-paper); outline-offset: -6px; }
 
-.sv-stage-count { grid-area: count; display: flex; align-items: baseline; gap: 0.5rem; }
-.sv-stage-count strong {
-  font-family: var(--font-head); font-size: 2.75rem; font-weight: 400; line-height: 0.8; letter-spacing: -0.04em;
-  color: var(--color-forest);
-  animation: sv-fade 500ms var(--ease-soft) both;
-}
-.sv-stage-count span { font-size: 0.875rem; color: var(--color-ink-soft); }
-@media (min-width: 900px) {
-  /* The number as large as its side allows. */
-  .sv-stage-count { container-type: inline-size; flex-direction: column; align-items: flex-end; gap: 1rem; }
-  .sv-stage-count strong { font-size: min(9rem, 80cqi); font-weight: 300; }
-}
-
-.sv-stage-nav { grid-area: nav; display: flex; gap: 0.5rem; }
-@media (min-width: 900px) { .sv-stage-nav { justify-self: start; } }
+/* The square buttons along the top of the full screen view. */
 .sv-stage-btn {
   display: grid; place-items: center;
   width: 2.75rem; height: 2.75rem; padding: 0;
@@ -1410,15 +1382,15 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 }
 .sv-stage-btn:hover:not(:disabled) { background: var(--color-cream); }
 .sv-stage-btn:disabled { opacity: 0.3; cursor: default; }
-.sv-stage-btn--next { border-color: var(--color-forest); background: var(--color-forest); color: var(--color-paper); }
-.sv-stage-btn--next:hover:not(:disabled) { background: var(--color-forest-deep); }
 .sv-stage-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 @media (min-width: 900px) { .sv-stage-btn { width: 3.5rem; height: 3.5rem; } }
 
 /* The photograph full screen (PhotoViewer), on the page's own white: the
-   number and the zoom and close buttons along the top, the photograph in the
-   middle as large as fits, the two arrows under it. Enlarged, the middle
-   scrolls both ways, without bars. */
+   number and the zoom and close buttons along the top, the whole photograph
+   in the middle as large as fits, its arrows inside its own left and right
+   edges (`--ox`, how far in from the screen's edge it starts), the dots
+   under it. Enlarged, the middle scrolls both ways, without bars. On a touch
+   screen there are no arrows: the photograph is swiped. */
 .sv-viewer {
   width: 100%; max-width: none; height: 100dvh; max-height: none;
   margin: 0; padding: 0; border: 0;
@@ -1429,12 +1401,13 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-viewer::backdrop { background: var(--color-paper); }
 .sv-viewer-bar, .sv-viewer-foot { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem var(--gutter); }
 .sv-viewer-bar { justify-content: space-between; padding-top: max(0.75rem, env(safe-area-inset-top)); }
-.sv-viewer-foot { justify-content: center; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.sv-viewer-foot { justify-content: center; min-height: 3rem; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
 .sv-viewer-count { display: flex; align-items: baseline; gap: 0.4rem; }
 .sv-viewer-count strong { font-family: var(--font-head); font-size: 1.5rem; font-weight: 400; letter-spacing: -0.02em; color: var(--color-forest); }
 .sv-viewer-count span { font-size: 0.8125rem; color: var(--color-ink-soft); }
 .sv-viewer-tools { display: flex; gap: 0.5rem; }
 .sv-viewer-close { margin-left: 0.75rem; }
+.sv-viewer-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .sv-viewer-stage {
   position: relative; flex: 1; min-height: 0;
   overflow: hidden; scrollbar-width: none;
@@ -1447,6 +1420,28 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-viewer-canvas { display: grid; place-items: center; width: 100%; height: 100%; }
 .sv-viewer-frame { position: relative; width: 100%; height: 100%; }
 .sv-viewer-photo { object-fit: contain; -webkit-user-drag: none; animation: sv-fade 350ms var(--ease-soft) both; }
+
+.sv-viewer-arrow {
+  position: absolute; top: 50%; z-index: 1;
+  display: grid; place-items: center;
+  width: 3.5rem; height: 3.5rem; padding: 0;
+  translate: 0 -50%;
+  border: 0; background: rgba(255, 255, 255, 0.92); color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 250ms var(--ease-soft);
+}
+.sv-viewer-arrow:hover { background: var(--color-paper); }
+.sv-viewer-arrow:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.sv-viewer-prev { left: calc(var(--ox, 0px) + 1rem); }
+.sv-viewer-next { right: calc(var(--ox, 0px) + 1rem); }
+
+/* The same square dots as the slider's, dark on the white. */
+.sv-viewer-dots { overflow: hidden; }
+.sv-viewer-dots > div { display: flex; }
+.sv-viewer-dots span { flex: none; display: grid; place-items: center; width: 14px; height: 14px; }
+.sv-viewer-dots span::before { content: ""; width: 6px; height: 6px; background: rgba(17, 17, 17, 0.28); transition: background-color 250ms var(--ease-soft); }
+.sv-viewer-dots span[data-cut]::before { width: 4px; height: 4px; }
+.sv-viewer-dots span[data-on]::before { width: 8px; height: 8px; background: var(--color-forest); }
 
 /* The details, in one clear order of size: the name, then its facts, the
    description, the actions; then what is in the room as a quieter list, and
@@ -1638,7 +1633,7 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 /* On a touch screen photographs are swiped; arrows over them only hide the
    picture. */
 @media (hover: none) and (pointer: coarse) {
-  .sv-slides-arrow { display: none; }
+  .sv-slides-arrow, .sv-viewer-arrow { display: none; }
 }
 
 /* No hover on a touch screen, so a press answers instead: a brief dim, the

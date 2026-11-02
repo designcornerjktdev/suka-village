@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Minus, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
 import type { Photo } from "@/content/site";
 import { getDict } from "@/content/dict";
 import type { Locale } from "@/content/i18n";
@@ -17,14 +17,40 @@ import { lockScroll, unlockScroll } from "./scroll";
  * buttons (or the + and − keys) step it up to 2.2 times and back, and a click
  * or tap on it goes straight to the closest view of the point clicked, or
  * back to the whole picture. Enlarged, it pans like any scrolled box: a
- * finger, a trackpad, a wheel, or a drag with the mouse. The arrows, the
- * arrow keys, and a swipe at normal size go through the rest of the room.
- * The photograph is asked for at the size it is shown, so an enlarged one
+ * finger, a trackpad, a wheel, or a drag with the mouse. The arrows, inside
+ * the picture's own edges, the arrow keys, and a swipe at normal size go
+ * through the rest of the room; on a touch screen the swipe is the only way,
+ * and the dots under the picture show where it is (Reza, 31 Oct 2026). The
+ * photograph is asked for at the size it is shown, so an enlarged one
  * sharpens as the larger file arrives.
  */
 
 const STEPS = [1, 1.6, 2.2];
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/* At most this many dots: more than that (the gallery) and the row slides
+   along with the photograph, the dot at a cut end drawn small. */
+const DOTS = 13;
+const DOT = 14;
+
+function Dots({ at, count }: { at: number; count: number }) {
+  const shown = Math.min(count, DOTS);
+  const first = Math.min(Math.max(0, at - (DOTS >> 1)), count - shown);
+  const last = first + shown - 1;
+  return (
+    <div className="sv-viewer-dots" style={{ width: shown * DOT }} aria-hidden="true">
+      <div style={{ translate: `${-first * DOT}px 0` }}>
+        {Array.from({ length: count }, (_, i) => (
+          <span
+            key={i}
+            data-on={i === at ? "true" : undefined}
+            data-cut={(i === first && first > 0) || (i === last && last < count - 1) ? "true" : undefined}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type Drag = { x: number; y: number; left: number; top: number; moved: boolean; mouse: boolean };
 
@@ -92,10 +118,11 @@ export default function PhotoViewer({
     el.scrollTop = f.fy * h + oy - f.y;
   }, [w, h, ox, oy]);
 
+  /* The last photograph's size stands until the next one has loaded, so the
+     arrows hold their place rather than jumping to the screen's edges. */
   const show = (i: number) => {
     setAt((i + count) % count);
     setStep(0);
-    setNatural(null);
   };
 
   const zoomTo = (next: number, x = box.w / 2, y = box.h / 2) => {
@@ -147,69 +174,77 @@ export default function PhotoViewer({
         </div>
       </div>
 
-      <div
-        ref={stage}
-        className="sv-viewer-stage"
-        data-zoomed={step > 0 ? "true" : undefined}
-        onPointerDown={(e) => {
-          if (e.button !== 0) return;
-          const el = e.currentTarget;
-          const mouse = e.pointerType === "mouse";
-          drag.current = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop, moved: false, mouse };
-          if (mouse && step > 0) el.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          const d = drag.current;
-          if (!d) return;
-          const dx = e.clientX - d.x;
-          const dy = e.clientY - d.y;
-          if (Math.abs(dx) + Math.abs(dy) > 6) d.moved = true;
-          if (d.mouse && step > 0) {
-            e.currentTarget.scrollLeft = d.left - dx;
-            e.currentTarget.scrollTop = d.top - dy;
-          }
-        }}
-        onPointerUp={(e) => {
-          const d = drag.current;
-          drag.current = null;
-          if (!d) return;
-          const dx = e.clientX - d.x;
-          const dy = e.clientY - d.y;
-          if (!d.moved) {
-            const r = e.currentTarget.getBoundingClientRect();
-            zoomTo(step > 0 ? 0 : STEPS.length - 1, e.clientX - r.left, e.clientY - r.top);
-          } else if (step === 0 && many && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
-            show(at + (dx < 0 ? 1 : -1));
-          }
-        }}
-        onPointerCancel={() => {
-          drag.current = null;
-        }}
-      >
-        <div className="sv-viewer-canvas" style={natural ? { width: Math.max(box.w, w), height: Math.max(box.h, h) } : undefined}>
-          <div className="sv-viewer-frame" style={natural ? { width: w, height: h } : undefined}>
-            <Image
-              key={photo.src}
-              src={photo.src}
-              alt={photo.alt[locale]}
-              fill
-              sizes={`${Math.round(zoom * 100)}vw`}
-              draggable={false}
-              className="sv-viewer-photo"
-              onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
-            />
+      <div className="sv-viewer-body" style={{ ["--ox" as string]: `${ox}px` }}>
+        <div
+          ref={stage}
+          className="sv-viewer-stage"
+          data-zoomed={step > 0 ? "true" : undefined}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            const el = e.currentTarget;
+            const mouse = e.pointerType === "mouse";
+            drag.current = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop, moved: false, mouse };
+            if (mouse && step > 0) el.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            const d = drag.current;
+            if (!d) return;
+            const dx = e.clientX - d.x;
+            const dy = e.clientY - d.y;
+            if (Math.abs(dx) + Math.abs(dy) > 6) d.moved = true;
+            if (d.mouse && step > 0) {
+              e.currentTarget.scrollLeft = d.left - dx;
+              e.currentTarget.scrollTop = d.top - dy;
+            }
+          }}
+          onPointerUp={(e) => {
+            const d = drag.current;
+            drag.current = null;
+            if (!d) return;
+            const dx = e.clientX - d.x;
+            const dy = e.clientY - d.y;
+            if (!d.moved) {
+              const r = e.currentTarget.getBoundingClientRect();
+              zoomTo(step > 0 ? 0 : STEPS.length - 1, e.clientX - r.left, e.clientY - r.top);
+            } else if (step === 0 && many && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
+              show(at + (dx < 0 ? 1 : -1));
+            }
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+          }}
+        >
+          <div className="sv-viewer-canvas" style={natural ? { width: Math.max(box.w, w), height: Math.max(box.h, h) } : undefined}>
+            <div className="sv-viewer-frame" style={natural ? { width: w, height: h } : undefined}>
+              <Image
+                key={photo.src}
+                src={photo.src}
+                alt={photo.alt[locale]}
+                fill
+                sizes={`${Math.round(zoom * 100)}vw`}
+                draggable={false}
+                className="sv-viewer-photo"
+                onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+              />
+            </div>
           </div>
         </div>
+
+        {many && natural ? (
+          <>
+            <button type="button" className="sv-viewer-arrow sv-viewer-prev" onClick={() => show(at - 1)} aria-label={t.prevPhoto}>
+              <ChevronLeft size={24} strokeWidth={1.5} aria-hidden="true" />
+            </button>
+            <button type="button" className="sv-viewer-arrow sv-viewer-next" onClick={() => show(at + 1)} aria-label={t.nextPhoto}>
+              <ChevronRight size={24} strokeWidth={1.5} aria-hidden="true" />
+            </button>
+          </>
+        ) : null}
       </div>
 
       {many ? (
         <div className="sv-viewer-foot">
-          <button type="button" className="sv-stage-btn" onClick={() => show(at - 1)} aria-label={t.prevPhoto}>
-            <ArrowLeft size={20} strokeWidth={1.5} aria-hidden="true" />
-          </button>
-          <button type="button" className="sv-stage-btn sv-stage-btn--next" onClick={() => show(at + 1)} aria-label={t.nextPhoto}>
-            <ArrowRight size={20} strokeWidth={1.5} aria-hidden="true" />
-          </button>
+          <Dots at={at} count={count} />
         </div>
       ) : null}
     </dialog>
