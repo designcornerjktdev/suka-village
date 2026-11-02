@@ -1366,7 +1366,14 @@ button.sv-textlink { padding: 0; border: 0; background-color: transparent; curso
 .sv-slides--stage { height: auto; aspect-ratio: 4 / 3; }
 @media (max-width: 899px) { .sv-slides--stage { margin-inline: calc(-1 * var(--gutter)); } }
 @media (min-width: 900px) {
-  .sv-slides--stage { aspect-ratio: 16 / 9; max-height: calc(100svh - var(--head-h)); }
+  /* The height is worked out from the page's width, not by aspect-ratio:
+     with aspect-ratio, capping the height narrowed the box as well, and on
+     a short window it sat to the left with a gap on the right (seen by the
+     client, 2 Nov 2026). The width now always runs edge to edge. */
+  .sv-slides--stage {
+    aspect-ratio: auto;
+    height: min(calc((100vw - 2 * var(--gutter)) * 9 / 16), max(20rem, calc(100svh - var(--head-h))));
+  }
   .sv-slides--stage .sv-slides-arrow { width: 3.5rem; height: 3.5rem; }
 }
 .sv-slide-open { position: absolute; inset: 0; z-index: 1; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }

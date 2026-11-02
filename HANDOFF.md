@@ -160,6 +160,9 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
   - Foto kamar selebar halaman, rasio 16:9 dan boleh terpotong. Panah ada di
     dalam foto, titik di bawahnya. Di HP foto tetap 4:3 dari tepi ke tepi,
     di-swipe, dengan titik.
+  - Perbaikan 2 Nov: tinggi foto dihitung dari lebar halaman, bukan lewat
+    `aspect-ratio`. Sebelumnya di jendela browser yang pendek (laptop klien)
+    foto ikut menyempit dan menempel ke kiri.
   - Diklik, foto terbuka utuh dalam bentuk aslinya (kebanyakan 3:2; beberapa
     foto Single Cabin potret 4:5). Panah menempel di dalam tepi foto, juga
     saat di-zoom.
