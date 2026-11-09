@@ -1,6 +1,6 @@
 # Handoff: Suka Village
 
-Status per 31 Oktober 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
+Status per 9 November 2026. Untuk siapa pun (atau sesi Claude mana pun) yang
 melanjutkan proyek ini: baca ini dulu, lalu PRODUCT.md.
 
 ## Ringkas
