@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import Showcase from "@/components/Showcase";
-import { explore } from "@/content/site";
+import type { explore } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import { isLocale, locales } from "@/content/i18n";
 import JsonLd from "@/components/JsonLd";
 import PageNav from "@/components/PageNav";
 import { breadcrumbs, pageMetadata } from "@/lib/seo";
+import { getSection, paragraphs } from "@/lib/server/content";
 
 /**
- * Explore: three places near the estate (Situ Gunung, Gunung Padang, and
- * Bukit Sabak since the 21 October 2026 revision), in the same rows as every
- * other page. The estate's own address is on the Contact page, so it is not
- * repeated here.
+ * Explore: places near the estate, in the same rows as every other page,
+ * from Admin → Konten → Jelajah (map link per place). The estate's own
+ * address is on the Contact page, so it is not repeated here.
  *
  * The photographs are public landmarks, not the property. The owner asked for
  * no credit line under each place (revision of 28 October 2026), so the only
@@ -22,7 +22,7 @@ import { breadcrumbs, pageMetadata } from "@/lib/seo";
  */
 
 type ExplorePhoto = (typeof explore)[number]["photos"][number];
-const mustCredit = explore.flatMap((spot): readonly ExplorePhoto[] => spot.photos).filter((p) => p.credit.license.startsWith("CC BY"));
+const hasCredit = (p: object): p is ExplorePhoto => "credit" in p;
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -39,32 +39,39 @@ export default async function ExplorePage({ params }: PageProps<"/[lang]/explore
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = getDict(lang);
+  const spots = await getSection("explore");
+  /* Licence credits for the photographs on the page that need one. */
+  const mustCredit = spots.flatMap((s) => s.photos).filter(hasCredit).filter((p) => p.credit.license.startsWith("CC BY"));
 
   return (
     <>
       <section className="sv-page">
         <h1 className="sr-only">{t.seo.explore.title}</h1>
-        <PageNav title={t.nav.explore} label={t.common.onThisPage} items={explore.map((spot) => ({ id: spot.id, label: spot.name }))} />
+        <PageNav title={t.nav.explore} label={t.common.onThisPage} items={spots.map((spot) => ({ id: spot.id, label: spot.name[lang] }))} />
         <div className="sv-wrap">
 
           <div className="sv-rows">
-            {explore.map((spot, i) => (
+            {spots.map((spot, i) => (
               <Showcase
                 key={spot.id}
                 id={spot.id}
                 index={i}
                 locale={lang}
-                name={spot.name}
+                name={spot.name[lang]}
                 photos={spot.photos}
                 actions={
-                  <a href={spot.mapHref} target="_blank" rel="noopener noreferrer" className="sv-btn sv-btn--ghost sv-btn--sm">
-                    <span>{t.common.openMap}</span>
-                    <ArrowUpRight size={16} strokeWidth={1.6} aria-hidden="true" />
-                  </a>
+                  spot.link ? (
+                    <a href={spot.link} target="_blank" rel="noopener noreferrer" className="sv-btn sv-btn--ghost sv-btn--sm">
+                      <span>{t.common.openMap}</span>
+                      <ArrowUpRight size={16} strokeWidth={1.6} aria-hidden="true" />
+                    </a>
+                  ) : undefined
                 }
               >
                 <div className="sv-row-copy">
-                  <p>{t.explore.copy[spot.id]}</p>
+                  {paragraphs(spot.body[lang]).map((p) => (
+                    <p key={p}>{p}</p>
+                  ))}
                 </div>
               </Showcase>
             ))}

@@ -6,6 +6,7 @@ import { isLocale, locales } from "@/content/i18n";
 import JsonLd from "@/components/JsonLd";
 import PageNav from "@/components/PageNav";
 import { breadcrumbs, pageMetadata } from "@/lib/seo";
+import { getSection } from "@/lib/server/content";
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -22,6 +23,8 @@ export default async function GalleryPage({ params }: PageProps<"/[lang]/gallery
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = getDict(lang);
+  /* One item holds the whole gallery, in page order (Admin → Konten → Galeri). */
+  const photos = (await getSection("gallery")).flatMap((item) => item.photos);
 
   return (
     <>
@@ -29,7 +32,7 @@ export default async function GalleryPage({ params }: PageProps<"/[lang]/gallery
         <h1 className="sr-only">{t.seo.gallery.title}</h1>
         <PageNav title={t.nav.gallery} label={t.common.onThisPage} items={[]} />
         <div className="sv-wrap">
-          <GalleryGrid locale={lang} />
+          <GalleryGrid locale={lang} photos={photos} />
         </div>
       </section>
       <JsonLd data={breadcrumbs(lang, [{ name: t.nav.gallery, path: "gallery" }])} />

@@ -1,8 +1,9 @@
-import { units } from "@/content/site";
+import type { Feature } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import type { Locale } from "@/content/i18n";
 
-type Unit = (typeof units)[number];
+/** The facts the specs need: a launch room from content/site.ts or a room from the CMS. */
+type Unit = { size: number; bedrooms: number; bathrooms: number; features: readonly Feature[] };
 
 /**
  * A room's specification, in the order the owner's brief lists it: size,

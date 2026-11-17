@@ -10,6 +10,7 @@ import { getDict } from "@/content/dict";
 import { isLocale, locales } from "@/content/i18n";
 import { formatPhone } from "@/lib/booking/format";
 import { breadcrumbs, pageMetadata } from "@/lib/seo";
+import { getSection, getWhatsapp, paragraphs } from "@/lib/server/content";
 
 /**
  * Contact, in the same rows as every other page but unnumbered (two rows are
@@ -35,14 +36,24 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/contact">)
   return pageMetadata({ locale, path: "contact", ...t.seo.contact, image: "home" });
 }
 
-const MAP_QUERY = `${place.plusCode} Sukalarang, Sukabumi`;
 
 export default async function ContactPage({ params }: PageProps<"/[lang]/contact">) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = getDict(lang);
   const c = t.contact;
-  const welcome = photos.home[1];
+  /* The two rows as edited in Admin → Konten → Kontak; the site's own text and
+     photograph stand in for anything the CMS leaves empty. */
+  const items = await getSection("contact");
+  const reserve = items.find((i) => i.id === "reserve");
+  const location = items.find((i) => i.id === "location");
+  const welcome = reserve?.photos[0] ?? photos.home[1];
+  const instagram = reserve?.link || social.instagram;
+  const plusCode = location?.plusCode || place.plusCode;
+  const mapHref = location?.link || place.mapHref;
+  const MAP_QUERY = `${plusCode} Sukalarang, Sukabumi`;
+  /* The WhatsApp number is set in Admin → Pengaturan (IA: C6). */
+  const phone = (await getWhatsapp()) || `+${whatsapp.number}`;
 
   return (
     <>
@@ -52,8 +63,8 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
           title={t.nav.contact}
           label={t.common.onThisPage}
           items={[
-            { id: "reservasi", label: c.reserveTitle },
-            { id: "lokasi", label: c.location },
+            { id: "reservasi", label: reserve?.name[lang] || c.reserveTitle },
+            { id: "lokasi", label: location?.name[lang] || c.location },
           ]}
         />
         <div className="sv-wrap">
@@ -63,7 +74,7 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
               index={0}
               numbered={false}
               locale={lang}
-              name={c.reserveTitle}
+              name={reserve?.name[lang] || c.reserveTitle}
               media={
                 <Image
                   src={welcome.src}
@@ -81,7 +92,7 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
                     <span>{c.chat}</span>
                     <ArrowUpRight size={16} strokeWidth={1.6} aria-hidden="true" />
                   </a>
-                  <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="sv-textlink">
+                  <a href={instagram} target="_blank" rel="noopener noreferrer" className="sv-textlink">
                     Instagram {social.handle}
                     <ArrowUpRight size={16} strokeWidth={1.5} aria-hidden="true" />
                   </a>
@@ -89,10 +100,12 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
               }
             >
               <div className="sv-row-copy">
-                <p>{c.reserveCopy}</p>
+                {paragraphs(reserve?.body[lang] || c.reserveCopy).map((p) => (
+                  <p key={p}>{p}</p>
+                ))}
               </div>
               <a href={waHref(t.common.waHello)} target="_blank" rel="noopener noreferrer" className="sv-contact-number tnum">
-                {formatPhone(`+${whatsapp.number}`)}
+                {formatPhone(phone)}
               </a>
             </Showcase>
 
@@ -101,7 +114,7 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
               index={1}
               numbered={false}
               locale={lang}
-              name={c.location}
+              name={location?.name[lang] || c.location}
               media={
                 <div className="sv-contact-map">
                   <iframe
@@ -114,16 +127,18 @@ export default async function ContactPage({ params }: PageProps<"/[lang]/contact
                 </div>
               }
               actions={
-                <a href={place.mapHref} target="_blank" rel="noopener noreferrer" className="sv-btn sv-btn--primary sv-btn--sm">
+                <a href={mapHref} target="_blank" rel="noopener noreferrer" className="sv-btn sv-btn--primary sv-btn--sm">
                   <span>{c.route}</span>
                   <ArrowUpRight size={16} strokeWidth={1.6} aria-hidden="true" />
                 </a>
               }
             >
               <div className="sv-row-copy">
-                <p>{place.address}</p>
+                {paragraphs(location?.body[lang] || place.address).map((p) => (
+                  <p key={p}>{p}</p>
+                ))}
               </div>
-              <p className="sv-contact-plus tnum">Plus code {place.plusCode}</p>
+              <p className="sv-contact-plus tnum">Plus code {plusCode}</p>
             </Showcase>
           </div>
         </div>

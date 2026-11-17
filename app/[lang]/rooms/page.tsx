@@ -6,15 +6,16 @@ import PageNav from "@/components/PageNav";
 import RoomSpecs, { KeySpecs } from "@/components/RoomSpecs";
 import Showcase from "@/components/Showcase";
 import JsonLd from "@/components/JsonLd";
-import { units } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import { isLocale, localePath, locales } from "@/content/i18n";
 import { breadcrumbs, pageMetadata } from "@/lib/seo";
+import { getRooms, paragraphs } from "@/lib/server/content";
 
 /**
  * Rooms: one row per room, its first three photographs in a slider (as on
  * Facilities), the facts, and two ways on: Book now, and Discover for the
- * room's own page with every photograph.
+ * room's own page with every photograph. Rooms, their facts, text and
+ * photographs come from Admin → Kamar & harga.
  */
 
 export function generateStaticParams() {
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/rooms">): 
   const { lang } = await params;
   const locale = isLocale(lang) ? lang : "id";
   const t = getDict(locale);
-  const bedrooms = Object.fromEntries(units.map((u) => [u.id, u.bedrooms]));
+  const bedrooms = Object.fromEntries((await getRooms()).map((u) => [u.id, u.bedrooms]));
   return pageMetadata({
     locale,
     path: "rooms",
@@ -39,6 +40,7 @@ export default async function RoomsPage({ params }: PageProps<"/[lang]/rooms">) 
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = getDict(lang);
+  const units = await getRooms();
 
   return (
     <>
@@ -51,7 +53,7 @@ export default async function RoomsPage({ params }: PageProps<"/[lang]/rooms">) 
             {units.map((unit, i) => {
               const href = localePath(lang, `rooms/${unit.slug}`);
               /* The outside of the building first, then two rooms inside. */
-              const three = [unit.cover, ...unit.photos.filter((p) => p !== unit.cover)].slice(0, 3);
+              const three = unit.photos.slice(0, 3);
               return (
                 <Showcase
                   key={unit.id}
@@ -74,7 +76,9 @@ export default async function RoomsPage({ params }: PageProps<"/[lang]/rooms">) 
                   }
                 >
                   <div className="sv-row-copy">
-                    <p>{t.rooms.notes[unit.id]}</p>
+                    {paragraphs(unit.description[lang] || (t.rooms.notes as Record<string, string>)[unit.id] || "").map((p) => (
+                      <p key={p}>{p}</p>
+                    ))}
                   </div>
                   <KeySpecs unit={unit} locale={lang} />
                   <RoomSpecs unit={unit} locale={lang} />

@@ -60,6 +60,11 @@ Diperbarui: 17 November 2026.
     "Cek pesanan" (kode + email), bukan langsung ke halaman pesanannya.
     Apakah itu bisa diterima?
 
+15. **Teks halaman login admin** (diubah 17 Nov 2026, saat login sungguhan
+    dipasang): catatan "Prototipe: email dan kata sandi apa saja bisa dipakai"
+    dihapus, dan pesan error kini dua: "Isi email dan kata sandi." (kosong)
+    dan "Email atau kata sandi salah." (ditolak server). Mohon dicek kata-katanya.
+
 ## Sudah terjawab
 
 - **Jenis VA:** DGPC dengan Doku General BIN. Partner Service ID BNI 84923,

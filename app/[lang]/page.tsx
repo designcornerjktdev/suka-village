@@ -6,6 +6,7 @@ import { brand, photos, social, waHref } from "@/content/site";
 import { getDict } from "@/content/dict";
 import { isLocale } from "@/content/i18n";
 import { pageMetadata } from "@/lib/seo";
+import { getSection } from "@/lib/server/content";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
@@ -25,12 +26,14 @@ export async function generateMetadata({ params }: PageProps<"/[lang]">): Promis
  * No title on the picture. The heading is there for screen readers and search
  * engines only.
  */
-const HERO = photos.mainVilla[11];
+/* The site's own photograph until the CMS has one (Admin → Konten → Beranda). */
+const DEFAULT_HERO = photos.mainVilla[11];
 
 export default async function Home({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = getDict(lang);
+  const HERO = (await getSection("home"))[0]?.photos[0] ?? DEFAULT_HERO;
 
   return (
     <section className="sv-home">

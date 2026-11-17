@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { gallery } from "@/content/site";
+import { gallery, type Photo } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import type { Locale } from "@/content/i18n";
 
@@ -22,7 +22,8 @@ const PhotoViewer = dynamic(loadViewer, { ssr: false });
  * only, no captions, as the owner asked (21 October 2026): what each picture
  * shows is still in its alt text for screen readers.
  */
-export default function GalleryGrid({ locale }: { locale: Locale }) {
+/* `photos`: the gallery as edited in Admin → Konten → Galeri (the site's own set if none is given). */
+export default function GalleryGrid({ locale, photos = gallery }: { locale: Locale; photos?: readonly Photo[] }) {
   const t = getDict(locale);
   const [open, setOpen] = useState<number | null>(null);
   const grid = useRef<HTMLUListElement>(null);
@@ -31,7 +32,7 @@ export default function GalleryGrid({ locale }: { locale: Locale }) {
   return (
     <>
       <ul ref={grid} className="sv-gallery">
-        {gallery.map((photo, i) => (
+        {photos.map((photo, i) => (
           <li key={photo.src} className="sv-gallery-item">
             <button
               type="button"
@@ -59,7 +60,7 @@ export default function GalleryGrid({ locale }: { locale: Locale }) {
 
       {open !== null ? (
         <PhotoViewer
-          photos={gallery}
+          photos={photos}
           locale={locale}
           label={t.nav.gallery}
           start={open}

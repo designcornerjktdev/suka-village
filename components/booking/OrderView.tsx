@@ -10,7 +10,6 @@ import {
   Copy,
   CreditCard,
   Hourglass,
-  Info,
   LoaderCircle,
   Mail,
   MapPin,
@@ -27,7 +26,7 @@ import QrisCode from "./QrisCode";
 import MethodMark from "./MethodMark";
 import MessagePreview from "./MessagePreview";
 import { DEMO } from "@/lib/booking/config";
-import { cancelBooking, changePaymentMethod, checkPayment, confirmBooking, rejectBooking, simulateGateway } from "@/lib/booking/api";
+import { cancelBooking, changePaymentMethod, checkPayment } from "@/lib/booking/api";
 import { useBooking, useBookings, useNow, useRooms, useSettings } from "@/lib/booking/hooks";
 import { GUEST_GROUPS, METHODS, methodInfo } from "@/lib/booking/payments";
 import { effectiveStatus } from "@/lib/booking/occupancy";
@@ -453,64 +452,6 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
             </div>
           ) : null}
 
-          {/* --- Prototype: stand-in for the gateway's webhook ----------- */}
-          {DEMO && status === "pending" ? (
-            <section className="sv-demo-panel">
-              <p className="sv-demo-panel-title">
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                {o.demoTitle}
-              </p>
-              <p>{o.demoLead}</p>
-              <div className="sv-demo-panel-actions">
-                <button
-                  type="button"
-                  className="sv-btn sv-btn--primary sv-btn--sm"
-                  disabled={!!busy}
-                  onClick={() => run("paid", () => simulateGateway(booking.code, "paid"))}
-                >
-                  {busy === "paid" ? <LoaderCircle className="sv-spin" size={15} strokeWidth={1.8} aria-hidden="true" /> : null}
-                  <span>{o.simulatePaid}</span>
-                </button>
-                <button
-                  type="button"
-                  className="sv-btn sv-btn--ghost sv-btn--sm"
-                  disabled={!!busy}
-                  onClick={() => run("expire", () => simulateGateway(booking.code, "expired"))}
-                >
-                  <span>{o.simulateExpire}</span>
-                </button>
-              </div>
-            </section>
-          ) : null}
-
-          {/* --- Prototype: stand-in for the admin's decision ------------- */}
-          {DEMO && waiting ? (
-            <section className="sv-demo-panel">
-              <p className="sv-demo-panel-title">
-                <Info size={15} strokeWidth={1.8} aria-hidden="true" />
-                {o.demoTitle}
-              </p>
-              <p>{o.demoWaitLead}</p>
-              <div className="sv-demo-panel-actions">
-                <button type="button" className="sv-btn sv-btn--primary sv-btn--sm" disabled={!!busy} onClick={() => run("accept", () => confirmBooking(booking.code))}>
-                  {busy === "accept" ? <LoaderCircle className="sv-spin" size={15} strokeWidth={1.8} aria-hidden="true" /> : null}
-                  <span>{o.simulateAccept}</span>
-                </button>
-                <button
-                  type="button"
-                  className="sv-btn sv-btn--ghost sv-btn--sm"
-                  disabled={!!busy}
-                  onClick={() => run("reject", () => rejectBooking(booking.code, locale === "id" ? "Tanggal tidak tersedia." : "The dates are not available."))}
-                >
-                  <span>{o.simulateReject}</span>
-                </button>
-                <Link href={`/admin/bookings/${booking.code}`} target="_blank" className="sv-textlink">
-                  {o.openAdmin}
-                  <ArrowUpRight size={14} strokeWidth={1.6} aria-hidden="true" />
-                </Link>
-              </div>
-            </section>
-          ) : null}
         </div>
 
         {/* --- Details ------------------------------------------------------ */}

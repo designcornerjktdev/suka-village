@@ -2,34 +2,36 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Info, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import Logo from "../Logo";
 import { adminLogin } from "@/lib/booking/api";
-import { DEMO } from "@/lib/booking/config";
 
 /**
- * The admin sign in. In the prototype any filled in email and password opens
- * the panel, and the page says so. The developer replaces adminLogin with real
- * authentication (BOOKING.md, "Admin access").
+ * The admin sign in, against real accounts (lib/server/auth.ts; accounts are
+ * made with `npm run admin:create`).
  */
 export default function AdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<"empty" | "wrong" | null>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password) {
+      setError("empty");
+      return;
+    }
     setBusy(true);
-    setError(false);
+    setError(null);
     const ok = await adminLogin(email, password);
     if (ok) {
       router.replace("/admin/bookings");
       return;
     }
     setBusy(false);
-    setError(true);
+    setError("wrong");
   };
 
   return (
@@ -53,7 +55,7 @@ export default function AdminLogin() {
 
         {error ? (
           <p className="sv-bk-alert" role="alert">
-            Isi email dan kata sandi.
+            {error === "empty" ? "Isi email dan kata sandi." : "Email atau kata sandi salah."}
           </p>
         ) : null}
 
@@ -61,13 +63,6 @@ export default function AdminLogin() {
           {busy ? <LoaderCircle className="sv-spin" size={16} strokeWidth={1.8} aria-hidden="true" /> : null}
           Masuk
         </button>
-
-        {DEMO ? (
-          <p className="ad-note">
-            <Info size={15} strokeWidth={1.6} aria-hidden="true" />
-            Prototipe: email dan kata sandi apa saja bisa dipakai. Login sungguhan dipasang developer.
-          </p>
-        ) : null}
       </form>
     </main>
   );

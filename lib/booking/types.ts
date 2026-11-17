@@ -287,8 +287,8 @@ export type Room = {
 
 /**
  * A photograph is referenced by a string: a path under /photos for the ones
- * that ship with the site, or "upload:<id>" for one added in the admin (the
- * file itself is in IndexedDB in the prototype; object storage in production).
+ * that ship with the site, or /uploads/<year>/<id>.jpg for one added in the
+ * admin (stored on the server's disk, lib/server/storage.ts).
  */
 export type MediaMeta = { name: string; alt: Bilingual };
 

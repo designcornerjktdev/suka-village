@@ -8,7 +8,7 @@
  * The developer sets this to false once api.ts and hooks.ts talk to the real
  * backend. Nothing else in the interface needs to change. See BOOKING.md.
  */
-export const DEMO = true;
+export const DEMO = false;
 
 /** Artificial latency on mock calls, so loading states are exercised. */
 export const MOCK_LATENCY_MS = 450;

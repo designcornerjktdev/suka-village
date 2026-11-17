@@ -6,10 +6,11 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, Info } from "lucide-react";
 import RoomSpecs, { KeySpecs } from "@/components/RoomSpecs";
 import Slides from "@/components/Slides";
 import JsonLd from "@/components/JsonLd";
-import { units, waHref } from "@/content/site";
+import { waHref } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import { isLocale, localePath, locales } from "@/content/i18n";
 import { breadcrumbs, pageMetadata, roomMeta, roomSchema } from "@/lib/seo";
+import { getRoom, getRooms, paragraphs } from "@/lib/server/content";
 
 /**
  * One room, reached from "Discover". As on the owner's reference
@@ -21,27 +22,32 @@ import { breadcrumbs, pageMetadata, roomMeta, roomSchema } from "@/lib/seo";
  * own shape, when clicked (`stage` in Slides).
  */
 
-export function generateStaticParams() {
-  return locales.flatMap((lang) => units.map((unit) => ({ lang, unit: unit.slug })));
+/* Built for the rooms in the database at build time; a room added later in
+   the admin is rendered on its first visit (dynamicParams) and cached. */
+export async function generateStaticParams() {
+  const rooms = await getRooms();
+  return locales.flatMap((lang) => rooms.map((unit) => ({ lang, unit: unit.slug })));
 }
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/rooms/[unit]">): Promise<Metadata> {
   const { lang, unit } = await params;
-  const found = units.find((u) => u.slug === unit);
+  const found = await getRoom(unit);
   if (!found) return {};
   const locale = isLocale(lang) ? lang : "id";
-  return pageMetadata({ locale, path: `rooms/${found.slug}`, ...roomMeta(locale, found), image: found.id });
+  /* Share images exist for the three launch rooms; a new room shares the Rooms one. */
+  const image = (["mainVilla", "familyCabin", "singleCabin"] as const).find((id) => id === found.id) ?? "rooms";
+  return pageMetadata({ locale, path: `rooms/${found.slug}`, ...roomMeta(locale, found), image });
 }
 
 export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[unit]">) {
   const { lang, unit } = await params;
   if (!isLocale(lang)) notFound();
-  const found = units.find((u) => u.slug === unit);
+  const found = await getRoom(unit);
   if (!found) notFound();
   const t = getDict(lang);
-  const others = units.filter((u) => u.id !== found.id);
+  const others = (await getRooms()).filter((u) => u.id !== found.id);
   const ask = fill(t.rooms.askMessage, { name: found.name });
-  const all = [found.cover, ...found.photos.filter((p) => p !== found.cover)];
+  const all = found.photos;
 
   return (
     <>
@@ -63,7 +69,9 @@ export default async function RoomPage({ params }: PageProps<"/[lang]/rooms/[uni
                 {found.size} m² · {found.bedrooms} {found.bedrooms === 1 ? t.rooms.bedroomShortOne : t.rooms.bedroomsShort}
               </p>
               <div className="sv-row-copy">
-                <p>{t.rooms.notes[found.id]}</p>
+                {paragraphs(found.description[lang] || (t.rooms.notes as Record<string, string>)[found.id] || "").map((p) => (
+                  <p key={p}>{p}</p>
+                ))}
               </div>
               <KeySpecs unit={found} locale={lang} />
               <div className="sv-show-actions">

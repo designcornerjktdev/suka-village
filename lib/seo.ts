@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { brand, listedFacilities, photos, place, share, social, units, whatsapp, type ShareKey } from "@/content/site";
+import { brand, listedFacilities, photos, place, share, social, units, whatsapp, type Feature, type ShareKey } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import { defaultLocale, localePath, locales, type Locale } from "@/content/i18n";
 import { INDEXABLE, SITE_URL } from "./site-url";
@@ -119,10 +119,29 @@ export function pageMetadata({
   };
 }
 
-/** A room's title and description, with its numbers filled in from the facts. */
-export function roomMeta(locale: Locale, unit: (typeof units)[number]) {
-  const meta = getDict(locale).seo.room[unit.id];
+/** What room pages and their structured data need: a launch room or one from the CMS. */
+export type SeoRoom = {
+  id: string;
+  slug: string;
+  name: string;
+  size: number;
+  bedrooms: number;
+  bathrooms: number;
+  features: readonly Feature[];
+  photos: readonly { src: string }[];
+  description?: { id: string; en: string };
+};
+
+/** A room's title and description, with its numbers filled in from the facts.
+    A room added in the CMS has no written SEO text: its name and its own
+    description stand in. */
+export function roomMeta(locale: Locale, unit: SeoRoom) {
+  const meta = (getDict(locale).seo.room as Record<string, { title: string; description: string } | undefined>)[unit.id];
   const values = { size: unit.size, bedrooms: unit.bedrooms, bathrooms: unit.bathrooms };
+  if (!meta) {
+    const text = (unit.description?.[locale] ?? "").replace(/\s+/g, " ").trim();
+    return { title: `${unit.name} · Suka Village`, description: text.length > 160 ? `${text.slice(0, 157).trimEnd()}...` : text };
+  }
   return { title: fill(meta.title, values), description: fill(meta.description, values) };
 }
 
@@ -182,7 +201,7 @@ export function siteGraph(locale: Locale) {
 }
 
 /** One room, on its own page, tied back to the property. */
-export function roomSchema(locale: Locale, unit: (typeof units)[number]) {
+export function roomSchema(locale: Locale, unit: SeoRoom) {
   const t = getDict(locale);
   return {
     "@context": "https://schema.org",

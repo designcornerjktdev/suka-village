@@ -13,6 +13,19 @@ describe("proxy (locale redirect)", () => {
     expect(matches("/uploads/2027/abc.jpg")).toBe(false);
   });
 
+  it("admin pages without a session cookie go to the login, never into a locale", () => {
+    expect(matches("/admin/bookings")).toBe(true);
+    const res = proxy(new NextRequest("http://localhost/admin/bookings"));
+    expect(res?.headers.get("location")).toBe("http://localhost/admin/login");
+  });
+
+  it("admin pages with a session cookie, and the login itself, pass through", () => {
+    const withCookie = proxy(new NextRequest("http://localhost/admin/calendar", { headers: { cookie: "sv_admin=abc" } }));
+    expect(withCookie?.headers.get("location") ?? null).toBeNull();
+    const loginPage = proxy(new NextRequest("http://localhost/admin/login"));
+    expect(loginPage?.headers.get("location") ?? null).toBeNull();
+  });
+
   it("still sends bare pages to a locale", () => {
     expect(matches("/rooms")).toBe(true);
     const res = proxy(new NextRequest("http://localhost/rooms", { headers: { "accept-language": "en" } }));
