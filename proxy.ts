@@ -34,7 +34,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   /* Everything except Next internals, the admin (Indonesian only, outside the
-     locale tree), and anything with a file extension, so /photos/... and
+     locale tree), the backend (/api, DOKU's token call at /authorization),
+     uploaded photos, and anything with a file extension, so /photos/... and
      /favicon.ico are never rewritten into a locale. */
-  matcher: ["/((?!_next|admin|.*\\..*).*)"],
+  matcher: ["/((?!_next|admin|api|authorization|uploads|.*\\..*).*)"],
 };

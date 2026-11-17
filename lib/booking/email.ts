@@ -138,6 +138,7 @@ export function bookingEmail({
   locale,
   origin,
   roomName,
+  token,
 }: {
   booking: Booking;
   template: TemplateId;
@@ -146,9 +147,11 @@ export function bookingEmail({
   /** Where the site lives; the logo and the links point here. */
   origin: string;
   roomName?: (id: string) => string;
+  /** Order page access token, added to the links (server emails only). */
+  token?: string;
 }) {
   const t = T[locale];
-  const vars = variablesFor(b, locale, origin, roomName);
+  const vars = variablesFor(b, locale, origin, roomName, token);
   const tpl = settings.templates[template];
   const subject = render(tpl.subject[locale], vars);
   const text = render(tpl.email[locale], vars);

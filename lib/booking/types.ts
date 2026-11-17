@@ -202,6 +202,29 @@ export type Booking = {
   rejectReason?: string;
 };
 
+/** What the booking flow (and the admin's booking manual) sends. */
+export type CreateInput = {
+  checkIn: string;
+  checkOut: string;
+  units: UnitId[];
+  guests: number;
+  guest: Guest;
+  notes?: string;
+  method: PaymentMethodId;
+  locale: Locale;
+  /** A promo code the guest applied. Checked again on the server, and the
+      discount worked out again: what the browser showed is never trusted. */
+  promoCode?: string;
+  /** Admin only: a booking taken by hand. `paid` means the admin has the
+      money and vouches for it, so it is created already confirmed. */
+  source?: "website" | "admin";
+  paid?: boolean;
+};
+
+export type CreateError = "invalid" | "unavailable" | "min_nights" | "not_bookable" | "promo";
+
+export type CreateResult = { ok: true; booking: Booking } | { ok: false; error: CreateError; units?: UnitId[]; promoError?: PromoError };
+
 export type BlockReason = "airbnb" | "booking_com" | "maintenance" | "owner" | "other";
 
 /** Nights closed by hand, without a website booking: sold on another platform, repairs, the owner's own use. */

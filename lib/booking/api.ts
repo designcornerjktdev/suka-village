@@ -1,12 +1,13 @@
 "use client";
 
-import type { Locale } from "@/content/i18n";
 import type {
   Block,
   BlockReason,
   Booking,
   BookingStatus,
   Content,
+  CreateInput,
+  CreateResult,
   ContentSection,
   ContentItem,
   Guest,
@@ -77,27 +78,8 @@ function notify(b: Booking, template: TemplateId): NotificationLog[] {
 
 /* --- Guest ---------------------------------------------------------------- */
 
-export type CreateInput = {
-  checkIn: string;
-  checkOut: string;
-  units: UnitId[];
-  guests: number;
-  guest: Guest;
-  notes?: string;
-  method: PaymentMethodId;
-  locale: Locale;
-  /** A promo code the guest applied. Checked again here, and the discount
-      worked out again: what the browser showed is never trusted. */
-  promoCode?: string;
-  /** Admin only: a booking taken by hand. `paid` means the admin has the
-      money and vouches for it, so it is created already confirmed. */
-  source?: "website" | "admin";
-  paid?: boolean;
-};
-
-export type CreateError = "invalid" | "unavailable" | "min_nights" | "not_bookable" | "promo";
-
-export type CreateResult = { ok: true; booking: Booking } | { ok: false; error: CreateError; units?: UnitId[]; promoError?: PromoError };
+/* Shared with the server (lib/server/bookings.ts), so they live in types.ts. */
+export type { CreateError, CreateInput, CreateResult } from "./types";
 
 /** Looks a code up and checks it against a stay. */
 function findPromo(db: ReturnType<typeof getDB>, code: string, ctx: { checkIn: string; checkOut: string; units: UnitId[] }) {

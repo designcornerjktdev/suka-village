@@ -1,0 +1,265 @@
+// Suka Village database. The shapes the app sees are lib/booking/types.ts;
+// lib/server/mappers.ts converts rows into them.
+//
+// Kept portable to MySQL (docs/superpowers/specs/2026-11-17-backend-design.md):
+// no partial indexes, no array columns, no Postgres-only raw SQL. Lists and
+// bilingual text are Json. Stay dates are @db.Date (calendar days, Asia/Jakarta);
+// event times are DateTime in UTC. Money is Int rupiah.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// pending | paid | confirmed | rejected | checked_in | completed | cancelled | expired
+model Booking {
+  code         String    @id
+  status       String
+  /// website | admin
+  source       String
+  /// id | en
+  locale       String
+  checkIn      DateTime  @db.Date
+  checkOut     DateTime  @db.Date
+  guests       Int
+  guestName    String
+  /// Empty for a booking the admin took over WhatsApp without an email.
+  guestEmail   String
+  /// E.164, +62...
+  guestPhone   String
+  notes        String?
+  /// Quote frozen at booking time, night by night (lib/booking/types.ts Quote).
+  quote        Json
+  /// The promo applied, for counting its quota (also frozen inside quote).
+  promoId      String?
+  internalNote String?
+  rejectReason String?
+  /// Money reached us for a booking that is no longer a stay (rejected, or paid after it expired).
+  refundOwed   Boolean   @default(false)
+  /// Soft delete (UU PDP request or tidying); tax records keep the row.
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  units         BookingUnit[]
+  nights        Night[]
+  payment       Payment?
+  notifications Notification[]
+  events        BookingEvent[]
+  accessTokens  AccessToken[]
+
+  @@index([status])
+  @@index([checkIn])
+  @@index([promoId])
+}
+
+model BookingUnit {
+  bookingCode String
+  unit        String
+  booking     Booking @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
+  room        Room    @relation(fields: [unit], references: [unit])
+
+  @@id([bookingCode, unit])
+}
+
+/// THE double-booking guard. One row per (room, night) that is taken, by a
+/// holding booking or a block. Rows are deleted when a booking is released
+/// (cancelled, expired, rejected) or a block is removed, so a plain unique
+/// index is enough, on Postgres and MySQL alike.
+model Night {
+  id          Int      @id @default(autoincrement())
+  unit        String
+  date        DateTime @db.Date
+  bookingCode String?
+  blockId     String?
+  booking     Booking? @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
+  block       Block?   @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@unique([unit, date])
+  @@index([bookingCode])
+  @@index([blockId])
+}
+
+model Payment {
+  bookingCode String    @id
+  /// lib/booking/types.ts PaymentMethodId
+  method      String
+  amount      Int
+  /// pending | paid | expired | failed | refunded
+  status      String
+  /// What the guest pays with: VA number, QR string, e-wallet or card URL.
+  reference   String
+  /// DOKU's id for the charge.
+  gatewayId   String?
+  expiresAt   DateTime
+  paidAt      DateTime?
+  booking     Booking   @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  bookingCode String
+  /// lib/booking/types.ts TemplateId
+  template    String
+  to          String
+  /// sent | failed
+  status      String
+  at          DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
+
+  @@index([bookingCode])
+}
+
+/// History card in the admin booking detail.
+model BookingEvent {
+  id          Int      @id @default(autoincrement())
+  bookingCode String
+  /// guest | admin | system | gateway
+  by          String
+  event       String
+  adminId     String?
+  at          DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
+
+  @@index([bookingCode])
+}
+
+/// Signed-link access to the order page. Only the SHA-256 of the token is kept.
+model AccessToken {
+  hash        String   @id
+  bookingCode String
+  createdAt   DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
+
+  @@index([bookingCode])
+}
+
+/// Nights closed by hand (or, later, by BookandLink).
+model Block {
+  id         String   @id @default(cuid())
+  unit       String
+  from       DateTime @db.Date
+  /// Exclusive, like checkOut.
+  to         DateTime @db.Date
+  /// airbnb | booking_com | maintenance | owner | other
+  reason     String
+  note       String?
+  /// manual | bookandlink
+  source     String   @default("manual")
+  externalId String?
+  createdAt  DateTime @default(now())
+  nights     Night[]
+  room       Room     @relation(fields: [unit], references: [unit])
+
+  @@index([unit])
+}
+
+model Room {
+  unit        String        @id
+  name        String
+  size        Int
+  bedrooms    Int
+  bathrooms   Int
+  /// Feature[]
+  features    Json
+  /// { id, en }
+  description Json
+  /// string[]
+  photos      Json
+  archived    Boolean       @default(false)
+  position    Int           @default(0)
+  rate        Rate?
+  bookings    BookingUnit[]
+  blocks      Block[]
+}
+
+model Rate {
+  unit      String  @id
+  weekday   Int
+  /// Friday and Saturday nights.
+  weekend   Int
+  minNights Int     @default(1)
+  maxGuests Int?
+  bookable  Boolean @default(false)
+  /// Season[]
+  seasons   Json
+  room      Room    @relation(fields: [unit], references: [unit])
+}
+
+model Promo {
+  id          String    @id @default(cuid())
+  /// Upper case, unique.
+  code        String    @unique
+  note        String?
+  /// percent | amount
+  kind        String
+  value       Int
+  maxDiscount Int?
+  minNights   Int       @default(1)
+  validFrom   DateTime? @db.Date
+  validTo     DateTime? @db.Date
+  /// UnitId[]; empty = every room
+  units       Json
+  quota       Int?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
+
+/// One row (id = 1): lib/booking/types.ts Settings.
+model Settings {
+  id   Int  @id @default(1)
+  data Json
+}
+
+model ContentItem {
+  id       String
+  /// home | facilities | experiences | events | explore | gallery | contact
+  section  String
+  position Int
+  /// lib/booking/types.ts ContentItem minus id
+  data     Json
+
+  @@id([section, id])
+}
+
+/// Name and alt text (ID/EN) of a photograph, keyed by its src.
+model Media {
+  src  String @id
+  name String
+  alt  Json
+}
+
+model Admin {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  adminId   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+/// DOKU notifications already handled (idempotency).
+model WebhookEvent {
+  id         String   @id
+  receivedAt DateTime @default(now())
+}
+
+/// Fixed-window rate limit counters.
+model RateHit {
+  key         String
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@id([key, windowStart])
+}

@@ -47,3 +47,6 @@ next-env.d.ts
 !.env.example
 /uploads
 /.superpowers/
+
+# DOKU SNAP merchant key pair (never commit)
+/keys/

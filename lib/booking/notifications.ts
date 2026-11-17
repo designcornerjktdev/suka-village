@@ -125,6 +125,9 @@ export function variablesFor(
   locale: Locale,
   origin: string,
   roomName: (id: string) => string = (id) => units.find((x) => x.id === id)?.name ?? id,
+  /** The order page access token (server emails only). Without it the link
+      opens "Cek pesanan"; previews in the admin leave it out. */
+  token?: string,
 ): Record<(typeof VARIABLES)[number], string> {
   const method = methodInfo(b.payment.method);
   const reference =
@@ -148,7 +151,7 @@ export function variablesFor(
     referensi: reference,
     batas: fmtDateTime(b.payment.expiresAt, locale),
     alasan: b.rejectReason || (locale === "id" ? "Tanggal tidak tersedia." : "The dates are not available."),
-    link: `${origin}/${locale}/booking/${b.code}`,
+    link: `${origin}/${locale}/booking/${b.code}${token ? `?t=${encodeURIComponent(token)}` : ""}`,
     peta: place.mapHref,
   };
 }
