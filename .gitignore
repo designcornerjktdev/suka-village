@@ -43,3 +43,7 @@ next-env.d.ts
 
 # design tool workspace (Impeccable), local only
 /.impeccable/
+
+!.env.example
+/uploads
+/.superpowers/
