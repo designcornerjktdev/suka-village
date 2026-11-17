@@ -23,6 +23,7 @@ import { localePath, type Locale } from "@/content/i18n";
 import Emph from "../Emph";
 import StorePhoto from "../StorePhoto";
 import DemoQR from "./DemoQR";
+import QrisCode from "./QrisCode";
 import MethodMark from "./MethodMark";
 import MessagePreview from "./MessagePreview";
 import { DEMO } from "@/lib/booking/config";
@@ -283,7 +284,8 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
                 ) : method.group === "qris" ? (
                   <>
                     <p className="sv-pay-card-title">{o.qrisTitle}</p>
-                    <DemoQR seed={booking.payment.reference} label={o.qrisTitle} />
+                    {/* The prototype keeps its labelled placeholder; the live site draws DOKU's QRIS string. */}
+                    {DEMO ? <DemoQR seed={booking.payment.reference} label={o.qrisTitle} /> : <QrisCode value={booking.payment.reference} label={o.qrisTitle} />}
                     <ol className="sv-pay-steps">
                       {o.qrisSteps.map((s) => (
                         <li key={s}>{s}</li>

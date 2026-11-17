@@ -1,0 +1,174 @@
+import { expireLapsed, markPaidByGateway } from "../bookings";
+import { db } from "../db";
+import { sendTemplates } from "../mail";
+import { dokuConfig } from "./doku/config";
+import { signNonSnap } from "./doku/nonsnap";
+import { issueNotificationToken, sameSignature, verifyAsymmetric, verifyNotificationToken } from "./doku/snap";
+
+/**
+ * DOKU → us. SNAP notifications come in two steps, as in DOKU's own library:
+ *  1. DOKU asks us for a token, signing `clientId|timestamp` with ITS private
+ *     key; we check it with DOKU's public key and issue a short-lived JWT
+ *     signed with OUR private key.
+ *  2. DOKU posts the payment with `Authorization: Bearer <that token>`; we
+ *     accept it only if the token is ours and unexpired.
+ */
+
+export const NOTIFY_TOKEN_SECONDS = 900;
+
+type Reply = { status: number; body: unknown };
+
+export function handleTokenRequest(headers: Headers, now = new Date()): Reply {
+  const c = dokuConfig();
+  const clientId = headers.get("x-client-key") ?? "";
+  const timestamp = headers.get("x-timestamp") ?? "";
+  const signature = headers.get("x-signature") ?? "";
+  if (!c.dokuPublicKey || clientId !== c.clientId || !verifyAsymmetric(c.dokuPublicKey, clientId, timestamp, signature)) {
+    return { status: 401, body: { responseCode: "4017300", responseMessage: "Unauthorized. Signature" } };
+  }
+  return {
+    status: 200,
+    body: {
+      responseCode: "2007300",
+      responseMessage: "Successful",
+      accessToken: issueNotificationToken(c.privateKey, c.clientId, NOTIFY_TOKEN_SECONDS, now),
+      tokenType: "Bearer",
+      expiresIn: NOTIFY_TOKEN_SECONDS,
+      additionalInfo: "",
+    },
+  };
+}
+
+type VaNotification = {
+  partnerServiceId?: string;
+  customerNo?: string;
+  virtualAccountNo?: string;
+  virtualAccountName?: string;
+  trxId?: string;
+  paymentRequestId?: string;
+  paidAmount?: { value?: string; currency?: string };
+};
+
+/** SNAP QRIS payment notification (service 52). */
+type QrisNotification = {
+  originalReferenceNo?: string;
+  originalPartnerReferenceNo?: string;
+  latestTransactionStatus?: string;
+  amount?: { value?: string; currency?: string };
+};
+
+const fail = (status: number, code: string, message: string): Reply => ({ status, body: { responseCode: code, responseMessage: message } });
+
+export async function handlePaymentNotification(headers: Headers, raw: string, now = new Date()): Promise<Reply> {
+  const c = dokuConfig();
+  const bearer = (headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+  if (!verifyNotificationToken(c.merchantPublicKey, bearer, now)) return fail(401, "4012501", "Invalid Token (B2B)");
+
+  let parsed: VaNotification & QrisNotification;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return fail(400, "4002500", "Bad Request");
+  }
+
+  /* QRIS (SNAP service 52) and e-wallet direct debit (service 56) share this shape. */
+  if (parsed.originalPartnerReferenceNo) {
+    const q = parsed;
+    const charge = await db.payment.findFirst({ where: { gatewayId: q.originalPartnerReferenceNo }, select: { method: true } });
+    const ok = { status: 200, body: { responseCode: charge?.method === "qris" ? "2005200" : "2005600", responseMessage: "Successful" } };
+    /* Only a successful payment moves anything; other statuses are acknowledged. */
+    if (q.latestTransactionStatus !== "00") return ok;
+    const r = await settle(q.originalPartnerReferenceNo!, q.amount?.value, `qris:${q.originalPartnerReferenceNo}:${q.originalReferenceNo ?? ""}`, now);
+    return r ?? ok;
+  }
+
+  const n = parsed;
+  const r = await settle(n.trxId, n.paidAmount?.value, `va:${n.trxId}:${n.paymentRequestId ?? ""}`, now);
+  if (r) return r;
+  return {
+    status: 200,
+    body: {
+      responseCode: "2002500",
+      responseMessage: "Successful",
+      virtualAccountData: {
+        partnerServiceId: n.partnerServiceId,
+        customerNo: n.customerNo,
+        virtualAccountNo: n.virtualAccountNo,
+        virtualAccountName: n.virtualAccountName,
+        paymentRequestId: n.paymentRequestId,
+        paidAmount: n.paidAmount,
+      },
+    },
+  };
+}
+
+/**
+ * Non-SNAP notification (cards): signed like a Non-SNAP request, with our
+ * Secret Key and Request-Target = the path DOKU posted to. Body carries
+ * order.invoice_number (our trxId), order.amount and transaction.status.
+ */
+export async function handleNonSnapNotification(headers: Headers, raw: string, path: string, now = new Date()): Promise<Reply> {
+  const c = dokuConfig();
+  const expected = signNonSnap(c.secretKey, {
+    clientId: headers.get("client-id") ?? "",
+    requestId: headers.get("request-id") ?? "",
+    timestamp: headers.get("request-timestamp") ?? "",
+    target: path,
+    body: raw,
+  });
+  if (headers.get("client-id") !== c.clientId || !sameSignature(headers.get("signature") ?? "", expected)) {
+    return { status: 401, body: { error: { code: "invalid_signature", message: "Invalid Signature" } } };
+  }
+  let n: { order?: { invoice_number?: string; amount?: number | string }; transaction?: { status?: string } };
+  try {
+    n = JSON.parse(raw);
+  } catch {
+    return { status: 400, body: { error: { code: "bad_request", message: "Bad Request" } } };
+  }
+  /* Only a successful payment moves anything; FAILED and the rest are acknowledged. */
+  if (n.transaction?.status !== "SUCCESS") return { status: 200, body: {} };
+  const r = await settle(n.order?.invoice_number, n.order?.amount === undefined ? undefined : String(n.order.amount), `card:${n.order?.invoice_number}`, now);
+  return r ?? { status: 200, body: {} };
+}
+
+/** Non-SNAP notifications carry `Signature: HMACSHA256=...`; SNAP ones a Bearer token. */
+export const isNonSnap = (headers: Headers) => (headers.get("signature") ?? "").startsWith("HMACSHA256=");
+
+/**
+ * A successful payment for our charge `trxId`: checks the amount, then marks
+ * the booking paid (idempotent), or flags a refund if it is no longer a stay.
+ * Returns an error reply, or null when the caller should answer success.
+ */
+async function settle(trxId: string | undefined, amount: string | undefined, eventId: string, now: Date): Promise<Reply | null> {
+  const payment = trxId ? await db.payment.findFirst({ where: { gatewayId: trxId } }) : null;
+  if (!payment) return fail(404, "4042512", "Bill not found");
+  const code = payment.bookingCode;
+
+  const paid = Math.round(Number(amount ?? NaN));
+  if (paid !== payment.amount) {
+    await db.bookingEvent.create({ data: { bookingCode: code, by: "gateway", event: `Pembayaran DOKU tidak sesuai: diterima ${amount ?? "?"}, tagihan ${payment.amount}`, at: now } });
+    return fail(400, "4042513", "Invalid Amount");
+  }
+
+  /* Kept for the audit trail; the status change below is itself idempotent. */
+  await db.webhookEvent.upsert({ where: { id: eventId }, create: { id: eventId }, update: {} });
+
+  /* Settle lapsed holds first and on their own: inside the paid transition a
+     refused change rolls back, and would leave a lapsed hold looking pending. */
+  await db.$transaction((tx) => expireLapsed(tx, now));
+  const r = await markPaidByGateway(code, trxId!, now);
+  if (r.ok) {
+    await sendTemplates(code, r.templates);
+  } else if (r.error === "state") {
+    /* Money arrived for a booking that is no longer a stay (expired, cancelled). */
+    const b = await db.booking.findUniqueOrThrow({ where: { code } });
+    if (!b.refundOwed) {
+      await db.$transaction([
+        db.booking.update({ where: { code }, data: { refundOwed: true } }),
+        db.payment.update({ where: { bookingCode: code }, data: { status: "paid", paidAt: now } }),
+        db.bookingEvent.create({ data: { bookingCode: code, by: "gateway", event: "Pembayaran masuk setelah pesanan berakhir, perlu refund", at: now } }),
+      ]);
+    }
+  }
+  return null;
+}

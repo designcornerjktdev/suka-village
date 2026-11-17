@@ -7,6 +7,7 @@ export default defineConfig({
     environment: "node",
     setupFiles: ["./tests/setup.ts"],
     fileParallelism: false,
+    include: ["tests/**/*.test.{ts,tsx}"],
     env: { DATABASE_URL: process.env.TEST_DATABASE_URL ?? "postgresql://suka:suka@localhost:5433/suka_test" },
   },
 });

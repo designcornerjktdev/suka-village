@@ -92,8 +92,10 @@ model Payment {
   status      String
   /// What the guest pays with: VA number, QR string, e-wallet or card URL.
   reference   String
-  /// DOKU's id for the charge.
+  /// Our id for the charge at DOKU (VA trxId, QRIS partnerReferenceNo).
   gatewayId   String?
+  /// DOKU's own id for the charge, where it has one (QRIS referenceNo).
+  gatewayRef  String?
   expiresAt   DateTime
   paidAt      DateTime?
   booking     Booking   @relation(fields: [bookingCode], references: [code], onDelete: Cascade)

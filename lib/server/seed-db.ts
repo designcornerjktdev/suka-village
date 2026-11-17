@@ -48,9 +48,16 @@ export async function seedDatabase(db: PrismaClient) {
     }
   }
 
+  /* OVO needs the guest's account bound first (phone, OTP, PIN) and GoPay is
+     not in DOKU's SNAP Direct API, so both start switched off; the admin can
+     see them in Pengaturan, and the server refuses them until they are built
+     (docs/open-questions.md). */
+  const settings = seedSettings();
+  settings.methods.ovo = false;
+  settings.methods.gopay = false;
   await db.settings.upsert({
     where: { id: 1 },
     update: {},
-    create: { id: 1, data: seedSettings() as unknown as Prisma.InputJsonValue },
+    create: { id: 1, data: settings as unknown as Prisma.InputJsonValue },
   });
 }

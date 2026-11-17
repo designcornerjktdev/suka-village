@@ -221,7 +221,8 @@ export type CreateInput = {
   paid?: boolean;
 };
 
-export type CreateError = "invalid" | "unavailable" | "min_nights" | "not_bookable" | "promo";
+/** "payment": the payment gateway could not open a charge for this method. */
+export type CreateError = "invalid" | "unavailable" | "min_nights" | "not_bookable" | "promo" | "payment";
 
 export type CreateResult = { ok: true; booking: Booking } | { ok: false; error: CreateError; units?: UnitId[]; promoError?: PromoError };
 

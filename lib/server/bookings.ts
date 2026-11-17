@@ -255,9 +255,10 @@ export function reject(code: string, reason: string, adminId: string, now?: Date
   );
 }
 
-/** Guest: only while unpaid (after paying, they ask the property). Admin: until arrival. */
-export function cancel(code: string, by: "guest" | "admin", reason?: string, adminId?: string, now?: Date) {
-  const from: BookingStatus[] = by === "guest" ? ["pending"] : ["pending", "paid", "confirmed"];
+/** Guest: only while unpaid (after paying, they ask the property). Admin: until arrival.
+    System: an unpaid booking whose payment could not be opened. */
+export function cancel(code: string, by: "guest" | "admin" | "system", reason?: string, adminId?: string, now?: Date) {
+  const from: BookingStatus[] = by === "admin" ? ["pending", "paid", "confirmed"] : ["pending"];
   const why = reason?.trim();
   return transition(
     code,

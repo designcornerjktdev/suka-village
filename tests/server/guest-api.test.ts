@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { installFakeDoku } from "../doku-fake";
 import { db } from "@/lib/server/db";
 import { seedDatabase } from "@/lib/server/seed-db";
 import { issueAccessToken, verifyAccess } from "@/lib/server/access";
@@ -30,7 +31,7 @@ const booking = (over: Record<string, unknown> = {}) => ({
   units: ["mainVilla"],
   guests: 4,
   guest: { name: "Ana Wijaya", email: "Ana@Example.com", phone: "081234567890" },
-  method: "qris",
+  method: "va_bca",
   locale: "id",
   ...over,
 });
@@ -43,10 +44,13 @@ async function book(over: Record<string, unknown> = {}) {
 }
 
 beforeEach(async () => {
+  installFakeDoku();
   await resetDb();
   await seedDatabase(db);
   await db.rate.updateMany({ data: { bookable: true } });
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("access tokens", () => {
   it("a token opens only its own booking", async () => {
@@ -146,12 +150,16 @@ describe("POST /api/bookings", () => {
     expect(await res.json()).toEqual({ ok: false, error: "invalid" });
   });
 
-  it("the 6th booking from one address in a minute → 429", async () => {
+  it("an address that used its 5 bookings this minute → 429, nothing held", async () => {
+    /* The per-minute counting is pinned by the rateLimit test above; here only
+       that the route applies it. Both this minute and the next are filled, so a
+       minute boundary during the test cannot change the answer. */
     const from = "10.8.8.8";
-    const statuses = [];
-    for (let i = 0; i < 6; i++) statuses.push((await createBooking(req("/api/bookings", booking({ checkIn: `2027-04-${10 + 2 * i}`, checkOut: `2027-04-${11 + 2 * i}` }), from))).status);
-    expect(statuses.slice(0, 5)).toEqual([200, 200, 200, 200, 200]);
-    expect(statuses[5]).toBe(429);
+    const minute = Math.floor(Date.now() / 60_000) * 60_000;
+    await db.rateHit.createMany({ data: [minute, minute + 60_000].map((t) => ({ key: `book:${from}`, windowStart: new Date(t), count: 5 })) });
+    const res = await createBooking(req("/api/bookings", booking(), from));
+    expect(res.status).toBe(429);
+    expect(await db.booking.count()).toBe(0);
   });
 });
 
@@ -204,7 +212,7 @@ describe("POST /api/bookings/:code/cancel", () => {
   it("guest cancel emails `cancelled`", async () => {
     const r = await book();
     await cancel(req(`/api/bookings/${r.booking.code}/cancel?t=${r.token}`, {}), ctx({ code: r.booking.code }));
-    expect(await db.notification.findMany({ where: { bookingCode: r.booking.code }, select: { template: true } })).toEqual([{ template: "cancelled" }]);
+    expect(await db.notification.findMany({ where: { bookingCode: r.booking.code }, select: { template: true }, orderBy: { at: "asc" } })).toEqual([{ template: "awaiting_payment" }, { template: "cancelled" }]);
   });
 
   it("guest cancel after paid → 409", async () => {

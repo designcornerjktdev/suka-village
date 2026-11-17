@@ -17,6 +17,15 @@ describe("seedDatabase", () => {
     expect((settings.data as { holdMinutes: number }).holdMinutes).toBe(60);
   });
 
+  it("starts with OVO and GoPay switched off (not available through DOKU SNAP without account binding)", async () => {
+    await resetDb();
+    await seedDatabase(db);
+    const { methods } = (await db.settings.findUniqueOrThrow({ where: { id: 1 } })).data as { methods: Record<string, boolean> };
+    expect(methods.ovo).toBe(false);
+    expect(methods.gopay).toBe(false);
+    expect(methods.dana && methods.shopeepay && methods.qris && methods.va_bni).toBe(true);
+  });
+
   it("is safe to run twice and never overwrites the owner's edits", async () => {
     await resetDb();
     await seedDatabase(db);

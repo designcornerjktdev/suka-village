@@ -11,7 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "postinstall": "prisma generate",
-    "admin:create": "tsx scripts/create-admin.ts"
+    "admin:create": "tsx scripts/create-admin.ts",
+    "doku:check": "tsx scripts/doku-sandbox-check.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
