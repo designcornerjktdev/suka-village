@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/server/db";
 import { seedDatabase } from "@/lib/server/seed-db";
-import { loadRooms, loadSection, toPhoto } from "@/lib/server/content";
+import { loadRooms, loadSection, orEmpty, toPhoto } from "@/lib/server/content";
 import { photos as library, units } from "@/content/site";
 import { resetDb } from "../setup";
 
@@ -62,6 +62,34 @@ describe("page sections", () => {
     await db.contentItem.update({ where: { section_id: { section: "experiences", id: "farm" } }, data: { data: { ...(row.data as object), name: { id: "Peternakan Kami", en: "Our Farm" } } } });
     const farm = (await loadSection("experiences")).find((i) => i.id === "farm");
     expect(farm?.name).toEqual({ id: "Peternakan Kami", en: "Our Farm" });
+  });
+});
+
+describe("build without a database", () => {
+  const down = async (): Promise<string[]> => {
+    throw new Error("Can't reach database server at localhost:3306");
+  };
+  afterEach(() => {
+    delete process.env.NEXT_PHASE;
+  });
+
+  it("during `next build`: no throw; the page is marked to render on request instead", async () => {
+    process.env.NEXT_PHASE = "phase-production-build";
+    let bailed = false;
+    const r = await orEmpty(down, [] as string[], async () => {
+      bailed = true;
+    });
+    expect(r).toEqual([]);
+    expect(bailed).toBe(true);
+  });
+
+  it("at run time a database error is NOT hidden", async () => {
+    await expect(orEmpty(down, [] as string[], async () => undefined)).rejects.toThrow(/reach database/);
+  });
+
+  it("when the database answers, nothing changes", async () => {
+    process.env.NEXT_PHASE = "phase-production-build";
+    expect(await orEmpty(async () => ["a"], [] as string[], async () => undefined)).toEqual(["a"]);
   });
 });
 

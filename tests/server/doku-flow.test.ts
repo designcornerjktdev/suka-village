@@ -9,6 +9,10 @@ import { POST as checkPayment } from "@/app/api/bookings/[code]/check-payment/ro
 import { POST as changeMethod } from "@/app/api/bookings/[code]/payment-method/route";
 import { POST as guestCancel } from "@/app/api/bookings/[code]/cancel/route";
 import { DOKU_ENV, dokuTokenRequestHeaders, installFakeDoku } from "../doku-fake";
+import { CHARGE_GRACE_MS } from "@/lib/server/payments/charges";
+import { createAdmin } from "@/lib/server/admins";
+import { setAdminAlertTransport } from "@/lib/server/mail";
+import { snapTimestamp } from "@/lib/server/payments/doku/snap";
 import { resetDb } from "../setup";
 
 let fake: ReturnType<typeof installFakeDoku>;
@@ -160,10 +164,74 @@ describe("payment notification", () => {
     expect(row.events.map((e) => e.event)).toContain("Pembayaran masuk setelah pesanan berakhir, perlu refund");
   });
 
+  it("paid after expiry: every admin is emailed, once, and the history says so (review I4)", async () => {
+    await createAdmin(db, "owner@sukavillage.com", "kata-sandi-panjang");
+    await createAdmin(db, "staff@sukavillage.com", "kata-sandi-panjang");
+    const r = await book();
+    await db.payment.update({ where: { bookingCode: r.booking.code }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    const sent: { to: string; subject: string; text: string }[] = [];
+    setAdminAlertTransport({ sendMail: async (m: { to: string; subject: string; text: string }) => void sent.push(m) } as never);
+    try {
+      await dokuNotifies(vaPaid(r.booking));
+      await dokuNotifies(vaPaid(r.booking));
+    } finally {
+      setAdminAlertTransport(null);
+    }
+    expect(sent.map((m) => m.to).sort()).toEqual(["owner@sukavillage.com", "staff@sukavillage.com"]);
+    expect(sent[0].subject).toContain(r.booking.code);
+    expect(sent[0].text).toContain("refund");
+    const events = (await db.bookingEvent.findMany({ where: { bookingCode: r.booking.code } })).map((e) => e.event);
+    expect(events).toContain("Admin diberi tahu lewat email: perlu refund");
+  });
+
   it("unknown transaction → 404", async () => {
     await book();
     const res = await dokuNotifies({ trxId: "SV-NOPE-1", paidAmount: { value: "1.00", currency: "IDR" } });
     expect(res.status).toBe(404);
+  });
+});
+
+describe("an old charge paid after the method was changed (review I1)", () => {
+  it("the payment is still matched to the booking: paid, method of the charge that was paid", async () => {
+    const r = await book("dana");
+    const danaTrx = (await db.payment.findUniqueOrThrow({ where: { bookingCode: r.booking.code } })).gatewayId!;
+    /* The guest switches to a VA; the DANA link cannot be closed at DOKU. */
+    await changeMethod(post(`/api/bookings/${r.booking.code}/payment-method?t=${r.token}`, { method: "va_bni" }), ctx(r.booking.code));
+    const p = await db.payment.findUniqueOrThrow({ where: { bookingCode: r.booking.code } });
+    expect(p.gatewayId).not.toBe(danaTrx);
+    /* ...and then pays the old DANA link anyway. */
+    const { accessToken } = await (await dokuToken(new Request("http://localhost/t", { method: "POST", headers: dokuTokenRequestHeaders(), body: "{}" }))).json();
+    const res = await notify(
+      new Request("http://localhost/api/webhooks/doku", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ originalPartnerReferenceNo: danaTrx, originalReferenceNo: "x", latestTransactionStatus: "00", amount: { value: `${p.amount}.00`, currency: "IDR" } }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const b = await findBooking(r.booking.code);
+    expect(b?.status).toBe("paid");
+    expect(b?.payment.method).toBe("dana");
+    expect(b?.notifications.map((n) => n.template)).toContain("payment_received");
+  });
+});
+
+describe("a payment in the last seconds (review I2)", () => {
+  it("DOKU's charge ends 5 minutes before the hold, so its notification lands before the booking expires", async () => {
+    const r = await book();
+    const p = await db.payment.findUniqueOrThrow({ where: { bookingCode: r.booking.code } });
+    const sent = fake.calls.find((c) => c.path.endsWith("create-va"))!.body as { expiredDate: string };
+    expect(sent.expiredDate).toBe(snapTimestamp(new Date(p.expiresAt.getTime() - CHARGE_GRACE_MS)));
+    expect(CHARGE_GRACE_MS).toBe(5 * 60_000);
+  });
+
+  it("paid at the charge's last moment, notified a minute later: paid, not expired", async () => {
+    const r = await book();
+    const p = await db.payment.findUniqueOrThrow({ where: { bookingCode: r.booking.code } });
+    /* The hold has 4 minutes left: the guest paid as the VA closed, DOKU notifies now. */
+    await db.payment.update({ where: { bookingCode: r.booking.code }, data: { expiresAt: new Date(Date.now() + 4 * 60_000) } });
+    expect((await dokuNotifies(vaPaid({ code: r.booking.code, payment: { reference: p.reference, gatewayId: p.gatewayId!, amount: p.amount } }))).status).toBe(200);
+    expect((await findBooking(r.booking.code))?.status).toBe("paid");
   });
 });
 

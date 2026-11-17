@@ -24,17 +24,15 @@ export type DokuConfig = {
   merchantPublicKey: string;
   /** DOKU's public key, to check the token request DOKU sends us. */
   dokuPublicKey: string;
-  /** Per bank, from the DOKU dashboard's VA table: "Partner Service ID" and
-      "Prefix Customer No". Empty means the bank is not set up. */
-  va: Record<"va_bca" | "va_bni" | "va_bri" | "va_mandiri", { partnerServiceId: string; customerPrefix: string }>;
+  /** Per bank, the "Merchant BIN" column of the DOKU dashboard's VA table
+      (sent as partnerServiceId; NOT the "Partner Service ID" column, which
+      DOKU refuses). Empty means the bank is not set up. */
+  va: Record<"va_bca" | "va_bni" | "va_bri" | "va_mandiri", { partnerServiceId: string }>;
   /** QRIS credentials issued once QRIS is approved (dashboard), and the property's postal code. */
   qris: { merchantId: string; terminalId: string; postalCode: string };
 };
 
-const bank = (partnerServiceId?: string, customerPrefix?: string) => ({
-  partnerServiceId: partnerServiceId?.trim() ?? "",
-  customerPrefix: customerPrefix?.trim() ?? "",
-});
+const bank = (merchantBin?: string) => ({ partnerServiceId: merchantBin?.trim() ?? "" });
 
 export class DokuNotConfigured extends Error {
   constructor(what: string) {
@@ -59,10 +57,10 @@ export function dokuConfig(): DokuConfig {
     merchantPublicKey: createPublicKey(privateKey).export({ type: "spki", format: "pem" }).toString(),
     dokuPublicKey: pem(e.DOKU_PUBLIC_KEY, e.DOKU_PUBLIC_KEY_PATH),
     va: {
-      va_bca: bank(e.DOKU_VA_BCA, e.DOKU_VA_BCA_CUSTOMER_PREFIX),
-      va_bni: bank(e.DOKU_VA_BNI, e.DOKU_VA_BNI_CUSTOMER_PREFIX),
-      va_bri: bank(e.DOKU_VA_BRI, e.DOKU_VA_BRI_CUSTOMER_PREFIX),
-      va_mandiri: bank(e.DOKU_VA_MANDIRI, e.DOKU_VA_MANDIRI_CUSTOMER_PREFIX),
+      va_bca: bank(e.DOKU_VA_BCA),
+      va_bni: bank(e.DOKU_VA_BNI),
+      va_bri: bank(e.DOKU_VA_BRI),
+      va_mandiri: bank(e.DOKU_VA_MANDIRI),
     },
     qris: {
       merchantId: e.DOKU_QRIS_MERCHANT_ID?.trim() ?? "",

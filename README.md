@@ -6,10 +6,11 @@ CMS admin.
 
 - **Tampilan dan alur:** final. Semua halaman, layar booking, dan layar admin
   sudah jadi.
-- **Booking dan CMS:** masih prototipe. Semua data (booking, harga, konten CMS)
-  tersimpan di browser lewat `localStorage`. Belum ada database, payment
-  gateway, email, atau login admin sungguhan. Itu pekerjaan developer, dan
-  kontraknya sudah ditulis di [BOOKING.md](BOOKING.md).
+- **Booking dan CMS:** tersambung ke backend (November 2026): database
+  MariaDB/MySQL (Prisma), pembayaran DOKU (VA, QRIS, DANA, ShopeePay, kartu),
+  email otomatis, login admin, upload foto, dan cron. Halaman publik membaca
+  kamar dan konten dari database. Cara pasang di [DEPLOY.md](DEPLOY.md); yang
+  masih ditanyakan di [docs/open-questions.md](docs/open-questions.md).
 - **Demo:** https://villa-landing-eight.vercel.app (akun Vercel desainer, hanya
   untuk demo; produksi di-deploy dari hosting owner).
 
@@ -46,14 +47,27 @@ Lalu lihat di lebar HP (390px) dan desktop (1440px).
 
 ## Environment
 
-Saat ini hanya satu variabel:
+Semua variabel ada di `.env.example` (salin ke `.env`) dan dijelaskan di
+[DEPLOY.md](DEPLOY.md) §2: database, DOKU, SMTP, folder upload, cron.
+Tidak ada secret di repo ini; `.env` dan `keys/` tidak di-commit.
 
-| Variabel | Isi |
-|---|---|
-| `SITE_URL` | Domain asli, misalnya `https://sukavillage.com` (tanpa garis miring di akhir). **Isi hanya di deployment produksi, dan paling akhir.** Selama kosong, semua halaman `noindex` dan robots.txt menolak crawler; di luar Vercel, link share dan canonical juga mengarah ke localhost. Detail di [SEO.md](SEO.md) §1. |
+`SITE_URL` tetap saklar SEO: **isi hanya di produksi, dan paling akhir.**
+Selama kosong, semua halaman `noindex` dan robots.txt menolak crawler. Detail
+di [SEO.md](SEO.md) §1.
 
-Kunci database, payment gateway, dan email ditambahkan developer saat backend
-dibangun. Tidak ada secret di repo ini.
+## Menjalankan dengan backend (lokal)
+
+```bash
+docker compose up -d          # MariaDB 10.11 di port 3307 (suka + suka_test), sama dengan Hostinger
+cp .env.example .env          # lalu isi DOKU_* dan CRON_SECRET
+npm ci
+npx prisma migrate dev        # tabel
+npm run db:seed               # kamar, konten, pengaturan (sekali)
+npm run admin:create -- kamu@sukavillage.com
+npm run dev
+npm test                      # test backend (vitest, database suka_test)
+npm run doku:check -- va_bni  # cek koneksi sandbox DOKU
+```
 
 ## Dokumen, urutan baca
 
@@ -62,6 +76,9 @@ dibangun. Tidak ada secret di repo ini.
 | [HANDOFF.md](HANDOFF.md) | Status proyek, aturan yang selalu berlaku, riwayat revisi, peta kode. **Baca dulu.** |
 | [PRODUCT.md](PRODUCT.md) | Brief klien yang mengikat, aturan desain, identitas brand. |
 | [BOOKING.md](BOOKING.md) | Kontrak backend: model data, status booking, endpoint, payment, email, akses admin, checklist go-live (§10). |
+| [DEPLOY.md](DEPLOY.md) | Memasang di Hostinger Web App dengan MySQL/MariaDB: env, database, build, cron, DOKU, email, backup. |
+| [docs/open-questions.md](docs/open-questions.md) | Pertanyaan yang masih menunggu DOKU, owner, dan desainer. |
+| [docs/superpowers/](docs/superpowers/) | Desain dan rencana implementasi backend. |
 | [REPLACE.md](REPLACE.md) | Data yang masih menunggu owner (harga, kebijakan, foto, dll.). Tidak boleh live sebelum terisi. |
 | [SEO.md](SEO.md) | SEO, saklar `SITE_URL`, hasil Lighthouse. |
 | [AGENTS.md](AGENTS.md) | Next.js 16 berbeda dari versi lama. Baca `node_modules/next/dist/docs/` sebelum memakai API yang belum dikenal. |

@@ -59,3 +59,33 @@ export async function sendTemplates(code: string, templates: TemplateId[], deps:
     await db.notification.create({ data: { bookingCode: code, template, to, status } });
   }
 }
+
+/* --- Alerts to the admins ----------------------------------------------------
+   For things someone at the property must act on that the admin screens do
+   not show by themselves (a refund owed on money that arrived late). Plain
+   text, to every admin account. */
+
+let alertTransport: Transporter | null = null;
+
+/** Tests: where admin alerts go (null for the normal transport). */
+export function setAdminAlertTransport(t: Transporter | null) {
+  alertTransport = t;
+}
+
+/** Emails every admin. Returns how many were reached; never throws. */
+export async function sendAdminAlert(subject: string, text: string): Promise<number> {
+  const transport = alertTransport ?? defaultTransport();
+  const admins = await db.admin.findMany({ select: { email: true } });
+  const settings = await readSettings().catch(() => null);
+  const from = settings?.contact.senderEmail ? `Suka Village <${settings.contact.senderEmail}>` : process.env.MAIL_FROM;
+  let reached = 0;
+  for (const { email } of admins) {
+    try {
+      await transport.sendMail({ from, to: email, subject, text });
+      reached++;
+    } catch (e) {
+      console.error(`[mail] admin alert to ${email} failed:`, e);
+    }
+  }
+  return reached;
+}

@@ -338,18 +338,25 @@ guests ask for deletion.
 
 ## 10. Going live checklist
 
-- [ ] Backend implements every endpoint above; `api.ts` / `hooks.ts` call it.
-- [ ] `DEMO = false` in `lib/booking/config.ts`; delete `store.ts`,
-      `simulateGateway`, the demo data in `seed.ts`, `DemoQR.tsx`, and the
-      "simulate" panels go with the flag.
+Status per 17 November 2026: the backend is built (see DEPLOY.md and
+docs/superpowers/). Ticked items are done in code; the rest needs the owner,
+DOKU production, or the hosting.
+
+- [x] Backend implements every endpoint above; `api.ts` / `hooks.ts` call it.
+- [x] `DEMO = false` in `lib/booking/config.ts`; `store.ts`, `simulateGateway`,
+      the demo data in `seed.ts` and the "simulate" panels are gone. (`DemoQR.tsx`
+      stays for a DEMO build; the live site draws the real QR, `QrisCode.tsx`.)
 - [ ] Real rates entered in **Kamar & harga** (the current ones are examples).
 - [ ] Example promo codes deleted in **Promo**; real ones created if wanted.
 - [ ] Cancellation and **refund** policy written in **Pengaturan → Kebijakan
       & kontak**; a refund procedure agreed for rejected bookings.
-- [ ] Payment gateway live keys, webhook URL registered and verified.
+- [ ] Payment gateway live keys, webhook URL registered and verified
+      (DOKU SNAP + Non-SNAP for cards; sandbox VA, DANA, ShopeePay and card
+      checked on 17 Nov 2026; notifications not yet seen from the real sandbox).
 - [ ] Email sender domain verified (SPF/DKIM); templates reviewed.
-- [ ] Object storage for uploads; `StorePhoto` switched to real URLs.
-- [ ] Admin auth on; admin accounts created.
+- [x] Storage for uploads (the server's disk, `UPLOAD_DIR`; object storage
+      only if the host has no lasting disk); `StorePhoto` uses real URLs.
+- [x] Admin auth on. [ ] Admin accounts created on production (`npm run admin:create`).
 - [ ] Privacy policy and terms pages published.
 - [ ] Last of all: `SITE_URL` set to the real domain on the production
       deployment. Until then every page is noindex and robots.txt turns

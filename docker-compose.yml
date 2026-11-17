@@ -1,14 +1,18 @@
+# Local database, the same engine as Hostinger Web/Cloud hosting (MariaDB).
+# Host port 3307 (3306 is often taken by a local MySQL/XAMPP).
 services:
   db:
-    image: postgres:16
+    image: mariadb:10.11
     environment:
-      POSTGRES_USER: suka
-      POSTGRES_PASSWORD: suka
-      POSTGRES_DB: suka
+      MARIADB_ROOT_PASSWORD: suka-root
+      MARIADB_DATABASE: suka
+      MARIADB_USER: suka
+      MARIADB_PASSWORD: suka
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     ports:
-      - "5433:5432"
+      - "3307:3306"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mariadb-data:/var/lib/mysql
       - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
 volumes:
-  pgdata:
+  mariadb-data:

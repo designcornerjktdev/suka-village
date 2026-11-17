@@ -62,9 +62,9 @@ describe("Virtual account", () => {
       expiredDate: "2027-03-01T11:00:00+07:00",
       additionalInfo: { channel: "VIRTUAL_ACCOUNT_BCA", virtualAccountConfig: { reusableStatus: false } },
     });
-    /* DGPC: we send a 10-digit customerNo in the bank's customer prefix (DOKU
-       checks the format), and keep the number DOKU makes and returns. */
-    expect(String(body.customerNo)).toMatch(/^1900\d{6}$/);
+    /* DGPC: partnerServiceId is the Merchant BIN, customerNo any 10 digits
+       (DOKU checks the length), and we keep the number DOKU makes. */
+    expect(String(body.customerNo)).toMatch(/^\d{10}$/);
     expect(body.virtualAccountNo).toBe(`${body.partnerServiceId}${body.customerNo}`);
     expect(r).toEqual({ reference: "1900800000000123", gatewayId: "SV-ABC123-1" });
   });
@@ -74,7 +74,7 @@ describe("Virtual account", () => {
     await expect(createVa(charge)).rejects.toThrow(/no VA number/);
   });
 
-  it("each bank uses its own channel and prefix", async () => {
+  it("each bank uses its own channel and Merchant BIN", async () => {
     expect(VA_CHANNEL).toEqual({ va_bca: "VIRTUAL_ACCOUNT_BCA", va_bni: "VIRTUAL_ACCOUNT_BNI", va_bri: "VIRTUAL_ACCOUNT_BRI", va_mandiri: "VIRTUAL_ACCOUNT_BANK_MANDIRI" });
     await createVa({ ...charge, method: "va_mandiri" });
     const body = fake.calls.find((c) => c.path.endsWith("create-va"))!.body as Record<string, unknown>;

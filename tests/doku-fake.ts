@@ -24,13 +24,9 @@ export const DOKU_ENV = {
   DOKU_PUBLIC_KEY: dokuKeys.publicKey,
   DOKU_ENV: "sandbox",
   DOKU_VA_BCA: "19008",
-  DOKU_VA_BCA_CUSTOMER_PREFIX: "1900",
   DOKU_VA_BNI: "84923",
-  DOKU_VA_BNI_CUSTOMER_PREFIX: "8492",
   DOKU_VA_BRI: "13925",
-  DOKU_VA_BRI_CUSTOMER_PREFIX: "1392",
   DOKU_VA_MANDIRI: "88899",
-  DOKU_VA_MANDIRI_CUSTOMER_PREFIX: "8889",
   DOKU_QRIS_MERCHANT_ID: "QRIS-MID-01",
   DOKU_QRIS_TERMINAL_ID: "TERM01",
   DOKU_QRIS_POSTAL_CODE: "43191",
@@ -41,6 +37,9 @@ export type Call = { method: string; path: string; headers: Record<string, strin
 type Responder = (call: Call) => { status?: number; body: unknown } | undefined;
 
 export function installFakeDoku(opts: { respond?: Responder } = {}) {
+  /* Only the fake's settings: Prisma loads the developer's .env into
+     process.env, and a real DOKU_* value there must not leak into a test. */
+  for (const k of Object.keys(process.env)) if (k.startsWith("DOKU_") && !(k in DOKU_ENV)) delete process.env[k];
   Object.assign(process.env, DOKU_ENV);
   resetDokuClient();
   const calls: Call[] = [];
@@ -99,14 +98,15 @@ export function installFakeDoku(opts: { respond?: Responder } = {}) {
     if (custom) return reply(custom.status ?? 200, custom.body);
 
     if (call.path.endsWith("/transfer-va/create-va")) {
-      /* DGPC, as the real sandbox behaves (checked 17 Nov 2026): the request
-         must carry a 10-digit customerNo starting with the bank's customer
-         prefix and virtualAccountNo = partnerServiceId + customerNo, or DOKU
-         answers 4032715; DOKU then makes ITS OWN number and returns it. */
+      /* DGPC, as the real sandbox behaves (checked 18 Nov 2026):
+         partnerServiceId must be the Merchant BIN (a Partner Service ID like
+         "8492" is refused, 4032701), customerNo must be exactly 10 digits
+         (11 is refused, 4032715) and virtualAccountNo = partnerServiceId +
+         customerNo. DOKU then makes ITS OWN number and returns it. */
       const b = call.body as { trxId: string; partnerServiceId: string; customerNo?: string; virtualAccountNo?: string };
-      const bank = Object.entries(DOKU_ENV).find(([k, v]) => k.endsWith("_CUSTOMER_PREFIX") === false && k.startsWith("DOKU_VA_") && v.padStart(8, " ") === b.partnerServiceId)?.[0];
-      const prefix = bank ? DOKU_ENV[`${bank}_CUSTOMER_PREFIX` as keyof typeof DOKU_ENV] : undefined;
-      if (!prefix || !b.customerNo || !new RegExp(`^${prefix}\\d{${10 - prefix.length}}$`).test(b.customerNo) || b.virtualAccountNo !== `${b.partnerServiceId}${b.customerNo}`) {
+      const known = Object.entries(DOKU_ENV).some(([k, v]) => /^DOKU_VA_(BCA|BNI|BRI|MANDIRI)$/.test(k) && v.padStart(8, " ") === b.partnerServiceId);
+      if (!known) return reply(403, { responseCode: "4032701", responseMessage: `Feature Not Allowed [Identifier for BIN = '${b.partnerServiceId.trim()}' is not configured properly.]` });
+      if (!b.customerNo || !/^\d{10}$/.test(b.customerNo) || b.virtualAccountNo !== `${b.partnerServiceId}${b.customerNo}`) {
         return reply(403, { responseCode: "4032715", responseMessage: "Transaction Not Permitted.[Combination of partnerServiceId, customerNo, and virtualAccountNo]" });
       }
       const customerNo = String(++vaCount).padStart(11, "0");

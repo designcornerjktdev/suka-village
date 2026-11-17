@@ -8,6 +8,6 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     fileParallelism: false,
     include: ["tests/**/*.test.{ts,tsx}"],
-    env: { DATABASE_URL: process.env.TEST_DATABASE_URL ?? "postgresql://suka:suka@localhost:5433/suka_test" },
+    env: { DATABASE_URL: process.env.TEST_DATABASE_URL ?? "mysql://suka:suka@localhost:3307/suka_test" },
   },
 });

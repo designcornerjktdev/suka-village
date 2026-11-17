@@ -8,8 +8,9 @@ import { isUniqueViolation } from "./errors";
 import { bookingInclude, fromDay, toBooking, toDay, toRate } from "./mappers";
 import { claimNights, releaseNights, takenUnits } from "./nights";
 import { findUsablePromo } from "./promos";
+import { notifyChannel } from "./channel";
 import { jakartaToday } from "./time";
-import type { Tx } from "./tx";
+import { runTx, type Tx } from "./tx";
 
 /**
  * Bookings on the server: the authority for price, discount and
@@ -76,7 +77,7 @@ export async function createBooking(input: CreateInput, opts: { now?: Date } = {
   const nights = nightsOf(input.checkIn, input.checkOut);
 
   try {
-    return await db.$transaction(async (tx) => {
+    const result = await runTx(async (tx) => {
       await expireLapsed(tx, now);
 
       const rooms = await tx.room.findMany({ where: { unit: { in: units }, archived: false }, include: { rate: true } });
@@ -149,11 +150,13 @@ export async function createBooking(input: CreateInput, opts: { now?: Date } = {
       const row = await tx.booking.findUniqueOrThrow({ where: { code }, include: bookingInclude });
       return { ok: true as const, booking: toBooking(row) };
     });
+    await notifyChannel({ kind: "booking", code: result.booking.code, holds: true });
+    return result;
   } catch (e) {
     if (e instanceof Refused) return e.result;
     /* Lost a race for the same night: the other booking committed first. */
     if (isUniqueViolation(e)) {
-      const clash = await db.$transaction((tx) => takenUnits(tx, units, nights));
+      const clash = await runTx((tx) => takenUnits(tx, units, nights));
       return { ok: false, error: "unavailable", units: clash.length ? clash : units };
     }
     throw e;
@@ -191,7 +194,7 @@ async function transition(
   now = new Date(),
 ): Promise<TransitionResult> {
   try {
-    return await db.$transaction(async (tx) => {
+    return await runTx(async (tx) => {
       await expireLapsed(tx, now);
       const exists = await tx.booking.findFirst({ where: { code, deletedAt: null }, select: { code: true } });
       if (!exists) throw new Stop("not_found");
@@ -239,9 +242,9 @@ export async function markPaidByGateway(code: string, gatewayId: string, at: Dat
 export const confirm = (code: string, adminId: string, now?: Date) =>
   transition(code, ["paid"], "confirmed", { by: "admin", adminId }, async () => ({ event: "Pesanan diterima admin", templates: ["confirmed"] }), now);
 
-export function reject(code: string, reason: string, adminId: string, now?: Date) {
+export async function reject(code: string, reason: string, adminId: string, now?: Date) {
   const why = reason.trim();
-  return transition(
+  return released(code, await transition(
     code,
     ["paid"],
     "rejected",
@@ -252,15 +255,21 @@ export function reject(code: string, reason: string, adminId: string, now?: Date
       return { event: `Pesanan ditolak admin${why ? `: ${why}` : ""}`, templates: ["rejected"] };
     },
     now,
-  );
+  ));
+}
+
+/** Tells the channel (BookandLink, later) that a booking gave its nights back. */
+async function released(code: string, r: TransitionResult): Promise<TransitionResult> {
+  if (r.ok) await notifyChannel({ kind: "booking", code, holds: false });
+  return r;
 }
 
 /** Guest: only while unpaid (after paying, they ask the property). Admin: until arrival.
     System: an unpaid booking whose payment could not be opened. */
-export function cancel(code: string, by: "guest" | "admin" | "system", reason?: string, adminId?: string, now?: Date) {
+export async function cancel(code: string, by: "guest" | "admin" | "system", reason?: string, adminId?: string, now?: Date) {
   const from: BookingStatus[] = by === "admin" ? ["pending", "paid", "confirmed"] : ["pending"];
   const why = reason?.trim();
-  return transition(
+  return released(code, await transition(
     code,
     from,
     "cancelled",
@@ -273,7 +282,7 @@ export function cancel(code: string, by: "guest" | "admin" | "system", reason?: 
       return { event: why ? `Dibatalkan: ${why}` : by === "guest" ? "Dibatalkan oleh tamu" : "Dibatalkan oleh admin", templates: ["cancelled"] };
     },
     now,
-  );
+  ));
 }
 
 /** From the arrival day (`today`, Jakarta) onwards. */
@@ -338,7 +347,7 @@ export const DELETABLE: BookingStatus[] = ["cancelled", "expired", "rejected"];
 
 /** Soft delete: hidden everywhere, the row kept for tax records. */
 export async function softDelete(code: string, now = new Date()): Promise<{ ok: true } | { ok: false; error: "state" | "not_found" }> {
-  return db.$transaction(async (tx) => {
+  return runTx(async (tx) => {
     await expireLapsed(tx, now);
     const row = await tx.booking.findFirst({ where: { code, deletedAt: null }, select: { code: true } });
     if (!row) return { ok: false as const, error: "not_found" as const };

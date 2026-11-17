@@ -26,17 +26,14 @@ export const VA_PATHS = {
   delete: "/virtual-accounts/bi-snap-va/v1.1/transfer-va/delete-va",
 };
 
-function bankFor(method: VaMethod) {
-  const b = dokuConfig().va[method];
-  const env = `DOKU_VA_${method.slice(3).toUpperCase()}`;
-  if (!b.partnerServiceId) throw new Error(`DOKU VA for ${method} is not set up (${env})`);
-  if (!b.customerPrefix) throw new Error(`DOKU VA customer prefix for ${method} is not set (${env}_CUSTOMER_PREFIX)`);
-  return b;
+/** The bank's Merchant BIN (DOKU_VA_<BANK>), sent as partnerServiceId. */
+function prefixFor(method: VaMethod) {
+  const bin = dokuConfig().va[method].partnerServiceId;
+  if (!bin) throw new Error(`DOKU VA for ${method} is not set up (DOKU_VA_${method.slice(3).toUpperCase()}: the Merchant BIN)`);
+  return bin;
 }
 
-const prefixFor = (method: VaMethod) => bankFor(method).partnerServiceId;
-
-/** customerNo is always 10 digits: the bank's customer prefix, then random digits. */
+/** DOKU accepts a customerNo of exactly 10 digits (11 is refused). */
 const CUSTOMER_NO_LENGTH = 10;
 
 /** Only the characters DOKU accepts in a VA name. */
@@ -57,16 +54,15 @@ export type VaCharge = {
 
 /**
  * DGPC (DOKU Generated Payment Code), as the account is set up. Checked
- * against the sandbox on 17 Nov 2026: DOKU still wants a customerNo of 10
- * digits starting with the bank's customer prefix, and virtualAccountNo =
- * partnerServiceId + customerNo, or it answers 4032715. It then makes its OWN
- * number and returns it; that returned number is what the guest pays and what
- * delete and status calls must use.
+ * against the sandbox on 18 Nov 2026: partnerServiceId is the Merchant BIN
+ * (left padded to 8), customerNo any 10 digits, virtualAccountNo the two
+ * together; anything else is refused (4032701 / 4032715). DOKU then makes ITS
+ * OWN number and returns it; that returned number is what the guest pays and
+ * what delete and status calls use.
  */
 export async function createVa(c: VaCharge): Promise<{ reference: string; gatewayId: string }> {
-  const b = bankFor(c.method);
-  const partnerServiceId = b.partnerServiceId.padStart(8, " ");
-  const customerNo = b.customerPrefix + String(randomInt(0, 10 ** (CUSTOMER_NO_LENGTH - b.customerPrefix.length))).padStart(CUSTOMER_NO_LENGTH - b.customerPrefix.length, "0");
+  const partnerServiceId = prefixFor(c.method).padStart(8, " ");
+  const customerNo = String(randomInt(0, 10 ** CUSTOMER_NO_LENGTH)).padStart(CUSTOMER_NO_LENGTH, "0");
   const res = await dokuRequest<{ virtualAccountData?: { virtualAccountNo?: string } }>("POST", VA_PATHS.create, {
     partnerServiceId,
     customerNo,

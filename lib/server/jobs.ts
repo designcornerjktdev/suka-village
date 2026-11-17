@@ -1,10 +1,12 @@
 import { timingSafeEqual } from "node:crypto";
 import { addDays } from "@/lib/booking/format";
 import { expireLapsed } from "./bookings";
+import { notifyChannel } from "./channel";
 import { db } from "./db";
 import { sendTemplates } from "./mail";
 import { fromDay } from "./mappers";
 import { jakartaToday } from "./time";
+import { runTx } from "./tx";
 
 /**
  * The two scheduled jobs (BOOKING.md §1, §4), called by the host's scheduler
@@ -22,12 +24,17 @@ import { jakartaToday } from "./time";
  * were emailed.
  */
 export async function runExpire(now = new Date()): Promise<number> {
-  await db.$transaction((tx) => expireLapsed(tx, now));
+  await runTx((tx) => expireLapsed(tx, now));
   const due = await db.booking.findMany({
     where: { status: "expired", deletedAt: null, guestEmail: { not: "" }, notifications: { none: { template: "expired" } } },
     select: { code: true },
   });
-  for (const { code } of due) await sendTemplates(code, ["expired"]);
+  for (const { code } of due) {
+    await sendTemplates(code, ["expired"]);
+    /* Its nights are free again: the channel (BookandLink, later) is told here,
+       once per booking, whoever expired it. */
+    await notifyChannel({ kind: "booking", code, holds: false });
+  }
   return due.length;
 }
 

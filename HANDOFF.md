@@ -12,9 +12,13 @@ melanjutkan proyek ini: baca ini dulu, lalu PRODUCT.md.
 - **Live:** https://villa-landing-eight.vercel.app (proyek Vercel
   `rsp2/villa-landing`). Link ini selalu menampilkan deploy terbaru; link
   `villa-landing-<kode>-rsp2.vercel.app` per deploy dikunci login Vercel.
-- **Masih prototipe:** booking dan CMS memakai data contoh yang tersimpan di
-  browser (localStorage), belum ada database, payment gateway, atau email
-  sungguhan. Semua halaman `noindex` sampai `SITE_URL` diisi (SEO.md §1).
+- **Backend (17 November 2026, branch `backend`):** booking dan CMS memakai
+  MariaDB/MySQL (Prisma; deploy di Hostinger Web App), pembayaran DOKU,
+  email, login admin, upload ke disk,
+  dan cron; halaman publik membaca dari database. Cara pasang: DEPLOY.md.
+  Desain dan rencana: docs/superpowers/. Pertanyaan terbuka:
+  docs/open-questions.md. Semua halaman tetap `noindex` sampai `SITE_URL`
+  diisi (SEO.md §1).
 
 ## Menjalankan dan deploy
 
@@ -24,7 +28,7 @@ npm run dev            # http://localhost:3000
 npx vercel --prod      # publish ke link live
 ```
 
-Admin: `/admin/login`, email dan kata sandi apa saja (prototipe).
+Admin: `/admin/login`, dengan akun yang dibuat lewat `npm run admin:create -- <email>`. Backend lokal (database, seed, test): README.md, "Menjalankan dengan backend".
 
 Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
 `npm run build`, lalu lihat di lebar HP (390px) dan desktop (1440px).
@@ -195,7 +199,9 @@ Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
 | `components/Showcase.tsx`, `Slides.tsx` | Pola baris dan slider foto. |
 | `components/SiteHeader.tsx`, `SiteFooter.tsx`, `Logo.tsx` | Header, footer, logo. |
 | `components/BookingBar.tsx`, `BookingDates.tsx` | Tombol dan kalender booking di header. |
-| `lib/booking/` | Prototipe booking/CMS: `api.ts` (tulis), `hooks.ts` (baca), `store.ts` (localStorage), `seed.ts` (data contoh; naikkan `CONTENT_REV` bila konten situs berubah), `promo.ts` (aturan kode promo). |
+| `lib/booking/` | Sisi klien booking/CMS: `api.ts` (tulis) dan `hooks.ts` (baca) memanggil API; `seed.ts` (impor pertama kamar, konten, pengaturan ke database), `promo.ts`, `pricing.ts`, `occupancy.ts` (aturan, juga dipakai server). |
+| `lib/server/` | Backend: booking dan status, pembayaran DOKU (`payments/`), email, login admin, upload, konten publik, cron. |
+| `app/api/`, `prisma/` | Endpoint API; skema dan migrasi database (MariaDB/MySQL). |
 | `components/admin/ui.tsx` | Komponen admin bersama: `Sheet` (panel edit), `ConfirmDelete`, `RowActions`, `Badge`. |
 | `public/photos/`, `public/brand/` | Foto (sisi terpanjang 1800px) dan file logo SVG. |
 

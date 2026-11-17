@@ -4,8 +4,9 @@ import { nightsOf } from "@/lib/booking/format";
 import { db } from "./db";
 import { isUniqueViolation } from "./errors";
 import { fromDay, toDay } from "./mappers";
+import { notifyChannel } from "./channel";
 import { claimNights, releaseNights } from "./nights";
-import type { Tx } from "./tx";
+import { runTx, type Tx } from "./tx";
 
 /**
  * Dates closed by hand in Admin → Kalender (sold elsewhere, repairs, the
@@ -49,10 +50,12 @@ async function claim(tx: Tx, input: BlockInput, blockId: string) {
 
 async function guarded(run: () => Promise<BlockResult>, input: BlockInput): Promise<BlockResult> {
   try {
-    return await run();
+    const r = await run();
+    if (r.ok) await notifyChannel({ kind: "block", id: r.block.id, holds: true });
+    return r;
   } catch (e) {
     if (e instanceof Clash) return { ok: false, clash: e.date };
-    if (isUniqueViolation(e)) return { ok: false, clash: await db.$transaction((tx) => firstClash(tx, input.unit, nightsOf(input.from, input.to))) };
+    if (isUniqueViolation(e)) return { ok: false, clash: await runTx((tx) => firstClash(tx, input.unit, nightsOf(input.from, input.to))) };
     throw e;
   }
 }
@@ -61,7 +64,7 @@ export function createBlock(input: BlockInput): Promise<BlockResult> {
   if (!(input.to > input.from)) return Promise.resolve({ ok: false, error: "invalid" });
   return guarded(
     () =>
-      db.$transaction(async (tx) => {
+      runTx(async (tx) => {
         if (!(await validUnit(tx, input.unit))) return { ok: false as const, error: "invalid" as const };
         const row = await tx.block.create({ data: { unit: input.unit, from: fromDay(input.from), to: fromDay(input.to), reason: input.reason, note: input.note?.trim() || null } });
         await claim(tx, input, row.id);
@@ -75,7 +78,7 @@ export function updateBlock(id: string, input: BlockInput): Promise<BlockResult>
   if (!(input.to > input.from)) return Promise.resolve({ ok: false, error: "invalid" });
   return guarded(
     () =>
-      db.$transaction(async (tx) => {
+      runTx(async (tx) => {
         if (!(await tx.block.findUnique({ where: { id } }))) return { ok: false as const, error: "not_found" as const };
         if (!(await validUnit(tx, input.unit))) return { ok: false as const, error: "invalid" as const };
         await releaseNights(tx, { blockId: id });
@@ -89,7 +92,8 @@ export function updateBlock(id: string, input: BlockInput): Promise<BlockResult>
 
 /** Opens the dates again (the block's nights go with it). */
 export async function deleteBlock(id: string) {
-  await db.block.deleteMany({ where: { id } });
+  const hit = await db.block.deleteMany({ where: { id } });
+  if (hit.count) await notifyChannel({ kind: "block", id, holds: false });
 }
 
 export async function listBlocks(): Promise<Block[]> {

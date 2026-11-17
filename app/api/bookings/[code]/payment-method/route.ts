@@ -6,6 +6,7 @@ import { db } from "@/lib/server/db";
 import { clientIp, json, notFound, parseBody, tokenOf } from "@/lib/server/http";
 import { closeCharge, openCharge, supportsMethod } from "@/lib/server/payments/charges";
 import { guestView } from "@/lib/server/public";
+import { runTx } from "@/lib/server/tx";
 
 const body = z.object({ method: z.string() });
 
@@ -22,7 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   const settings = await readSettings();
   if (!method || method === "manual" || !settings.methods[method] || !supportsMethod(method)) return json({ ok: false, error: "payment" }, 400);
 
-  await db.$transaction((tx) => expireLapsed(tx, new Date()));
+  await runTx((tx) => expireLapsed(tx, new Date()));
   const booking = await findBooking(code);
   if (!booking) return notFound();
   if (booking.status !== "pending") return json({ ok: false, error: "state" }, 409);

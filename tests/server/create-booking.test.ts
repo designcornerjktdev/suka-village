@@ -70,6 +70,33 @@ describe("createBooking", () => {
     expect(await db.booking.count()).toBe(1);
   });
 
+  it("concurrent create under deadlock retry", async () => {
+    /* Ten guests at once, overlapping rooms and nights: on MariaDB this is
+       where lock waits and deadlocks show. Every answer is ok or unavailable,
+       none throws, and no two accepted bookings share a night of a room. */
+    const tries: Partial<CreateInput>[] = [];
+    for (let i = 0; i < 10; i++) {
+      const start = 10 + (i % 4);
+      tries.push({ checkIn: `2027-03-${start}`, checkOut: `2027-03-${start + 2}`, units: i % 3 === 0 ? ["mainVilla", "familyCabin"] : i % 3 === 1 ? ["familyCabin"] : ["mainVilla"] });
+    }
+    const results = await Promise.all(tries.map((t) => create(t)));
+    expect(results.every((r) => r.ok || r.error === "unavailable")).toBe(true);
+    const won = results.filter((r) => r.ok);
+    expect(won.length).toBeGreaterThan(0);
+    const taken = new Set<string>();
+    for (const r of won) {
+      if (!r.ok) continue;
+      for (const unit of r.booking.units) {
+        for (const n of r.booking.quote.lines.find((l) => l.unit === unit)!.nights) {
+          const key = `${unit}:${n.date}`;
+          expect(taken.has(key)).toBe(false);
+          taken.add(key);
+        }
+      }
+    }
+    expect(await db.night.count()).toBe(taken.size);
+  });
+
   it("blocked dates are unavailable", async () => {
     const block = await db.block.create({ data: { unit: "mainVilla", from: fromDay("2027-03-11"), to: fromDay("2027-03-12"), reason: "airbnb" } });
     await db.$transaction((tx) => claimNights(tx, ["mainVilla"], ["2027-03-11"], { blockId: block.id }));

@@ -10,7 +10,7 @@ import { waHref } from "@/content/site";
 import { fill, getDict } from "@/content/dict";
 import { isLocale, localePath, locales } from "@/content/i18n";
 import { breadcrumbs, pageMetadata, roomMeta, roomSchema } from "@/lib/seo";
-import { getRoom, getRooms, paragraphs } from "@/lib/server/content";
+import { getRoom, getRooms, paragraphs, roomSlugs } from "@/lib/server/content";
 
 /**
  * One room, reached from "Discover". As on the owner's reference
@@ -25,8 +25,8 @@ import { getRoom, getRooms, paragraphs } from "@/lib/server/content";
 /* Built for the rooms in the database at build time; a room added later in
    the admin is rendered on its first visit (dynamicParams) and cached. */
 export async function generateStaticParams() {
-  const rooms = await getRooms();
-  return locales.flatMap((lang) => rooms.map((unit) => ({ lang, unit: unit.slug })));
+  const slugs = await roomSlugs();
+  return locales.flatMap((lang) => slugs.map((unit) => ({ lang, unit })));
 }
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/rooms/[unit]">): Promise<Metadata> {

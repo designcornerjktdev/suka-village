@@ -1,5 +1,11 @@
 # Desain Backend Suka Village
 
+> **Pembaruan 17 Nov 2026:** keputusan akhir hosting adalah **Hostinger Web
+> App dengan MySQL (MariaDB 10.11)**. Postgres dipakai selama pengembangan,
+> lalu dipindah (rencana `plans/2026-11-17-mysql-hostinger.md`): kolom teks
+> panjang `@db.Text`, transaksi READ COMMITTED + retry deadlock
+> (`lib/server/tx.ts`), dan build yang tetap jalan tanpa akses database.
+
 Tanggal: 17 November 2026 · Status: draf, menunggu persetujuan
 
 ## 1. Tujuan dan alasan

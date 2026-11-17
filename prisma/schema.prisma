@@ -1,17 +1,19 @@
 // Suka Village database. The shapes the app sees are lib/booking/types.ts;
 // lib/server/mappers.ts converts rows into them.
 //
-// Kept portable to MySQL (docs/superpowers/specs/2026-11-17-backend-design.md):
-// no partial indexes, no array columns, no Postgres-only raw SQL. Lists and
-// bilingual text are Json. Stay dates are @db.Date (calendar days, Asia/Jakarta);
-// event times are DateTime in UTC. Money is Int rupiah.
+// MariaDB/MySQL (Hostinger Web and Cloud hosting). A plain String is
+// VARCHAR(191) there, so anything that can be longer (DOKU payment URLs and QR
+// strings, notes, reasons, history lines) is @db.Text. No partial indexes, no
+// array columns; lists and bilingual text are Json (LONGTEXT on MariaDB). Stay
+// dates are @db.Date (calendar days, Asia/Jakarta); event times are DateTime in
+// UTC. Money is Int rupiah.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -31,13 +33,13 @@ model Booking {
   guestEmail   String
   /// E.164, +62...
   guestPhone   String
-  notes        String?
+  notes        String?   @db.Text
   /// Quote frozen at booking time, night by night (lib/booking/types.ts Quote).
   quote        Json
   /// The promo applied, for counting its quota (also frozen inside quote).
   promoId      String?
-  internalNote String?
-  rejectReason String?
+  internalNote String?   @db.Text
+  rejectReason String?   @db.Text
   /// Money reached us for a booking that is no longer a stay (rejected, or paid after it expired).
   refundOwed   Boolean   @default(false)
   /// Soft delete (UU PDP request or tidying); tax records keep the row.
@@ -50,6 +52,7 @@ model Booking {
   notifications Notification[]
   events        BookingEvent[]
   accessTokens  AccessToken[]
+  charges       Charge[]
 
   @@index([status])
   @@index([checkIn])
@@ -91,7 +94,7 @@ model Payment {
   /// pending | paid | expired | failed | refunded
   status      String
   /// What the guest pays with: VA number, QR string, e-wallet or card URL.
-  reference   String
+  reference   String    @db.Text
   /// Our id for the charge at DOKU (VA trxId, QRIS partnerReferenceNo).
   gatewayId   String?
   /// DOKU's own id for the charge, where it has one (QRIS referenceNo).
@@ -106,7 +109,7 @@ model Notification {
   bookingCode String
   /// lib/booking/types.ts TemplateId
   template    String
-  to          String
+  to          String   @db.Text
   /// sent | failed
   status      String
   at          DateTime @default(now())
@@ -121,9 +124,23 @@ model BookingEvent {
   bookingCode String
   /// guest | admin | system | gateway
   by          String
-  event       String
+  event       String   @db.Text
   adminId     String?
   at          DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
+
+  @@index([bookingCode])
+}
+
+/// Every charge ever opened at DOKU for a booking (one per payment method
+/// tried). A guest who changes method can still pay an older charge that
+/// DOKU cannot close (e-wallet links, card pages); its notification is then
+/// matched here instead of being lost.
+model Charge {
+  trxId       String   @id @db.VarChar(64)
+  bookingCode String
+  method      String
+  createdAt   DateTime @default(now())
   booking     Booking  @relation(fields: [bookingCode], references: [code], onDelete: Cascade)
 
   @@index([bookingCode])
@@ -148,7 +165,7 @@ model Block {
   to         DateTime @db.Date
   /// airbnb | booking_com | maintenance | owner | other
   reason     String
-  note       String?
+  note       String?  @db.Text
   /// manual | bookandlink
   source     String   @default("manual")
   externalId String?
@@ -195,7 +212,7 @@ model Promo {
   id          String    @id @default(cuid())
   /// Upper case, unique.
   code        String    @unique
-  note        String?
+  note        String?   @db.Text
   /// percent | amount
   kind        String
   value       Int
@@ -253,13 +270,13 @@ model Session {
 
 /// DOKU notifications already handled (idempotency).
 model WebhookEvent {
-  id         String   @id
+  id         String   @id @db.VarChar(255)
   receivedAt DateTime @default(now())
 }
 
 /// Fixed-window rate limit counters.
 model RateHit {
-  key         String
+  key         String   @db.VarChar(255)
   windowStart DateTime
   count       Int      @default(1)
 

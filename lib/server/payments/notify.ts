@@ -1,9 +1,11 @@
 import { expireLapsed, markPaidByGateway } from "../bookings";
 import { db } from "../db";
-import { sendTemplates } from "../mail";
+import { sendAdminAlert, sendTemplates } from "../mail";
+import { closeCharge } from "./charges";
 import { dokuConfig } from "./doku/config";
 import { signNonSnap } from "./doku/nonsnap";
 import { issueNotificationToken, sameSignature, verifyAsymmetric, verifyNotificationToken } from "./doku/snap";
+import { runTx } from "../tx";
 
 /**
  * DOKU → us. SNAP notifications come in two steps, as in DOKU's own library:
@@ -140,7 +142,12 @@ export const isNonSnap = (headers: Headers) => (headers.get("signature") ?? "").
  * Returns an error reply, or null when the caller should answer success.
  */
 async function settle(trxId: string | undefined, amount: string | undefined, eventId: string, now: Date): Promise<Reply | null> {
-  const payment = trxId ? await db.payment.findFirst({ where: { gatewayId: trxId } }) : null;
+  let payment = trxId ? await db.payment.findFirst({ where: { gatewayId: trxId } }) : null;
+  /* Not the booking's current charge: one it opened earlier, before the guest
+     changed payment method (an e-wallet link or card page DOKU cannot close).
+     The money is still this booking's. */
+  const earlier = !payment && trxId ? await db.charge.findUnique({ where: { trxId } }) : null;
+  if (earlier) payment = await db.payment.findUnique({ where: { bookingCode: earlier.bookingCode } });
   if (!payment) return fail(404, "4042512", "Bill not found");
   const code = payment.bookingCode;
 
@@ -155,8 +162,15 @@ async function settle(trxId: string | undefined, amount: string | undefined, eve
 
   /* Settle lapsed holds first and on their own: inside the paid transition a
      refused change rolls back, and would leave a lapsed hold looking pending. */
-  await db.$transaction((tx) => expireLapsed(tx, now));
+  await runTx((tx) => expireLapsed(tx, now));
+  const current = earlier ? { ...payment } : null;
   const r = await markPaidByGateway(code, trxId!, now);
+  if (r.ok && earlier && current) {
+    /* Paid with the earlier charge: record that method, and close the charge
+       opened after it so the guest is not asked to pay twice. */
+    await db.payment.update({ where: { bookingCode: code }, data: { method: earlier.method } });
+    if (current.gatewayId !== trxId) await closeCharge(current);
+  }
   if (r.ok) {
     await sendTemplates(code, r.templates);
   } else if (r.error === "state") {
@@ -168,6 +182,21 @@ async function settle(trxId: string | undefined, amount: string | undefined, eve
         db.payment.update({ where: { bookingCode: code }, data: { status: "paid", paidAt: now } }),
         db.bookingEvent.create({ data: { bookingCode: code, by: "gateway", event: "Pembayaran masuk setelah pesanan berakhir, perlu refund", at: now } }),
       ]);
+      /* Nothing in the admin screens shows an owed refund by itself: tell
+         every admin now (once: refundOwed guards this branch). */
+      const rupiah = `Rp ${payment.amount.toLocaleString("id-ID")}`;
+      const reached = await sendAdminAlert(
+        `Perlu refund: pembayaran masuk setelah pesanan ${code} berakhir`,
+        [
+          `Pesanan ${code} sudah berakhir (${b.status}), tetapi DOKU melaporkan pembayaran ${rupiah} untuknya.`,
+          "",
+          "Kamar tidak lagi ditahan untuk tamu ini. Mohon proses refund di dashboard DOKU dan hubungi tamu:",
+          `${b.guestName}, ${b.guestEmail || "-"}, ${b.guestPhone}.`,
+          "",
+          "Detail pesanan ada di Admin, menu Booking.",
+        ].join("\n"),
+      );
+      if (reached) await db.bookingEvent.create({ data: { bookingCode: code, by: "system", event: "Admin diberi tahu lewat email: perlu refund", at: now } });
     }
   }
   return null;

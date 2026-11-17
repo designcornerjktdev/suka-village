@@ -30,9 +30,9 @@ Diperbarui: 17 November 2026.
 6. **Cek status.** Untuk VA (`/orders/v1.0/transfer-va/status`), apakah
    `paymentFlagStatus: "00"` berarti lunas? Untuk e-wallet
    (`/orders/v1.0/debit/status`), `serviceCode` berapa yang benar?
-7. **BIN VA bank lain.** Sandbox baru menampilkan BNI (Partner Service ID
-   84923, Prefix Customer No 8492, DGPC, FIX_BILL). Berapa nilai untuk BCA,
-   BRI, dan Mandiri, dan apakah sama di produksi?
+7. **BIN VA bank lain.** Sandbox baru menampilkan BNI (Merchant BIN 84923,
+   DGPC, Closed). Berapa Merchant BIN untuk BCA, BRI, dan Mandiri, dan apakah
+   sama di produksi?
 
 ## Ke owner Suka Village
 
@@ -65,9 +65,24 @@ Diperbarui: 17 November 2026.
     dihapus, dan pesan error kini dua: "Isi email dan kata sandi." (kosong)
     dan "Email atau kata sandi salah." (ditolak server). Mohon dicek kata-katanya.
 
+16. **Teks cadangan untuk item baru dari CMS** (17 Nov 2026). Saat owner
+    menambah item yang tidak ada di desain awal, situs memakai:
+    - fasilitas baru: ikon bentuk (ikon taman bermain);
+    - acara baru: pesan WhatsApp "Halo Suka Village, saya ingin bertanya
+      tentang {nama acara}." (EN: "Hello Suka Village, I would like to ask
+      about {name}.");
+    - kamar baru: judul SEO "{nama kamar} · Suka Village", deskripsi dari teks
+      kamarnya, gambar share halaman Kamar.
+    Mohon dicek kata-katanya.
+17. **Nomor WhatsApp di seluruh situs.** Nomor di Admin → Pengaturan kini
+    dipakai di halaman Kontak. Tombol WhatsApp lain (header, footer, kamar,
+    acara) masih memakai nomor di `content/site.ts`. Apakah semuanya harus
+    ikut Pengaturan (IA menyebut "tombol WhatsApp di seluruh website")?
+
 ## Sudah terjawab
 
-- **Jenis VA:** DGPC dengan Doku General BIN. Partner Service ID BNI 84923,
-  Prefix Customer No 8492. DOKU tetap meminta `customerNo` 10 digit berawalan
-  prefix, lalu membuat nomornya sendiri (diuji di sandbox 17 Nov 2026).
+- **Jenis VA:** DGPC dengan Doku General BIN. Tabel VA BNI di dashboard:
+  Merchant BIN 84923, Partner Service ID 8492, Prefix Customer No 3. API SNAP
+  memakai **Merchant BIN** sebagai `partnerServiceId` dan `customerNo` 10 digit
+  apa saja; DOKU membuat nomor VA-nya sendiri (diuji di sandbox 18 Nov 2026).
 - **Skema API DOKU:** SNAP (akun sandbox mendukung, semua metode aktif).

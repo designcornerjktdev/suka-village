@@ -1,4 +1,6 @@
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { unstable_cache } from "next/cache";
+import { connection } from "next/server";
 import { explore, gallery, photos as library, units, type Photo } from "@/content/site";
 import type { Bilingual, ContentItem, ContentSection, Feature, MediaMeta } from "@/lib/booking/types";
 import { db } from "./db";
@@ -106,12 +108,30 @@ export async function loadSection(section: ContentSection): Promise<PublicItem[]
   });
 }
 
-/* The cached versions the pages call. */
-export const getRooms = unstable_cache(loadRooms, ["public-rooms"], { tags: ["rooms", "content"] });
-export const getSection = unstable_cache(loadSection, ["public-section"], { tags: ["content"] });
+/**
+ * A database read for a page, with one allowance: during `next build` on a
+ * host whose build step cannot reach the database (Hostinger may build away
+ * from it), the page is not prerendered EMPTY. `bail` (Next's connection())
+ * marks it to be rendered on request instead, when the database is there;
+ * its data is then cached under the same tags. Outside the build a database
+ * error is thrown as usual, never hidden. Errors are not cached by
+ * unstable_cache, so nothing empty is kept.
+ */
+export async function orEmpty<T>(load: () => Promise<T>, empty: T, bail: () => Promise<void> = connection): Promise<T> {
+  try {
+    return await load();
+  } catch (e) {
+    if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw e;
+    console.warn("[content] database not reachable during the build; this page renders on request instead.");
+    await bail();
+    return empty;
+  }
+}
 
-/** The WhatsApp number set in Admin → Pengaturan, for the Contact page. */
-export const getWhatsapp = unstable_cache(
+/* The cached versions the pages call. */
+const cachedRooms = unstable_cache(loadRooms, ["public-rooms"], { tags: ["rooms", "content"] });
+const cachedSection = unstable_cache(loadSection, ["public-section"], { tags: ["content"] });
+const cachedWhatsapp = unstable_cache(
   async () => {
     const row = await db.settings.findUnique({ where: { id: 1 } });
     return ((row?.data as { contact?: { whatsapp?: string } } | undefined)?.contact?.whatsapp ?? "").trim();
@@ -120,8 +140,23 @@ export const getWhatsapp = unstable_cache(
   { tags: ["settings"] },
 );
 
+export const getRooms = () => orEmpty(cachedRooms, [] as PublicRoom[]);
+export const getSection = (section: ContentSection) => orEmpty(() => cachedSection(section), [] as PublicItem[]);
+/** The WhatsApp number set in Admin → Pengaturan, for the Contact page. */
+export const getWhatsapp = () => orEmpty(cachedWhatsapp, "");
+
 export async function getRoom(slug: string): Promise<PublicRoom | null> {
   return (await getRooms()).find((r) => r.slug === slug) ?? null;
+}
+
+/** Room pages to prerender: none when the build cannot reach the database (they render on request). */
+export async function roomSlugs(): Promise<string[]> {
+  try {
+    return (await cachedRooms()).map((r) => r.slug);
+  } catch (e) {
+    if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw e;
+    return [];
+  }
 }
 
 /** A body as paragraphs (a blank line separates them in the CMS). */

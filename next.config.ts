@@ -16,6 +16,12 @@ const movedRooms = [
 const hidden = (value: string) => [{ key: "X-Robots-Tag", value }];
 
 const nextConfig: NextConfig = {
+  /* Shared build hosts (Hostinger) report dozens of CPUs but cap threads per
+     account; one worker per CPU exhausts that cap and the build aborts with
+     "OS can't spawn worker thread". A few workers is plenty for this site. */
+  experimental: {
+    cpus: 2,
+  },
   /* AVIF where the browser takes it (most phones now), WebP otherwise: the
      same photographs at a fraction of the bytes. */
   images: {

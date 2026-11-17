@@ -25,6 +25,9 @@ export class UnsupportedMethod extends Error {
 
 export const supportsMethod = (m: PaymentMethodId) => isVa(m) || m === "qris" || isEwallet(m) || m === "card";
 
+/** How much earlier than the booking's payment hold the DOKU charge closes. */
+export const CHARGE_GRACE_MS = 5 * 60_000;
+
 /** One trxId per charge: changing method opens a new charge with a new id. */
 const newTrxId = (code: string) => `${code}-${randomBytes(4).toString("hex")}`;
 
@@ -35,7 +38,11 @@ type OpenPayment = { method: string; reference: string; gatewayId: string | null
 export async function openCharge(code: string, opts: { ip?: string } = {}) {
   const b = await db.booking.findUniqueOrThrow({ where: { code }, include: { payment: true } });
   const p = b.payment!;
-  const base = { trxId: newTrxId(code), amount: p.amount, expiresAt: p.expiresAt.toISOString() };
+  /* The charge at DOKU closes CHARGE_GRACE_MS before the booking's hold, so a
+     guest who pays at the charge's last moment is notified while the booking
+     still holds its nights (the webhook can take a while). */
+  const chargeEnds = new Date(Math.max(Date.now() + 60_000, p.expiresAt.getTime() - CHARGE_GRACE_MS));
+  const base = { trxId: newTrxId(code), amount: p.amount, expiresAt: chargeEnds.toISOString() };
   let opened: { reference: string; gatewayId: string; gatewayRef?: string };
   if (isVa(p.method)) {
     opened = await createVa({ ...base, method: p.method, guest: { name: b.guestName, email: b.guestEmail, phone: b.guestPhone } });
@@ -50,7 +57,11 @@ export async function openCharge(code: string, opts: { ip?: string } = {}) {
   } else {
     throw new UnsupportedMethod(p.method);
   }
-  await db.payment.update({ where: { bookingCode: code }, data: { reference: opened.reference, gatewayId: opened.gatewayId, gatewayRef: opened.gatewayRef ?? null } });
+  await db.$transaction([
+    db.payment.update({ where: { bookingCode: code }, data: { reference: opened.reference, gatewayId: opened.gatewayId, gatewayRef: opened.gatewayRef ?? null } }),
+    /* Kept for good: a later method change cannot lose a payment on this charge. */
+    db.charge.create({ data: { trxId: opened.gatewayId, bookingCode: code, method: p.method } }),
+  ]);
 }
 
 /** Closes an open charge (method changed, booking cancelled). Never throws: an open charge expires on its own. */
