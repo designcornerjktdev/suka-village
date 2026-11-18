@@ -3,7 +3,7 @@ import type { PaymentMethodId } from "@/lib/booking/types";
 import { expireLapsed, findBooking, readSettings } from "@/lib/server/bookings";
 import { verifyAccess } from "@/lib/server/access";
 import { db } from "@/lib/server/db";
-import { clientIp, json, notFound, parseBody, tokenOf } from "@/lib/server/http";
+import { clientIp, requestOrigin, json, notFound, parseBody, tokenOf } from "@/lib/server/http";
 import { closeCharge, openCharge, supportsMethod } from "@/lib/server/payments/charges";
 import { guestView } from "@/lib/server/public";
 import { runTx } from "@/lib/server/tx";
@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   ]);
   await closeCharge(old);
   try {
-    await openCharge(code, { ip: clientIp(req) });
+    await openCharge(code, { ip: clientIp(req), origin: requestOrigin(req) });
   } catch (e) {
     console.error(`[payments] new charge for ${code} failed:`, e);
     return json({ ok: false, error: "payment" }, 502);

@@ -25,9 +25,18 @@ export function handleTokenRequest(headers: Headers, now = new Date()): Reply {
   const clientId = headers.get("x-client-key") ?? "";
   const timestamp = headers.get("x-timestamp") ?? "";
   const signature = headers.get("x-signature") ?? "";
-  if (!c.dokuPublicKey || clientId !== c.clientId || !verifyAsymmetric(c.dokuPublicKey, clientId, timestamp, signature)) {
+  const why = !c.dokuPublicKey
+    ? "DOKU public key missing (DOKU_PUBLIC_KEY / DOKU_PUBLIC_KEY_PATH)"
+    : clientId !== c.clientId
+      ? `X-CLIENT-KEY does not match DOKU_CLIENT_ID (got ${clientId ? `${clientId.length} chars` : "none"})`
+      : !verifyAsymmetric(c.dokuPublicKey, clientId, timestamp, signature)
+        ? "signature does not verify against the DOKU public key"
+        : null;
+  if (why) {
+    console.warn(`[payments] token request rejected: ${why}`);
     return { status: 401, body: { responseCode: "4017300", responseMessage: "Unauthorized. Signature" } };
   }
+  console.info("[payments] token request accepted, token issued");
   return {
     status: 200,
     body: {
@@ -64,14 +73,19 @@ const fail = (status: number, code: string, message: string): Reply => ({ status
 export async function handlePaymentNotification(headers: Headers, raw: string, now = new Date()): Promise<Reply> {
   const c = dokuConfig();
   const bearer = (headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!verifyNotificationToken(c.merchantPublicKey, bearer, now)) return fail(401, "4012501", "Invalid Token (B2B)");
+  if (!verifyNotificationToken(c.merchantPublicKey, bearer, now)) {
+    console.warn(`[payments] notification rejected: ${bearer ? "token invalid or expired" : "no Bearer token"}`);
+    return fail(401, "4012501", "Invalid Token (B2B)");
+  }
 
   let parsed: VaNotification & QrisNotification;
   try {
     parsed = JSON.parse(raw);
   } catch {
+    console.warn("[payments] notification rejected: body is not JSON");
     return fail(400, "4002500", "Bad Request");
   }
+  console.info(`[payments] notification received: ${parsed.originalPartnerReferenceNo ? `qris/ewallet ${parsed.originalPartnerReferenceNo}` : `va ${parsed.trxId ?? "(no trxId)"}`}`);
 
   /* QRIS (SNAP service 52) and e-wallet direct debit (service 56) share this shape. */
   if (parsed.originalPartnerReferenceNo) {
@@ -119,6 +133,7 @@ export async function handleNonSnapNotification(headers: Headers, raw: string, p
     body: raw,
   });
   if (headers.get("client-id") !== c.clientId || !sameSignature(headers.get("signature") ?? "", expected)) {
+    console.warn(`[payments] card notification rejected: ${headers.get("client-id") !== c.clientId ? "Client-Id does not match" : "signature does not match"}`);
     return { status: 401, body: { error: { code: "invalid_signature", message: "Invalid Signature" } } };
   }
   let n: { order?: { invoice_number?: string; amount?: number | string }; transaction?: { status?: string } };
@@ -148,11 +163,15 @@ async function settle(trxId: string | undefined, amount: string | undefined, eve
      The money is still this booking's. */
   const earlier = !payment && trxId ? await db.charge.findUnique({ where: { trxId } }) : null;
   if (earlier) payment = await db.payment.findUnique({ where: { bookingCode: earlier.bookingCode } });
-  if (!payment) return fail(404, "4042512", "Bill not found");
+  if (!payment) {
+    console.warn(`[payments] notification for unknown charge ${trxId ?? "(no trxId)"}`);
+    return fail(404, "4042512", "Bill not found");
+  }
   const code = payment.bookingCode;
 
   const paid = Math.round(Number(amount ?? NaN));
   if (paid !== payment.amount) {
+    console.warn(`[payments] amount mismatch for ${code}: got ${amount ?? "?"}, bill ${payment.amount}`);
     await db.bookingEvent.create({ data: { bookingCode: code, by: "gateway", event: `Pembayaran DOKU tidak sesuai: diterima ${amount ?? "?"}, tagihan ${payment.amount}`, at: now } });
     return fail(400, "4042513", "Invalid Amount");
   }
@@ -171,6 +190,7 @@ async function settle(trxId: string | undefined, amount: string | undefined, eve
     await db.payment.update({ where: { bookingCode: code }, data: { method: earlier.method } });
     if (current.gatewayId !== trxId) await closeCharge(current);
   }
+  console.info(`[payments] ${code} settle: ${r.ok ? "marked paid" : `not changed (${r.error})`}`);
   if (r.ok) {
     await sendTemplates(code, r.templates);
   } else if (r.error === "state") {

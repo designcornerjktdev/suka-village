@@ -48,13 +48,14 @@ export async function seedDatabase(db: PrismaClient) {
     }
   }
 
-  /* OVO needs the guest's account bound first (phone, OTP, PIN) and GoPay is
-     not in DOKU's SNAP Direct API, so both start switched off; the admin can
-     see them in Pengaturan, and the server refuses them until they are built
-     (docs/open-questions.md). */
+  /* Switched off until they work (docs/open-questions.md): GoPay is in neither
+     DOKU's SNAP Direct API nor Checkout; OVO and ShopeePay through Checkout
+     fail on DOKU's side in the sandbox (OVO: 500 on emoney-ovo, ShopeePay: a
+     blank page). The admin can switch them on in Pengaturan. */
   const settings = seedSettings();
   settings.methods.ovo = false;
   settings.methods.gopay = false;
+  settings.methods.shopeepay = false;
   await db.settings.upsert({
     where: { id: 1 },
     update: {},

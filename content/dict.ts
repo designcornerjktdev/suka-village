@@ -258,8 +258,14 @@ type Copy = {
     amount: string;
     vaTitle: string;
     vaSteps: string[];
+    /** VA opened through DOKU Checkout: the number is shown on DOKU's page. */
+    vaCheckoutTitle: string;
+    vaCheckoutGo: string;
+    vaCheckoutSteps: string[];
     qrisTitle: string;
     qrisSteps: string[];
+    /** QRIS opened through DOKU Checkout: the code shows in DOKU's pop-up. */
+    qrisCheckoutSteps: string[];
     ewalletTitle: string;
     ewalletOpen: string;
     ewalletSteps: string[];
@@ -706,8 +712,12 @@ const id: Copy = {
     amount: "Jumlah yang dibayar",
     vaTitle: "Nomor virtual account {bank}",
     vaSteps: ["Buka m-banking, internet banking, atau ATM {bank}.", "Pilih transfer ke virtual account, lalu masukkan nomor di atas.", "Pastikan nama Suka Village dan jumlahnya sesuai, lalu bayar."],
+    vaCheckoutTitle: "Virtual account {bank}",
+    vaCheckoutGo: "Bayar",
+    vaCheckoutSteps: ["Ketuk tombol di atas. Nomor virtual account {bank} tampil di halaman pembayaran DOKU.", "Buka m-banking, internet banking, atau ATM {bank}, pilih transfer ke virtual account, lalu masukkan nomornya.", "Pastikan nama Suka Village dan jumlahnya sesuai, lalu bayar."],
     qrisTitle: "Scan kode QRIS",
     qrisSteps: ["Buka aplikasi bank atau e-wallet.", "Pilih bayar dengan QRIS, lalu scan kode ini.", "Pastikan jumlahnya sesuai, lalu bayar."],
+    qrisCheckoutSteps: ["Ketuk Bayar. Kode QRIS tampil di halaman pembayaran DOKU.", "Buka aplikasi bank atau e-wallet, pilih bayar dengan QRIS, lalu scan kodenya.", "Pastikan jumlahnya sesuai, lalu bayar."],
     ewalletTitle: "Bayar dengan {wallet}",
     ewalletOpen: "Buka {wallet}",
     ewalletSteps: ["Tekan tombol di atas untuk membuka {wallet}.", "Periksa jumlahnya, lalu konfirmasi pembayaran.", "Kembali ke halaman ini. Status berubah otomatis."],
@@ -1155,8 +1165,12 @@ const en: Copy = {
     amount: "Amount to pay",
     vaTitle: "{bank} virtual account number",
     vaSteps: ["Open {bank} mobile banking, internet banking or an ATM.", "Choose transfer to virtual account and enter the number above.", "Check that the name reads Suka Village and the amount matches, then pay."],
+    vaCheckoutTitle: "{bank} virtual account",
+    vaCheckoutGo: "Pay",
+    vaCheckoutSteps: ["Tap the button above. Your {bank} virtual account number appears on DOKU's payment page.", "Open {bank} mobile banking, internet banking or an ATM, choose transfer to virtual account and enter the number.", "Check that the name reads Suka Village and the amount matches, then pay."],
     qrisTitle: "Scan the QRIS code",
     qrisSteps: ["Open your banking or e-wallet app.", "Choose pay with QRIS and scan this code.", "Check the amount, then pay."],
+    qrisCheckoutSteps: ["Tap Pay. The QRIS code appears on DOKU's payment page.", "Open your banking or e-wallet app, choose pay with QRIS and scan the code.", "Check the amount, then pay."],
     ewalletTitle: "Pay with {wallet}",
     ewalletOpen: "Open {wallet}",
     ewalletSteps: ["Press the button above to open {wallet}.", "Check the amount and confirm the payment.", "Come back to this page. The status updates on its own."],

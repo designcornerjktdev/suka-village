@@ -36,6 +36,10 @@ Jangan pernah meng-commit `.env` atau folder `keys/`.
 | `DOKU_PRIVATE_KEY_PATH` | Path kunci privat RSA merchant, misalnya `./keys/doku-private.pem` |
 | `DOKU_PUBLIC_KEY_PATH` | Path kunci publik **milik DOKU** (disalin dari dashboard) |
 | `DOKU_VA_<BANK>` | Kolom **Merchant BIN** di tabel VA dashboard DOKU (misalnya `84923`), **bukan** kolom Partner Service ID atau Prefix Customer No: DOKU menolak keduanya (diuji di sandbox 18 Nov 2026). Bank yang tidak dipakai dibiarkan kosong |
+| `DOKU_VA_CHECKOUT` | `1` (keputusan 19 Nov 2026): VA dibuka lewat DOKU Checkout (Non-SNAP). Tamu tetap memilih bank di situs; nomor VA tampil di pop-up DOKU. Alasannya: notifikasi VA SNAP tidak pernah dikirim DOKU di akun sandbox, sedangkan Non-SNAP terkirim. Kosong = SNAP (nomor VA di halaman pesanan) |
+| `DOKU_QRIS_CHECKOUT` | `1`: QRIS lewat DOKU Checkout (Non-SNAP); kode QR tampil di pop-up DOKU, tanpa perlu merchant/terminal id QRIS. Kosong = QRIS SNAP, yang butuh tiga variabel di bawah |
+| `DOKU_EWALLET_CHECKOUT` | `1`: DANA, ShopeePay, dan OVO lewat DOKU Checkout (pop-up). OVO hanya bisa lewat jalur ini (SNAP butuh account binding); nyalakan di Admin → Pengaturan bila ingin dipakai. GoPay tidak tersedia di Checkout |
+| `DOKU_CARD_CHECKOUT` | `1`: kartu lewat DOKU Checkout (pop-up, notifikasi format Checkout). Kosong = Credit Card Payment Page di tab baru. Kalau 3DS/OTP bank gagal di dalam pop-up, kosongkan |
 | `DOKU_QRIS_MERCHANT_ID`, `DOKU_QRIS_TERMINAL_ID`, `DOKU_QRIS_POSTAL_CODE` | Dari DOKU setelah QRIS disetujui, dan kode pos properti |
 | `SMTP_URL` | Misalnya `smtps://resend:API_KEY@smtp.resend.com:465`, atau SMTP email Hostinger. **Wajib di produksi**: tanpa ini email hanya dicatat, tidak terkirim, padahal admin melihatnya "terkirim" |
 | `MAIL_FROM` | `Suka Village <reservasi@sukavillage.com>` (dipakai bila alamat pengirim di Pengaturan kosong) |
@@ -140,7 +144,11 @@ Di dashboard DOKU produksi:
 1. Unggah Merchant Public Key (§2) dan salin DOKU Public Key.
 2. **Notification URL** (VA, QRIS, e-wallet, kartu):
    `https://sukavillage.com/api/webhooks/doku`
-   (sub-path yang ditambahkan DOKU juga diterima).
+   (sub-path yang ditambahkan DOKU juga diterima). URL ini diisi **per
+   metode**: tombol Configure di tiap baris bank/metode punya kolom Payment
+   Notification URL sendiri. Dengan `DOKU_VA_CHECKOUT=1`, isi di baris
+   **Non-SNAP** keempat bank VA (dan Credit Card). Jangan salin dari address
+   bar situs: `/id/api/...` ditolak 404.
 3. DOKU meminta token ke `https://sukavillage.com/authorization/v1/access-token/b2b`
    sebelum mengirim notifikasi SNAP. Pastikan path itu tidak diblokir.
 4. Aktifkan hanya metode yang dipakai. Metode yang mati di Admin → Pengaturan

@@ -15,6 +15,9 @@ export function qrPath(value: string): { size: number; d: string } {
 }
 
 export default function QrisCode({ value, label }: { value: string; label: string }) {
+  /* No QRIS string stored (the charge was never opened at DOKU): draw nothing
+     rather than take the whole order page down. */
+  if (!value) return null;
   const { size, d } = qrPath(value);
   return (
     <div className="sv-qr">

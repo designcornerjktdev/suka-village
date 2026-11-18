@@ -4,7 +4,7 @@ Hal yang masih perlu ditanyakan atau diputuskan sebelum go-live. Dikelompokkan
 menurut siapa yang bisa menjawab. Coret atau pindahkan ke "Sudah terjawab"
 begitu ada jawaban, dan sesuaikan kodenya bila perlu.
 
-Diperbarui: 17 November 2026.
+Diperbarui: 19 November 2026.
 
 ## Ke DOKU (support)
 
@@ -33,6 +33,23 @@ Diperbarui: 17 November 2026.
 7. **BIN VA bank lain.** Sandbox baru menampilkan BNI (Merchant BIN 84923,
    DGPC, Closed). Berapa Merchant BIN untuk BCA, BRI, dan Mandiri, dan apakah
    sama di produksi?
+   *Sandbox terjawab 19 Nov 2026:* BCA 190089, BRI 139256, Mandiri 861880
+   (semua 6 digit, jadi nomor customer 9 digit). Produksi masih perlu dicek.
+
+18. **Notifikasi SNAP tidak pernah dikirim (tiket terbuka, 19 Nov 2026).**
+    VA BNI dan BCA SNAP dibayar di simulator, tapi riwayat HTTP Notification
+    kosong dan tidak ada request masuk. Non-SNAP (Checkout, kartu) terkirim
+    ke URL yang sama. Sementara VA memakai Checkout (`DOKU_VA_CHECKOUT=1`).
+    QRIS, DANA, dan ShopeePay masih SNAP, jadi ikut terdampak. Kalau DOKU
+    memperbaikinya, VA bisa kembali ke SNAP dengan mengosongkan flag.
+19. **Pembuatan QRIS gagal di sandbox** (kode QR kosong). Penyebab belum
+    dicek; lihat log `opening the charge ... failed` saat memilih QRIS.
+
+20. **OVO dan ShopeePay lewat Checkout gagal di sandbox (19 Nov 2026).**
+    OVO: halaman DOKU memanggil `POST .../checkout/v1/payment/<token>/emoney-ovo`
+    dan mendapat 500, lalu "Unknown Error" (nomor dari simulator, status
+    Active). ShopeePay: halaman terbuka lalu putih kosong. DANA berhasil.
+    Keduanya dimatikan di Pengaturan sampai DOKU menjawab.
 
 ## Ke owner Suka Village
 

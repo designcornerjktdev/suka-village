@@ -1,7 +1,7 @@
 import type { PaymentMethodId } from "@/lib/booking/types";
 import { cancel, createBooking, findBooking, readSettings } from "@/lib/server/bookings";
 import { issueAccessToken } from "@/lib/server/access";
-import { clientIp, json, parseBody, tooMany } from "@/lib/server/http";
+import { clientIp, requestOrigin, json, parseBody, tooMany } from "@/lib/server/http";
 import { sendTemplates } from "@/lib/server/mail";
 import { openCharge, supportsMethod } from "@/lib/server/payments/charges";
 import { guestView } from "@/lib/server/public";
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const code = result.booking.code;
 
   try {
-    await openCharge(code, { ip: clientIp(req) });
+    await openCharge(code, { ip: clientIp(req), origin: requestOrigin(req) });
   } catch (e) {
     console.error(`[payments] opening the charge for ${code} failed:`, e);
     await cancel(code, "system", "Pembayaran tidak dapat dibuat");

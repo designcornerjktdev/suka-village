@@ -2,7 +2,7 @@ import { place, units } from "@/content/site";
 import type { Locale } from "@/content/i18n";
 import type { Booking, Template, TemplateId } from "./types";
 import { fmtDate, fmtDateTime, idr } from "./format";
-import { methodInfo } from "./payments";
+import { isCheckoutLink, methodInfo } from "./payments";
 
 /**
  * Messages sent to the guest at each step. EMAIL ONLY, by the owner's
@@ -130,9 +130,20 @@ export function variablesFor(
   token?: string,
 ): Record<(typeof VARIABLES)[number], string> {
   const method = methodInfo(b.payment.method);
+  /* A VA opened through DOKU Checkout stores the page URL, not a number: the
+     number shows on DOKU's page, opened from the order page. */
+  const viaCheckout = isCheckoutLink(b.payment.reference);
   const reference =
-    method.group === "va"
+    method.group === "va" && viaCheckout
+      ? locale === "id"
+        ? `Nomor VA ${method.bank} tampil setelah Anda menekan Bayar di halaman status pesanan.`
+        : `Your ${method.bank} VA number appears when you tap Pay on the booking status page.`
+      : method.group === "va"
       ? `${locale === "id" ? "Nomor VA" : "VA number"} ${method.bank}: ${b.payment.reference}`
+      : method.group === "qris" && viaCheckout
+        ? locale === "id"
+          ? "Kode QRIS tampil setelah Anda menekan Bayar di halaman status pesanan."
+          : "The QRIS code appears when you tap Pay on the booking status page."
       : method.group === "qris"
         ? locale === "id"
           ? "Kode QRIS ada di halaman status pesanan."

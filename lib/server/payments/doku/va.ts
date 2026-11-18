@@ -33,8 +33,13 @@ function prefixFor(method: VaMethod) {
   return bin;
 }
 
-/** DOKU accepts a customerNo of exactly 10 digits (11 is refused). */
-const CUSTOMER_NO_LENGTH = 10;
+/**
+ * DOKU accepts at most 15 digits for BIN + customerNo (sandbox, 19 Nov 2026:
+ * BNI BIN 84923 + 10 digits passes, BRI BIN 139256 + 10 is refused with
+ * 4032715, + 9 passes). So the customerNo gets what the BIN leaves.
+ */
+const VA_DIGITS = 15;
+export const customerNoLength = (bin: string) => VA_DIGITS - bin.length;
 
 /** Only the characters DOKU accepts in a VA name. */
 const vaName = (name: string) =>
@@ -55,14 +60,16 @@ export type VaCharge = {
 /**
  * DGPC (DOKU Generated Payment Code), as the account is set up. Checked
  * against the sandbox on 18 Nov 2026: partnerServiceId is the Merchant BIN
- * (left padded to 8), customerNo any 10 digits, virtualAccountNo the two
- * together; anything else is refused (4032701 / 4032715). DOKU then makes ITS
- * OWN number and returns it; that returned number is what the guest pays and
- * what delete and status calls use.
+ * (left padded to 8), customerNo random digits up to 15 in all
+ * (customerNoLength), virtualAccountNo the two together; anything else is
+ * refused (4032701 / 4032715). DOKU then makes ITS OWN number and returns it;
+ * that returned number is what the guest pays and what delete and status calls use.
  */
 export async function createVa(c: VaCharge): Promise<{ reference: string; gatewayId: string }> {
-  const partnerServiceId = prefixFor(c.method).padStart(8, " ");
-  const customerNo = String(randomInt(0, 10 ** CUSTOMER_NO_LENGTH)).padStart(CUSTOMER_NO_LENGTH, "0");
+  const bin = prefixFor(c.method);
+  const partnerServiceId = bin.padStart(8, " ");
+  const length = customerNoLength(bin);
+  const customerNo = String(randomInt(0, 10 ** length)).padStart(length, "0");
   const res = await dokuRequest<{ virtualAccountData?: { virtualAccountNo?: string } }>("POST", VA_PATHS.create, {
     partnerServiceId,
     customerNo,
@@ -78,6 +85,7 @@ export async function createVa(c: VaCharge): Promise<{ reference: string; gatewa
   });
   const number = res.virtualAccountData?.virtualAccountNo?.trim();
   if (!number) throw new Error(`DOKU create-va for ${c.trxId}: answer has no VA number`);
+  console.info(`[payments] VA created ${number} for trxId ${c.trxId}`);
   return { reference: number, gatewayId: c.trxId };
 }
 
@@ -91,7 +99,13 @@ export const VA_STATUS_PATH = "/orders/v1.0/transfer-va/status";
 export async function vaStatus(v: { method: VaMethod; reference: string }): Promise<"paid" | "pending"> {
   const prefix = prefixFor(v.method);
   const partnerServiceId = prefix.padStart(8, " ");
-  const res = await dokuRequest<{ virtualAccountData?: { paymentFlagStatus?: string } }>("POST", VA_STATUS_PATH, {
+  const res = await dokuRequest<{
+    virtualAccountData?: {
+      paymentFlagStatus?: string;
+      paymentFlagReason?: { english?: string };
+      paidAmount?: { value?: string };
+    };
+  }>("POST", VA_STATUS_PATH, {
     partnerServiceId,
     customerNo: v.reference.slice(prefix.length),
     virtualAccountNo: `${partnerServiceId}${v.reference.slice(prefix.length)}`,
@@ -99,7 +113,12 @@ export async function vaStatus(v: { method: VaMethod; reference: string }): Prom
     paymentRequestId: null,
     additionalInfo: {},
   });
-  return res.virtualAccountData?.paymentFlagStatus === "00" ? "paid" : "pending";
+  /* SNAP spec says paymentFlagStatus "00"; DOKU (sandbox, 18 Nov 2026) omits
+     it and answers paymentFlagReason "Success" with the paid amount instead. */
+  const d = res.virtualAccountData;
+  const paid = d?.paymentFlagStatus === "00" || (d?.paymentFlagReason?.english?.toLowerCase() === "success" && Number(d.paidAmount?.value ?? 0) > 0);
+  console.info(`[payments] VA status ${v.reference}: ${paid ? "paid" : "pending"}`);
+  return paid ? "paid" : "pending";
 }
 
 /** Closes a VA so it can no longer be paid. */

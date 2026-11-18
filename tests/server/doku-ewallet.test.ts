@@ -92,7 +92,7 @@ async function bookEwallet(method: string, from?: string) {
 
 describe("e-wallet booking", () => {
   it("the order carries the wallet's payment URL; it returns the guest to their order page", async () => {
-    const r = await bookEwallet("shopeepay", "198.51.100.9");
+    const r = await bookEwallet("dana", "198.51.100.9");
     expect(r.ok).toBe(true);
     expect(r.booking.payment.reference).toMatch(/^https:\/\/sandbox\.doku\.com\/ewallet\/pay\//);
     const call = fake.calls.find((c) => c.path.endsWith("payment-host-to-host"))!;

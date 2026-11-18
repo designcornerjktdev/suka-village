@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   CalendarPlus,
@@ -22,13 +22,14 @@ import { localePath, type Locale } from "@/content/i18n";
 import Emph from "../Emph";
 import StorePhoto from "../StorePhoto";
 import DemoQR from "./DemoQR";
+import { openDokuCheckout } from "./dokuCheckout";
 import QrisCode from "./QrisCode";
 import MethodMark from "./MethodMark";
 import MessagePreview from "./MessagePreview";
 import { DEMO } from "@/lib/booking/config";
 import { cancelBooking, changePaymentMethod, checkPayment } from "@/lib/booking/api";
 import { useBooking, useBookings, useNow, useRooms, useSettings } from "@/lib/booking/hooks";
-import { GUEST_GROUPS, METHODS, methodInfo } from "@/lib/booking/payments";
+import { GUEST_GROUPS, METHODS, isCheckoutLink, methodInfo } from "@/lib/booking/payments";
 import { effectiveStatus } from "@/lib/booking/occupancy";
 import { fmtDate, fmtDateTime, formatPhone, idr } from "@/lib/booking/format";
 import type { Booking, BookingStatus } from "@/lib/booking/types";
@@ -123,6 +124,28 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   const method = methodInfo(booking.payment.method);
+  const checkoutUrl =
+    status === "pending" && isCheckoutLink(booking.payment.reference) ? booking.payment.reference : null;
+
+  /* E-wallets leave the pop-up for a new tab: DOKU hands over to the wallet's
+     own page (DANA), which refuses to be framed, so the pop-up hung loading. */
+  const inPopup = checkoutUrl !== null && method.group !== "ewallet";
+
+  /* A VA, QRIS or card opened through DOKU Checkout pops DOKU's page up as soon as the order
+     page opens, once per charge in this tab: a reload or a return from DOKU
+     does not open it again; the Bayar button does. */
+  useEffect(() => {
+    if (!checkoutUrl || !inPopup) return;
+    const key = `sv-checkout-shown:${checkoutUrl}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      /* Storage blocked: opening every time is the safer side. */
+    }
+    void openDokuCheckout(checkoutUrl);
+  }, [checkoutUrl, inPopup]);
+
   const firstName = booking.guest.name.split(" ")[0];
   const waiting = status === "paid";
   const accepted = status === "confirmed" || status === "checked_in" || status === "completed";
@@ -266,7 +289,30 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
 
               <div className="sv-pay-card-body">
                 <MethodMark method={method} label={method.id === "card" ? c.groups.card : method.label} />
-                {method.group === "va" ? (
+                {method.group === "va" && checkoutUrl ? (
+                  /* Opened through DOKU Checkout: the number lives on DOKU's page. */
+                  <>
+                    <p className="sv-pay-card-title">{fill(o.vaCheckoutTitle, { bank: method.bank ?? "" })}</p>
+                    {/* Opens as DOKU's pop-up over this page; the link is the fallback without script. */}
+                    <a
+                      className="sv-btn sv-btn--primary"
+                      href={booking.payment.reference}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        void openDokuCheckout(booking.payment.reference);
+                      }}
+                    >
+                      <span>{o.vaCheckoutGo}</span>
+                    </a>
+                    <ol className="sv-pay-steps">
+                      {o.vaCheckoutSteps.map((s) => (
+                        <li key={s}>{fill(s, { bank: method.bank ?? "" })}</li>
+                      ))}
+                    </ol>
+                  </>
+                ) : method.group === "va" ? (
                   <>
                     <p className="sv-pay-card-title">{fill(o.vaTitle, { bank: method.bank ?? "" })}</p>
                     <button type="button" className="sv-copy sv-copy--va tnum" onClick={() => copy(booking.payment.reference, "ref")}>
@@ -277,6 +323,28 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
                     <ol className="sv-pay-steps">
                       {o.vaSteps.map((s) => (
                         <li key={s}>{fill(s, { bank: method.bank ?? "" })}</li>
+                      ))}
+                    </ol>
+                  </>
+                ) : method.group === "qris" && checkoutUrl ? (
+                  /* Opened through DOKU Checkout: the code shows in DOKU's pop-up. */
+                  <>
+                    <p className="sv-pay-card-title">{o.qrisTitle}</p>
+                    <a
+                      className="sv-btn sv-btn--primary"
+                      href={checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        void openDokuCheckout(checkoutUrl);
+                      }}
+                    >
+                      <span>{o.vaCheckoutGo}</span>
+                    </a>
+                    <ol className="sv-pay-steps">
+                      {o.qrisCheckoutSteps.map((s) => (
+                        <li key={s}>{s}</li>
                       ))}
                     </ol>
                   </>
@@ -294,6 +362,7 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
                 ) : method.group === "ewallet" ? (
                   <>
                     <p className="sv-pay-card-title">{fill(o.ewalletTitle, { wallet: method.label })}</p>
+                    {/* Checkout or not, a new tab: the wallet's own page cannot be framed. */}
                     <a className="sv-btn sv-btn--primary" href={booking.payment.reference} target="_blank" rel="noopener noreferrer">
                       <span>{fill(o.ewalletOpen, { wallet: method.label })}</span>
                       <ArrowUpRight size={16} strokeWidth={1.6} aria-hidden="true" />
@@ -307,9 +376,23 @@ function Order({ booking, status, locale, now }: { booking: Booking; status: Boo
                 ) : (
                   <>
                     <p className="sv-pay-card-title">{o.cardTitle}</p>
-                    <a className="sv-btn sv-btn--primary" href={booking.payment.reference} target="_blank" rel="noopener noreferrer">
-                      <CreditCard size={16} strokeWidth={1.6} aria-hidden="true" />
-                      <span>{o.cardGo}</span>
+                    {/* Through DOKU Checkout: DOKU's pop-up; the Payment Page opens a new tab. */}
+                    <a
+                      className="sv-btn sv-btn--primary"
+                      href={booking.payment.reference}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={
+                        checkoutUrl
+                          ? (e) => {
+                              e.preventDefault();
+                              void openDokuCheckout(checkoutUrl);
+                            }
+                          : undefined
+                      }
+                    >
+                      {checkoutUrl ? null : <CreditCard size={16} strokeWidth={1.6} aria-hidden="true" />}
+                      <span>{checkoutUrl ? o.vaCheckoutGo : o.cardGo}</span>
                     </a>
                     <p className="sv-pay-note">{o.cardNote}</p>
                   </>

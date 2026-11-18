@@ -71,7 +71,7 @@ export const tokenQuery = (code: string) => {
 /** Shown for the first moment only. OVO and GoPay are off, as on the server. */
 export const FALLBACK_SETTINGS: Settings = {
   holdMinutes: 60,
-  methods: { qris: true, va_bca: true, va_bni: true, va_bri: true, va_mandiri: true, gopay: false, ovo: false, dana: true, shopeepay: true, card: true, manual: true },
+  methods: { qris: true, va_bca: true, va_bni: true, va_bri: true, va_mandiri: true, gopay: false, ovo: false, dana: true, shopeepay: false, card: true, manual: true },
   templates: DEFAULT_TEMPLATES,
   cancellationPolicy: { id: "", en: "" },
   contact: { whatsapp: `+${whatsapp.number}`, senderEmail: "" },

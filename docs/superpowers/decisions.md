@@ -90,6 +90,15 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 - Task 14: Ruling: channel seam is setChannel/notifyChannel (an adapter object, none at launch) rather than pushBooking/pullBlocks no-ops — testable, and BookandLink's direction is still unknown — events: booking holds true (created) / false (rejected, cancelled, expired via runExpire), block holds true/false — cost: archiveRoom's dropped blocks are not reported (no OTA impact: an archived room is off sale everywhere).
 - Task 14: Ruling: docs in Indonesian (README/HANDOFF language); BOOKING.md §10 ticked where code is done; HANDOFF status line updated so later sessions do not read "prototype" — cost: none.
 
+## DOKU sandbox, 19 November 2026 (branch fix/doku-va-status)
+
+- Ruling: VA status reads DOKU's real answer — the sandbox omits paymentFlagStatus and answers paymentFlagReason "Success" with paidAmount; both count as paid — verified: "Saya sudah bayar" settled BNI and BCA — cost: none.
+- Ruling: VA customerNo length = 15 − Merchant BIN length — sandbox refuses BIN + customerNo over 15 digits (4032715); BNI (5-digit BIN) passed with 10, BRI/BCA/Mandiri (6-digit BIN) only with 9 — verified by create-va for all four — cost: none.
+- Ruling: SNAP notifications are not sent by DOKU for this account — VA BNI and BCA paid in the simulator, HTTP Notification history empty, no request reached the server; Non-SNAP (Checkout, card) notifications to the same URL arrive; a self-issued Bearer token through the tunnel is accepted (2002500), so our side works — ticket open with DOKU support — cost: SNAP payments settle only via "Saya sudah bayar" until DOKU fixes it.
+- Ruling: VA through DOKU Checkout (Non-SNAP), DOKU_VA_CHECKOUT=1, switched on — user decision 19 Nov 2026. The guest still picks the bank on our site; Checkout opens for that bank only (payment_method_types), as DOKU's pop-up over the order page (jokul-checkout-1.0.0.js), automatically once per charge, and from the "Bayar" button. Notification and status are the card's Non-SNAP ones; a charge keeps its route (Checkout reference = URL) — DOKU documents Non-SNAP VA only through Checkout — cost: the VA number shows on DOKU's page, not ours.
+- Ruling: the pop-up script is the production one (jokul.doku.com) for sandbox too — the sandbox URL in DOKU's docs answers with a web page; the script only frames the given URL and listens to staging/sandbox origins — cost: none.
+- Ruling: QrisCode draws nothing when the QR string is empty — a failed QRIS charge took the whole order page down — cost: none (QRIS creation itself still fails, see open-questions).
+
 ## Rencana MariaDB / Hostinger (2026-11-17-mysql-hostinger.md) dan review akhir
 
 - Task 1: Ruling: dev and test databases moved to MariaDB 10.11 in Docker (port 3307, utf8mb4_unicode_ci); the Postgres container was replaced, its volume (pgdata) left in place, not deleted — cost: none.

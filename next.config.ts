@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
   experimental: {
     cpus: 2,
   },
+  /* `next dev` refuses other origins by default. A Cloudflare quick tunnel
+     lets DOKU's sandbox reach a local server for payment notifications.
+     Dev only: production builds ignore this. */
+  allowedDevOrigins: ["*.trycloudflare.com"],
   /* AVIF where the browser takes it (most phones now), WebP otherwise: the
      same photographs at a fraction of the bytes. */
   images: {

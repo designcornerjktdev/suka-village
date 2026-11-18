@@ -65,3 +65,11 @@ export function mockReference(method: PaymentMethodId, code: string) {
       return "";
   }
 }
+
+/**
+ * A charge opened through DOKU Checkout stores the Checkout page URL
+ * (…/checkout-link-v2/…, or …/checkout/link/… on older hosts) as its
+ * reference; the order page opens it as DOKU's pop-up. Not just any URL:
+ * SNAP e-wallet charges store their wallet link too.
+ */
+export const isCheckoutLink = (reference: string) => /^https?:\/\/[^/]+\/checkout(-link-v2|\/link)\//.test(reference);

@@ -31,3 +31,17 @@ export async function parseBody<T extends z.ZodType>(req: Request, schema: T): P
 
 /** The ?t= access token. */
 export const tokenOf = (req: Request) => new URL(req.url).searchParams.get("t");
+
+/**
+ * The site's address as the guest reached it, for URLs handed to DOKU (the
+ * page it sends the guest back to). SITE_URL wins once set; until then (it
+ * stays empty while the site is noindex, SEO.md §1) the host the request came
+ * in on, as the hosting proxy forwards it.
+ */
+export function requestOrigin(req: Request): string {
+  const configured = process.env.SITE_URL?.trim().replace(/\/+$/, "");
+  if (configured) return configured;
+  const host = req.headers.get("x-forwarded-host")?.split(",")[0].trim() || req.headers.get("host");
+  const proto = req.headers.get("x-forwarded-proto")?.split(",")[0].trim() || new URL(req.url).protocol.replace(":", "");
+  return host ? `${proto}://${host}` : new URL(req.url).origin;
+}
