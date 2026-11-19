@@ -15,7 +15,7 @@ import type { PaymentGroup, PaymentMethodId } from "./types";
  *   mastercard drawn here from the brand's circles and colours.
  *
  * ShopeePay has no freely licensed logo anywhere we could find, so it shows as
- * text. The gateway's merchant kit has the official file (REPLACE.md #26).
+ * text. The gateway's merchant kit has the official file (docs/REPLACE.md #26).
  * The package idn-finlogos was considered and rejected: its logos are
  * CC BY-NC, non-commercial only.
  *

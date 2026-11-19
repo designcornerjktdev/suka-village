@@ -35,7 +35,7 @@ export type ISODateTime = string;
  * expired      payment window ran out; nights released
  *
  * Money first, then a person: the guest pays, and a booking only becomes a
- * stay once someone at the property has looked at it. See BOOKING.md.
+ * stay once someone at the property has looked at it. See docs/BOOKING.md.
  */
 export type BookingStatus =
   | "pending"

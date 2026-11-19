@@ -12,7 +12,7 @@ tipe kolom, isolasi transaksi, test infrastructure, dan panduan deploy.
 dengan yang dilaporkan untuk Hostinger), Next.js 16 (Hostinger Node.js Web App).
 
 **Spec:** `docs/superpowers/specs/2026-11-17-backend-design.md` (§3 batasan
-portabilitas, §6 penjaga double booking) dan `DEPLOY.md` §8. Keputusan user
+portabilitas, §6 penjaga double booking) dan `docs/DEPLOY.md` §8. Keputusan user
 17 Nov 2026: deploy di Hostinger Web App, database MySQL/MariaDB.
 
 ## Global Constraints
@@ -118,12 +118,12 @@ build, error database tetap dilempar (tidak disembunyikan).
 ### Task 4: Panduan deploy Hostinger + MariaDB, verifikasi akhir
 
 **Files:**
-- Modify: `DEPLOY.md` (database di hPanel: buat DB + user, charset
+- Modify: `docs/DEPLOY.md` (database di hPanel: buat DB + user, charset
   utf8mb4, `DATABASE_URL=mysql://...@localhost:3306/...`, langkah build
   Hostinger, cara menjalankan `prisma migrate deploy` dan seed di server,
   backup lewat phpMyAdmin/`mysqldump`), `README.md`, `.env.example`,
   `docs/superpowers/specs/2026-11-17-backend-design.md` (catatan keputusan)
-- Hapus bagian "Ke MySQL" di DEPLOY.md §8 (sekarang default), pertahankan
+- Hapus bagian "Ke MySQL" di docs/DEPLOY.md §8 (sekarang default), pertahankan
   "Ke Vercel".
 
 - [ ] Step 1: seluruh test di MariaDB 2 kali; `tsc`, `eslint`, `npm run build`,

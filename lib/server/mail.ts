@@ -7,7 +7,7 @@ import { findBooking, readSettings } from "./bookings";
 import { db } from "./db";
 
 /**
- * Automatic emails (BOOKING.md §4). Rendered by lib/booking/email.ts exactly
+ * Automatic emails (docs/BOOKING.md §4). Rendered by lib/booking/email.ts exactly
  * as the admin previews them, in the booking's language, with a fresh access
  * token in the links. Every attempt is logged in Notification as sent or
  * failed; a failure never throws, so an email problem never undoes a booking.

@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { db } from "./db";
 
 /**
- * Admin sign-in (BOOKING.md §6): two accounts, no roles. A session is a random
+ * Admin sign-in (docs/BOOKING.md §6): two accounts, no roles. A session is a random
  * token in an httpOnly cookie; the database keeps only its SHA-256, so a
  * leaked table opens no session. Every /api/admin/* handler calls
  * requireAdmin; the (panel) layout checks the session on the server too.

@@ -9,7 +9,7 @@ CMS admin.
 - **Booking dan CMS:** tersambung ke backend (November 2026): database
   MariaDB/MySQL (Prisma), pembayaran DOKU (VA, QRIS, DANA, ShopeePay, kartu),
   email otomatis, login admin, upload foto, dan cron. Halaman publik membaca
-  kamar dan konten dari database. Cara pasang di [DEPLOY.md](DEPLOY.md); yang
+  kamar dan konten dari database. Cara pasang di [docs/DEPLOY.md](docs/DEPLOY.md); yang
   masih ditanyakan di [docs/open-questions.md](docs/open-questions.md).
 - **Demo:** https://villa-landing-eight.vercel.app (akun Vercel desainer, hanya
   untuk demo; produksi di-deploy dari hosting owner).
@@ -48,12 +48,12 @@ Lalu lihat di lebar HP (390px) dan desktop (1440px).
 ## Environment
 
 Semua variabel ada di `.env.example` (salin ke `.env`) dan dijelaskan di
-[DEPLOY.md](DEPLOY.md) §2: database, DOKU, SMTP, folder upload, cron.
+[docs/DEPLOY.md](docs/DEPLOY.md) §2: database, DOKU, SMTP, folder upload, cron.
 Tidak ada secret di repo ini; `.env` dan `keys/` tidak di-commit.
 
 `SITE_URL` tetap saklar SEO: **isi hanya di produksi, dan paling akhir.**
 Selama kosong, semua halaman `noindex` dan robots.txt menolak crawler. Detail
-di [SEO.md](SEO.md) §1.
+di [docs/SEO.md](docs/SEO.md) §1.
 
 ## Menjalankan dengan backend (lokal)
 
@@ -73,14 +73,14 @@ npm run doku:check -- va_bni  # cek koneksi sandbox DOKU
 
 | File | Isi |
 |---|---|
-| [HANDOFF.md](HANDOFF.md) | Status proyek, aturan yang selalu berlaku, riwayat revisi, peta kode. **Baca dulu.** |
-| [PRODUCT.md](PRODUCT.md) | Brief klien yang mengikat, aturan desain, identitas brand. |
-| [BOOKING.md](BOOKING.md) | Kontrak backend: model data, status booking, endpoint, payment, email, akses admin, checklist go-live (§10). |
-| [DEPLOY.md](DEPLOY.md) | Memasang di Hostinger Web App dengan MySQL/MariaDB: env, database, build, cron, DOKU, email, backup. |
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Status proyek, aturan yang selalu berlaku, riwayat revisi, peta kode. **Baca dulu.** |
+| [docs/PRODUCT.md](docs/PRODUCT.md) | Brief klien yang mengikat, aturan desain, identitas brand. |
+| [docs/BOOKING.md](docs/BOOKING.md) | Kontrak backend: model data, status booking, endpoint, payment, email, akses admin, checklist go-live (§10). |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Memasang di Hostinger Web App dengan MySQL/MariaDB: env, database, build, cron, DOKU, email, backup. |
 | [docs/open-questions.md](docs/open-questions.md) | Pertanyaan yang masih menunggu DOKU, owner, dan desainer. |
 | [docs/superpowers/](docs/superpowers/) | Desain dan rencana implementasi backend. |
-| [REPLACE.md](REPLACE.md) | Data yang masih menunggu owner (harga, kebijakan, foto, dll.). Tidak boleh live sebelum terisi. |
-| [SEO.md](SEO.md) | SEO, saklar `SITE_URL`, hasil Lighthouse. |
+| [docs/REPLACE.md](docs/REPLACE.md) | Data yang masih menunggu owner (harga, kebijakan, foto, dll.). Tidak boleh live sebelum terisi. |
+| [docs/SEO.md](docs/SEO.md) | SEO, saklar `SITE_URL`, hasil Lighthouse. |
 | [AGENTS.md](AGENTS.md) | Next.js 16 berbeda dari versi lama. Baca `node_modules/next/dist/docs/` sebelum memakai API yang belum dikenal. |
 
 Information architecture (sitemap website dan CMS, inventaris halaman, alur
@@ -104,6 +104,6 @@ react-day-picker (kalender), lucide-react (ikon).
 
 ## Perubahan tampilan
 
-Desain dijaga oleh aturan di HANDOFF.md ("Aturan yang selalu berlaku") dan
-PRODUCT.md. Untuk perubahan tampilan, libatkan desainer (Reza) dan kirim link
+Desain dijaga oleh aturan di docs/HANDOFF.md ("Aturan yang selalu berlaku") dan
+docs/PRODUCT.md. Untuk perubahan tampilan, libatkan desainer (Reza) dan kirim link
 preview deploy supaya tampilannya bisa dicek sebelum live.

@@ -9,7 +9,7 @@ import { jakartaToday } from "./time";
 import { runTx } from "./tx";
 
 /**
- * The two scheduled jobs (BOOKING.md §1, §4), called by the host's scheduler
+ * The two scheduled jobs (docs/BOOKING.md §1, §4), called by the host's scheduler
  * through /api/cron/* (Vercel Cron, Hostinger hPanel cron, or crontab).
  *
  * Both are safe to run late, twice, or at the same time: an email is sent

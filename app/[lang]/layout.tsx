@@ -47,7 +47,7 @@ export async function generateMetadata({
     ...sitePreview(locale),
     robots: siteRobots,
     /* Search Console's HTML tag method: paste the token into the
-       GOOGLE_SITE_VERIFICATION environment variable (SEO.md). */
+       GOOGLE_SITE_VERIFICATION environment variable (docs/SEO.md). */
     verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
   };
 }

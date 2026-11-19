@@ -16,7 +16,7 @@ import { INDEXABLE, SITE_URL } from "./site-url";
  *     languages, so neither is treated as a duplicate of the other.
  *  2. Structured data states only what content/site.ts states. No price
  *     range, rating, opening hours, postal code or coordinates until the
- *     owner supplies them (REPLACE.md).
+ *     owner supplies them (docs/REPLACE.md).
  */
 
 /** An absolute URL on the site's own domain. */

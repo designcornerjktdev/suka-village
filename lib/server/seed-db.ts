@@ -10,7 +10,7 @@ import type { ContentSection } from "@/lib/booking/types";
  *
  * Deliberately NOT imported: demo bookings, demo promo codes and demo prices
  * being for sale. Rates start from the prototype's example figures but with
- * `bookable: false`, because the real prices are still pending (REPLACE.md #5).
+ * `bookable: false`, because the real prices are still pending (docs/REPLACE.md #5).
  */
 export async function seedDatabase(db: PrismaClient) {
   const rooms = seedRooms();

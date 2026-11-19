@@ -2,7 +2,7 @@ import { nonSnapRequest } from "./nonsnap";
 
 /**
  * Cards through DOKU's hosted Credit Card Payment Page (Non-SNAP): the guest
- * types their card on DOKU's page, never on this site (BOOKING.md §3). The
+ * types their card on DOKU's page, never on this site (docs/BOOKING.md §3). The
  * page link is valid for one hour; the booking's hold decides the rest.
  */
 

@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { db } from "./db";
 
 /**
- * The order page without an account (BOOKING.md §5). The link in every email
+ * The order page without an account (docs/BOOKING.md §5). The link in every email
  * carries a random token; only its SHA-256 is stored, so a leaked database
  * opens no order page. Every email gets a fresh token and old ones stay valid.
  */

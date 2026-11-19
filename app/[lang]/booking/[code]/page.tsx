@@ -9,7 +9,7 @@ import { isLocale } from "@/content/i18n";
  * once paid. Every email and WhatsApp message links here.
  *
  * Private by nature, so it is never indexed. In production the URL carries a
- * signed token rather than the bare code (BOOKING.md, "Order page access").
+ * signed token rather than the bare code (docs/BOOKING.md, "Order page access").
  */
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/booking/[code]">): Promise<Metadata> {

@@ -15,13 +15,13 @@ masih di `localStorage` lewat mock store. Backend menggantikan mock itu dengan
 sistem sungguhan supaya tamu bisa memesan dan membayar, dan tim Suka Village
 bisa mengurus booking dan konten.
 
-Kontrak yang mengikat: `lib/booking/types.ts` (model data), BOOKING.md
+Kontrak yang mengikat: `lib/booking/types.ts` (model data), docs/BOOKING.md
 (endpoint, status, aturan server), dan IA Suka Village v1.0.pdf (struktur).
 
 ## 2. Goals, non-goals, anti-goals
 
 **Goals**
-- Semua endpoint di BOOKING.md §2 berjalan. `api.ts` dan `hooks.ts` memanggil
+- Semua endpoint di docs/BOOKING.md §2 berjalan. `api.ts` dan `hooks.ts` memanggil
   endpoint itu, dengan nama fungsi dan bentuk data yang tetap sama.
 - Pembayaran sungguhan lewat **DOKU**: QRIS, VA (BCA, BNI, BRI, Mandiri),
   e-wallet, dan kartu (hosted checkout).
@@ -35,7 +35,7 @@ Kontrak yang mengikat: `lib/booking/types.ts` (model data), BOOKING.md
 - Sinkronisasi dengan booking engine **BookandLink** (yang sudah terhubung ke
   OTA). Ini direncanakan sebagai **tahap berikutnya**, dan caranya masih
   ditanyakan ke pihak Suka Village. Saat launch, tanggal yang terjual di
-  platform lain ditutup manual di Kalender (BOOKING.md §8). Lihat §14.
+  platform lain ditutup manual di Kalender (docs/BOOKING.md §8). Lihat §14.
 - WhatsApp otomatis (dibatalkan owner).
 - Refund otomatis. Refund dilakukan manual di dashboard DOKU.
 - Peran admin (owner atau staf).
@@ -57,7 +57,7 @@ Kontrak yang mengikat: `lib/booking/types.ts` (model data), BOOKING.md
 - Hosting final belum pasti. Kandidat termurahnya Hostinger, yang di shared
   hosting **hanya menyediakan MySQL**.
 - Domain: `sukavillage.com`, sudah dibeli di Hostinger.
-- UI tidak boleh berubah tampilannya (HANDOFF.md, aturan desain).
+- UI tidak boleh berubah tampilannya (docs/HANDOFF.md, aturan desain).
 
 ## 4. Pendekatan yang dipertimbangkan
 
@@ -99,7 +99,7 @@ Postgres (dev: Docker; staging: Neon/Supabase sebagai DB saja)
 
 ## 6. Data
 
-Tabel (Prisma), mengikuti saran BOOKING.md §1:
+Tabel (Prisma), mengikuti saran docs/BOOKING.md §1:
 
 `bookings`, `booking_units`, `booking_nights`, `payments`, `notifications`,
 `booking_events`, `blocks`, `rooms`, `rates`, `seasons`, `promos`, `settings`
@@ -131,7 +131,7 @@ lewat `prisma db seed`. Data booking contoh tidak ikut.
 
 ## 7. Endpoint
 
-Semua endpoint di BOOKING.md §2 dibuat apa adanya. Tambahan yang khusus untuk
+Semua endpoint di docs/BOOKING.md §2 dibuat apa adanya. Tambahan yang khusus untuk
 DOKU dan cron:
 
 | Endpoint | Fungsi |
@@ -174,7 +174,7 @@ memakai tabel sederhana di DB (per IP per menit), supaya tidak butuh Redis.
   kebenaran.
 - Kunci API dari env: `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `DOKU_ENV`
   (sandbox/production).
-- Logo metode bayar diganti dengan kit resmi DOKU (REPLACE.md #26).
+- Logo metode bayar diganti dengan kit resmi DOKU (docs/REPLACE.md #26).
 
 ## 9. Email
 

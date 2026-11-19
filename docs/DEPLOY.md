@@ -8,7 +8,7 @@ Node.js) tidak bisa.
 
 Urutan go-live yang lengkap (termasuk data dari owner) ada di
 [BOOKING.md §10](BOOKING.md). Pertanyaan yang masih terbuka ada di
-[docs/open-questions.md](docs/open-questions.md).
+[open-questions.md](open-questions.md).
 
 ## 1. Yang dibutuhkan
 

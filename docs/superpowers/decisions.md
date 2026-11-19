@@ -12,7 +12,7 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 - Task 1: Ruling: Docker Postgres on host port 5433 — a native Windows Postgres already owns 5432 — cost: none.
 - Task 2: Ruling: seed logic in lib/server/seed-db.ts and admin creation in lib/server/admins.ts (not named in plan) — makes both testable; prisma/seed.ts and scripts/create-admin.ts are thin wrappers — cost: none.
 - Task 2: Ruling: tests/setup.ts resetDb() uses Postgres pg_tables — test-only helper; must be rewritten if tests ever run on MySQL — cost: small.
-- Task 2: Ruling: added Room.position and ContentItem @@id([section,id]) — admin order is page order (BOOKING.md §7.4); content ids are only unique per section — cost: none.
+- Task 2: Ruling: added Room.position and ContentItem @@id([section,id]) — admin order is page order (docs/BOOKING.md §7.4); content ids are only unique per section — cost: none.
 - Task 3: Ruling: added Booking.promoId column (migration booking_promo_id) — quota counted by column, not by reading quote JSON (portable to MySQL) — cost: none.
 - Task 3: Ruling: server "today" = jakartaToday() in lib/server/time.ts, not format.todayISO() (machine-local) — server may run in UTC — cost: none.
 - Task 3: Ruling: promo row lock via no-op update; uses counted after lock under READ COMMITTED (Postgres). On MySQL (REPEATABLE READ) the count may read a stale snapshot — re-run "promo quota race" test after any MySQL switch — cost: quota overrun by one on MySQL if not checked.
@@ -26,7 +26,7 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 - Task 5: Ruling: emails for guest cancel are not sent yet; Task 6 wires sendTemplates into the route handlers — cost: none if Task 6 does it.
 - Task 5: Ruling: business refusals of POST /api/bookings (unavailable, promo, min_nights) answer 200 with {ok:false}; only malformed input is 400 — matches the CreateResult contract the client reads — cost: none.
 - Task 6: Ruling: added optional `token` param to variablesFor() and bookingEmail() — the shared {link} had no token; admin preview passes none and is unchanged — cost: none.
-- Task 6: Ruling: without SMTP_URL (local dev) mail uses nodemailer jsonTransport and logs status "sent" — keeps dev runnable; production must set SMTP_URL (DEPLOY.md, Task 14) — cost: an unset SMTP_URL in production would look "sent" in the admin while nothing is delivered.
+- Task 6: Ruling: without SMTP_URL (local dev) mail uses nodemailer jsonTransport and logs status "sent" — keeps dev runnable; production must set SMTP_URL (docs/DEPLOY.md, Task 14) — cost: an unset SMTP_URL in production would look "sent" in the admin while nothing is delivered.
 - Task 6: Ruling: sender = settings.contact.senderEmail when set, else MAIL_FROM — owner edits it in Pengaturan — cost: none.
 - Task 6: Ruling: awaiting_payment for new website bookings is sent in Task 7 after the DOKU charge exists (the email shows the VA number) — cost: none if Task 7 does it.
 - Task 7: Ruling: proxy.ts matcher now excludes api|authorization|uploads — found while routing DOKU: every /api route would have been redirected to /id/api in a real server (tests call handlers directly so missed it) — cost: none.
@@ -59,7 +59,7 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 - Task 8: Ruling: proxy now matches /admin and only checks the cookie exists (no DB in the proxy); validity is checked in the (panel) layout and requireAdmin — cost: none.
 - Task 8: Ruling: login page copy changed: removed "Prototipe: email dan kata sandi apa saja" note (now false), error split into empty vs wrong credentials — listed for Reza in docs/open-questions.md #15 — cost: copy may need Reza's wording.
 - Task 9: Ruling: every admin route goes through withAdmin() (lib/server/admin-route.ts); a test loops over all 30 handlers without a session — mutation check: disabling the guard fails all 30 — cost: none.
-- Task 9: Ruling: admin booking list returns all non-deleted bookings (effective status) + paidCount, no paging — a single property, and the list screen groups/filters client side (BOOKING.md said paginate) — cost: response grows ~1 KB per booking; revisit past a few thousand.
+- Task 9: Ruling: admin booking list returns all non-deleted bookings (effective status) + paidCount, no paging — a single property, and the list screen groups/filters client side (docs/BOOKING.md said paginate) — cost: response grows ~1 KB per booking; revisit past a few thousand.
 - Task 9: Ruling: an unpaid manual (admin) booking opens no DOKU charge and sends no email (prototype sent awaiting_payment with a mock reference) — the admin follows up by hand and marks it paid — cost: none.
 - Task 9: Ruling: public GET /api/settings keeps the email templates (the order page previews the emails the guest got) and drops only contact.senderEmail — cost: none.
 - Task 9: Ruling: revalidateTag(tag, { expire: 0 }) — the owner sees a CMS save on the next load; "max" would serve the old page once — cost: one blocking render after a save.
@@ -81,14 +81,14 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 - Task 12: Ruling: storage.ts fs calls carry /*turbopackIgnore: true*/ — the build traced the whole project (public/ included) into the server output because UPLOAD_DIR is a run-time path — cost: none.
 - Task 12: Ruling: hooks never call Date.now() in render (react-hooks/purity); until useNow ticks, the server's status stands — cost: none.
 - Task 13: Ruling: unstable_cache with tags (rooms, content, settings), not "use cache" — the Next 16 replacement needs cacheComponents: true, which changes how the whole app renders — cost: unstable_cache is marked replaced; migrate when the designer's pages are moved to Cache Components.
-- Task 13: Ruling: public pages are statically generated FROM THE DATABASE, so `npm run build` needs the database reachable (DEPLOY.md must say so) — cost: a build without DB access fails.
+- Task 13: Ruling: public pages are statically generated FROM THE DATABASE, so `npm run build` needs the database reachable (docs/DEPLOY.md must say so) — cost: a build without DB access fails.
 - Task 13: Ruling: rooms listed publicly = not archived AND at least one photo (not filtered by bookable: prices are still pending and every room starts off sale) — cost: a room shown with photos but not yet bookable online (as on the prototype).
 - Task 13: Ruling: new CMS items get fallbacks: facility icon Shapes, event WhatsApp message "Halo Suka Village, saya ingin bertanya tentang {name}." (EN likewise), room SEO title "{name} · Suka Village" + its description, room share image = the Rooms one — cost: Reza may want other wording (open question).
 - Task 13: Ruling: Experience and Event now honour "Segera hadir" (HANDOFF says the CMS sets it for both; the pages ignored it) — cost: none.
 - Task 13: Ruling: Contact WhatsApp number from Settings (IA: "nomor WhatsApp di C6"); the header/footer/other wa.me links still use the number in content/site.ts — cost: changing the number in Pengaturan changes the Contact page only (open question).
 - Task 13: Ruling: RoomSpecs/KeySpecs and lib/seo roomMeta/roomSchema take structural room types so a CMS room fits — cost: none.
 - Task 14: Ruling: channel seam is setChannel/notifyChannel (an adapter object, none at launch) rather than pushBooking/pullBlocks no-ops — testable, and BookandLink's direction is still unknown — events: booking holds true (created) / false (rejected, cancelled, expired via runExpire), block holds true/false — cost: archiveRoom's dropped blocks are not reported (no OTA impact: an archived room is off sale everywhere).
-- Task 14: Ruling: docs in Indonesian (README/HANDOFF language); BOOKING.md §10 ticked where code is done; HANDOFF status line updated so later sessions do not read "prototype" — cost: none.
+- Task 14: Ruling: docs in Indonesian (README/HANDOFF language); docs/BOOKING.md §10 ticked where code is done; HANDOFF status line updated so later sessions do not read "prototype" — cost: none.
 
 ## DOKU sandbox, 19 November 2026 (branch fix/doku-va-status)
 
@@ -124,5 +124,5 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 
 - I1 (old charge paid after a method change was lost) — Charge history table; settle falls back to it, records the paid method and closes the newer charge — test "the payment is still matched to the booking" RED (404) → GREEN, suite 230/230.
 - I2 (payment in the last seconds marked expired) — DOKU charge closes CHARGE_GRACE_MS (5 min) before the hold — test "DOKU's charge ends 5 minutes before the hold" RED → GREEN, suite 230/230.
-- I3 (rate limits bypassable via X-Forwarded-For) — clientIp takes the last (proxy-appended) hop; DEPLOY.md note — test "takes the address the host's proxy appended" RED (6.6.6.6) → GREEN, suite 230/230.
+- I3 (rate limits bypassable via X-Forwarded-For) — clientIp takes the last (proxy-appended) hop; docs/DEPLOY.md note — test "takes the address the host's proxy appended" RED (6.6.6.6) → GREEN, suite 230/230.
 - I4 (late payment refund was silent) — every admin emailed once (refundOwed guards it), history line added — test "every admin is emailed, once" RED → GREEN, suite 230/230.

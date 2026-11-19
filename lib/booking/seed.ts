@@ -13,7 +13,7 @@ import { DEFAULT_TEMPLATES } from "./notifications";
  * with the mock store; nothing invented is imported.
  */
 
-/** Starting figures for Kamar & harga. NOT the owner's prices (REPLACE.md #5):
+/** Starting figures for Kamar & harga. NOT the owner's prices (docs/REPLACE.md #5):
     the seed imports them with every room switched off for online booking. */
 export const DEMO_RATES: UnitRate[] = [
   {

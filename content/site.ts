@@ -9,7 +9,7 @@
  *
  * Display strings live in content/dict.ts. Never promote a PENDING entry to the
  * page as fact without the owner confirming it. The running list of what still
- * needs replacing lives in REPLACE.md.
+ * needs replacing lives in docs/REPLACE.md.
  */
 
 /* OWNER — Instagram bio and post artwork */
@@ -147,7 +147,7 @@ export const photos = {
    BRIEF — sizes, bedrooms, bathrooms and the amenity list are the owner's own,
    word for word. The brief gives the Main Villa three bedrooms; the Airbnb
    listing said four. The brief is newer and is what the site shows
-   (REPLACE.md #7).
+   (docs/REPLACE.md #7).
 -------------------------------------------------------------------------- */
 
 export type Feature =
@@ -209,7 +209,7 @@ export const totalBedrooms = units.reduce((n, u) => n + u.bedrooms, 0);
 /* --- Facilities -------------------------------------------------------------
    BRIEF — the shop is listed as "kalau ada" (if there is one). Until the owner
    confirms it exists it stays off the page: a guest who plans around a shop
-   that is not there has been misled (REPLACE.md #13).
+   that is not there has been misled (docs/REPLACE.md #13).
 -------------------------------------------------------------------------- */
 
 export const SHOP_CONFIRMED = false;
@@ -250,7 +250,7 @@ export type ExperienceId = (typeof experiences)[number]["id"];
    BRIEF — Family Gathering photographs are "menyusul" (to follow). Until they
    arrive it shows the real rooms a family gathering uses: the villa's living
    room, the restaurant, the playground and the pool, captioned as what they
-   are (REPLACE.md #14).
+   are (docs/REPLACE.md #14).
 -------------------------------------------------------------------------- */
 
 export const events = [
@@ -326,7 +326,7 @@ export const place = {
   address:
     "Kp. Cikereteuw, RT.02/RW.04, Sukalarang, Kec. Sukalarang, Kabupaten Sukabumi, Jawa Barat",
   /* The same address in parts, for structured data. There is no postal code
-     and no coordinates because the owner has given neither (REPLACE.md #31). */
+     and no coordinates because the owner has given neither (docs/REPLACE.md #31). */
   street: "Kp. Cikereteuw, RT.02/RW.04, Sukalarang",
   regency: "Kabupaten Sukabumi",
   province: "Jawa Barat",

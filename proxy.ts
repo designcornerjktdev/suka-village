@@ -13,7 +13,7 @@ const ADMIN_COOKIE = "sv_admin";
  *
  * The visitor's Accept-Language header decides, falling back to Indonesian,
  * which matches the owner's own material and the primary audience in
- * PRODUCT.md. Once redirected the locale lives in the URL, so the choice is
+ * docs/PRODUCT.md. Once redirected the locale lives in the URL, so the choice is
  * shareable and the language switch is a plain link.
  *
  * The admin (outside the locale tree) is only gated here: a request without a

@@ -10,7 +10,7 @@ import { breadcrumbs, pageMetadata } from "@/lib/seo";
 
 /**
  * The booking flow: dates, rooms, the guest's details, payment. No account.
- * Everything it writes goes through lib/booking/api.ts (see BOOKING.md).
+ * Everything it writes goes through lib/booking/api.ts (see docs/BOOKING.md).
  */
 
 export function generateStaticParams() {

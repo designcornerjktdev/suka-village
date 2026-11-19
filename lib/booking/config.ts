@@ -6,7 +6,7 @@
  * prices, a "simulate payment" panel on the order page, a banner in the admin.
  *
  * The developer sets this to false once api.ts and hooks.ts talk to the real
- * backend. Nothing else in the interface needs to change. See BOOKING.md.
+ * backend. Nothing else in the interface needs to change. See docs/BOOKING.md.
  */
 export const DEMO = false;
 

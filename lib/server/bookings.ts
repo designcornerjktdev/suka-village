@@ -14,7 +14,7 @@ import { runTx, type Tx } from "./tx";
 
 /**
  * Bookings on the server: the authority for price, discount and
- * availability (BOOKING.md §2). Whatever the browser showed is recomputed here.
+ * availability (docs/BOOKING.md §2). Whatever the browser showed is recomputed here.
  */
 
 export async function readSettings(tx: Tx | typeof db = db): Promise<Settings> {
@@ -164,7 +164,7 @@ export async function createBooking(input: CreateInput, opts: { now?: Date } = {
 }
 
 /* --- Status transitions ------------------------------------------------------
-   BOOKING.md §1: money first, then a person. Every transition is a
+   docs/BOOKING.md §1: money first, then a person. Every transition is a
    status-guarded update (WHERE status IN from), so two admins pressing
    "Terima" at once, or a webhook arriving twice, change the booking once. */
 

@@ -23,7 +23,7 @@ import { isUpload, putUpload, type UploadError } from "@/lib/booking/uploads";
  *    place of the picture, so the dialog asks for it rather than hiding it.
  *
  * The list is the parent's draft: nothing here is saved until the page's own
- * Simpan. The files themselves are stored at once (BOOKING.md, "Uploads").
+ * Simpan. The files themselves are stored at once (docs/BOOKING.md, "Uploads").
  */
 
 const LIBRARY = Object.values(library).flat();

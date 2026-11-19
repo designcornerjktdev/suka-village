@@ -6,7 +6,7 @@ import type { Bilingual, ContentItem, ContentSection, Feature, MediaMeta } from 
 import { db } from "./db";
 
 /**
- * What the public pages read from the database (CMS → site, BOOKING.md §7),
+ * What the public pages read from the database (CMS → site, docs/BOOKING.md §7),
  * in the shapes the page components already take from content/site.ts:
  * photographs as { src, alt }, rooms with a slug, a cover and their facts.
  *

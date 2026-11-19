@@ -10,7 +10,7 @@ import "./admin.css";
  * this is the owner's tool.
  *
  * Never indexed. In production every route under /admin is also behind
- * authentication on the server (BOOKING.md, "Admin access").
+ * authentication on the server (docs/BOOKING.md, "Admin access").
  */
 
 export const metadata: Metadata = {

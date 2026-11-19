@@ -16,5 +16,5 @@ export async function rateLimit(key: string, limit: number, now = new Date()): P
   return row.count <= limit;
 }
 
-/** Per-minute limits (BOOKING.md §2: rate-limit what can be guessed or abused). */
+/** Per-minute limits (docs/BOOKING.md §2: rate-limit what can be guessed or abused). */
 export const LIMITS = { promoCheck: 10, createBooking: 5, lookup: 5, login: 5 } as const;

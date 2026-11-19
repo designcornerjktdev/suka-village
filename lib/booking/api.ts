@@ -29,7 +29,7 @@ import { refreshAll, saveToken, send, tokenQuery } from "./client";
  * ============================================================================
  *
  * Every write the interface makes goes through a function in this file, one
- * backend endpoint per function (BOOKING.md §2), with the arguments and the
+ * backend endpoint per function (docs/BOOKING.md §2), with the arguments and the
  * return shapes the prototype had, so no component changed. The server is
  * the authority: it re-checks availability, prices, promos and status rules.
  * After each write the cached reads (hooks.ts) are fetched again.
