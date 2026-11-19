@@ -28,7 +28,7 @@ npm run dev            # http://localhost:3000
 npx vercel --prod      # publish ke link live
 ```
 
-Admin: `/admin/login`, dengan akun yang dibuat lewat `npm run admin:create -- <email>`. Backend lokal (database, seed, test): README.md, "Menjalankan dengan backend".
+Admin: `/admin/login`, masuk dengan email atau username. Akun pertama dibuat oleh `npm run db:seed` (`admin`; kata sandi dari `SEED_ADMIN_PASSWORD`, atau acak dan tampil sekali), atau lewat `npm run admin:create -- <email>`; akun berikutnya di menu admin **Pengguna** (tambah, ubah, reset kata sandi, hapus; semua akun punya akses sama). Backend lokal (database, seed, test): README.md, "Menjalankan dengan backend".
 
 Cek sebelum deploy: `npx tsc --noEmit`, `npx eslint app components lib content`,
 `npm run build`, lalu lihat di lebar HP (390px) dan desktop (1440px).

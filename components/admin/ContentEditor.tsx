@@ -178,18 +178,25 @@ const withStatus = (x: ContentItem, s: Status): ContentItem => ({ ...x, visible:
 
 /* --- Beranda, Galeri: photographs only ------------------------------------- */
 
+/* The one item a photographs-only section holds, as the seed makes it. A
+   section left without it (deleted rows, an empty save) starts from this
+   blank one, so the upload box is always there and Simpan creates the row. */
+const blankPhotosItem = (section: ContentSection): ContentItem =>
+  section === "home"
+    ? { id: "hero", name: { id: "Foto beranda", en: "Home photograph" }, body: { id: "", en: "" }, photos: [], visible: true }
+    : { id: section, name: { id: "Galeri", en: "Gallery" }, body: { id: "", en: "" }, photos: [], visible: true };
+
 function PhotosEditor({ section, items, meta }: { section: ContentSection; items: ContentItem[]; meta: Meta }) {
-  const { draft, setDraft, dirty, saving, saved, patch, save } = useDraft(items);
+  const base = items.length ? items : [blankPhotosItem(section)];
+  const { draft, setDraft, dirty, saving, saved, patch, save } = useDraft(base);
   const item = draft[0];
   return (
     <>
       <SectionHead meta={meta} />
-      {item ? (
-        <Card>
-          <PhotoManager photos={item.photos} onChange={(next) => patch(item.id, { photos: next })} emptyHint={meta.empty} />
-        </Card>
-      ) : null}
-      <SaveBar dirty={dirty} saving={saving} saved={saved} onReset={() => setDraft(items)} onSave={() => save(section, section === "home" ? "Foto beranda disimpan" : "Galeri disimpan")} />
+      <Card>
+        <PhotoManager photos={item.photos} onChange={(next) => patch(item.id, { photos: next })} emptyHint={meta.empty} />
+      </Card>
+      <SaveBar dirty={dirty} saving={saving} saved={saved} onReset={() => setDraft(base)} onSave={() => save(section, section === "home" ? "Foto beranda disimpan" : "Galeri disimpan")} />
     </>
   );
 }

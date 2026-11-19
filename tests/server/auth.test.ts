@@ -15,7 +15,7 @@ const tokenFrom = (setCookie: string) => setCookie.match(new RegExp(`${ADMIN_COO
 
 beforeEach(async () => {
   await resetDb();
-  await createAdmin(db, "owner@sukavillage.com", "kata-sandi-panjang");
+  await createAdmin(db, { email: "owner@sukavillage.com", username: "owner", displayName: "Owner", password: "kata-sandi-panjang" });
 });
 
 describe("login", () => {
@@ -30,6 +30,24 @@ describe("login", () => {
   it("wrong password or unknown email → null", async () => {
     expect(await login("owner@sukavillage.com", "salah-salah-salah")).toBeNull();
     expect(await login("orang@lain.com", "kata-sandi-panjang")).toBeNull();
+  });
+
+  it("logs in by username, case-insensitive and trimmed, and by email", async () => {
+    expect(await login("  OWNER ", "kata-sandi-panjang")).not.toBeNull();
+    expect(await login("owner@sukavillage.com", "kata-sandi-panjang")).not.toBeNull();
+    const r = await login("owner", "kata-sandi-panjang");
+    expect(await getAdmin(r!.token)).toMatchObject({ email: "owner@sukavillage.com", displayName: "Owner" });
+  });
+
+  it("unknown username and wrong password give the same null", async () => {
+    expect(await login("siapa", "kata-sandi-panjang")).toBeNull();
+    expect(await login("owner", "salah-salah-salah")).toBeNull();
+  });
+
+  it("an admin without a username still logs in by email", async () => {
+    await db.admin.update({ where: { email: "owner@sukavillage.com" }, data: { username: null } });
+    expect(await login("owner@sukavillage.com", "kata-sandi-panjang")).not.toBeNull();
+    expect(await login("owner", "kata-sandi-panjang")).toBeNull();
   });
 
   it("an expired session is refused", async () => {
@@ -54,6 +72,17 @@ describe("routes", () => {
     expect(c).toContain(`Max-Age=${SESSION_DAYS * 24 * 3600}`);
   });
 
+  it("POST /api/admin/login takes a username in `login`", async () => {
+    const res = await loginRoute(post("/api/admin/login", { login: "owner", password: "kata-sandi-panjang" }));
+    expect(res.status).toBe(200);
+  });
+
+  it("GET /api/admin/me returns display name and username", async () => {
+    const res = await loginRoute(post("/api/admin/login", { login: "owner", password: "kata-sandi-panjang" }));
+    const me = await meRoute(new Request("http://localhost/api/admin/me", { headers: { cookie: `${ADMIN_COOKIE}=${tokenFrom(cookieOf(res))}` } }));
+    expect(await me.json()).toMatchObject({ email: "owner@sukavillage.com", username: "owner", displayName: "Owner" });
+  });
+
   it("wrong password → 401, no cookie; the same answer for an unknown email", async () => {
     const a = await loginRoute(post("/api/admin/login", { email: "owner@sukavillage.com", password: "salah-salah-salah" }));
     const b = await loginRoute(post("/api/admin/login", { email: "x@y.com", password: "salah-salah-salah" }));
@@ -74,7 +103,7 @@ describe("routes", () => {
     const res = await loginRoute(post("/api/admin/login", { email: "owner@sukavillage.com", password: "kata-sandi-panjang" }));
     const cookie = `${ADMIN_COOKIE}=${tokenFrom(cookieOf(res))}`;
     const me = await meRoute(new Request("http://localhost/api/admin/me", { headers: { cookie } }));
-    expect(await me.json()).toEqual({ email: "owner@sukavillage.com" });
+    expect(await me.json()).toMatchObject({ email: "owner@sukavillage.com", displayName: "Owner" });
     const out = await logoutRoute(new Request("http://localhost/api/admin/logout", { method: "POST", headers: { cookie } }));
     expect(cookieOf(out)).toContain("Max-Age=0");
     expect((await meRoute(new Request("http://localhost/api/admin/me", { headers: { cookie } }))).status).toBe(401);

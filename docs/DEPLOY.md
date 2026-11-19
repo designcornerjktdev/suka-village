@@ -90,14 +90,18 @@ database bisa dijangkau untuk kembali ke halaman statis.
 ```bash
 npm ci                          # juga menjalankan prisma generate
 npx prisma migrate deploy       # membuat / memperbarui tabel
-npm run db:seed                 # SEKALI di database kosong: kamar, konten, pengaturan
-npm run admin:create -- owner@sukavillage.com    # ulangi untuk akun kedua
+npm run db:seed                 # kamar, konten, pengaturan, dan admin pertama (lihat bawah)
 npm run build
 npm start                       # port dari env PORT, standar 3000
 ```
 
 `db:seed` aman dijalankan ulang: hanya mengisi yang belum ada dan tidak pernah
-menimpa editan owner. Setelah seed, **semua kamar belum bisa dipesan** sampai
+menimpa editan owner. **Admin pertama** dibuat hanya kalau belum ada admin sama
+sekali: `admin` / `admin@sukavillage.com`, dengan kata sandi dari
+`SEED_ADMIN_PASSWORD` atau, kalau kosong, kata sandi acak yang **ditampilkan
+sekali** di terminal (catat). Nama, username, dan email diganti di Pengguna. Masuk
+dengan akun itu, buat akun owner di Admin → Pengguna, lalu hapus akun `admin`.
+`npm run admin:create -- <email>` tetap bisa dipakai sebagai cadangan. Setelah seed, **semua kamar belum bisa dipesan** sampai
 owner mengisi harga dan menyalakannya di Admin → Kamar & harga.
 
 ### Hostinger Node.js Web App
@@ -109,9 +113,9 @@ Di hPanel → Websites → Node.js (Web App):
 - Build command: `npm ci && npx prisma migrate deploy && npm run build`
   (`migrate deploy` hanya menjalankan migrasi yang belum ada; aman diulang).
 - Start command: `npm start`
-- **Seed dan akun admin, sekali:** dari Terminal/SSH Hostinger di folder
-  aplikasi: `npm run db:seed`, lalu `npm run admin:create -- <email>` untuk
-  tiap admin. Tanpa SSH, jalankan keduanya dari laptop dengan `DATABASE_URL`
+- **Seed dan admin pertama, sekali:** dari Terminal/SSH Hostinger di folder
+  aplikasi: `npm run db:seed` (catat kata sandi admin yang ditampilkan); akun
+  lain dibuat di Admin → Pengguna. Tanpa SSH, jalankan dari laptop dengan `DATABASE_URL`
   menunjuk ke database Hostinger (aktifkan Remote MySQL untuk IP laptop di
   hPanel, lalu matikan lagi).
 - Isi semua variabel di §2 pada bagian Environment Variables.

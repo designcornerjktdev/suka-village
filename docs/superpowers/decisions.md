@@ -99,6 +99,13 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 - Ruling: the pop-up script is the production one (jokul.doku.com) for sandbox too — the sandbox URL in DOKU's docs answers with a web page; the script only frames the given URL and listens to staging/sandbox origins — cost: none.
 - Ruling: QrisCode draws nothing when the QR string is empty — a failed QRIS charge took the whole order page down — cost: none (QRIS creation itself still fails, see open-questions).
 
+## User management, 19 November 2026 (feat/user-management)
+
+- Ruling: migration SQL written by hand (no shadow database for migrate diff; migrate dev is interactive) — checked with migrate diff from the database to the schema: empty — cost: none.
+- Ruling: admin names appear only in the admin booking detail, not the list or the guest view — guests must not see who handled their booking — cost: none.
+- Ruling: the users client (useAdmins and the writes) lives in lib/booking/admins.ts, not the big api.ts/hooks.ts — cost: none.
+- Ruling: browser check by curl only (login by username, /me, users list, page 200, wrong current password) — no browser tool in this session; layout at 390/1440 not seen — cost: a layout flaw in Pengguna would show on first use.
+
 ## Rencana MariaDB / Hostinger (2026-11-17-mysql-hostinger.md) dan review akhir
 
 - Task 1: Ruling: dev and test databases moved to MariaDB 10.11 in Docker (port 3307, utf8mb4_unicode_ci); the Postgres container was replaced, its volume (pgdata) left in place, not deleted — cost: none.

@@ -254,6 +254,9 @@ model Media {
 model Admin {
   id           String    @id @default(cuid())
   email        String    @unique
+  /// Optional for accounts made before usernames; lower-case, [a-z0-9._-]{3,32}.
+  username     String?   @unique
+  displayName  String    @default("")
   passwordHash String
   createdAt    DateTime  @default(now())
   sessions     Session[]

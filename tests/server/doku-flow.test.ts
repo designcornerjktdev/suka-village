@@ -165,8 +165,8 @@ describe("payment notification", () => {
   });
 
   it("paid after expiry: every admin is emailed, once, and the history says so (review I4)", async () => {
-    await createAdmin(db, "owner@sukavillage.com", "kata-sandi-panjang");
-    await createAdmin(db, "staff@sukavillage.com", "kata-sandi-panjang");
+    await createAdmin(db, { email: "owner@sukavillage.com", username: "owner", displayName: "Owner", password: "kata-sandi-panjang" });
+    await createAdmin(db, { email: "staff@sukavillage.com", username: "staff", displayName: "Staff", password: "kata-sandi-panjang" });
     const r = await book();
     await db.payment.update({ where: { bookingCode: r.booking.code }, data: { expiresAt: new Date(Date.now() - 1000) } });
     const sent: { to: string; subject: string; text: string }[] = [];

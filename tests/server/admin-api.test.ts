@@ -15,6 +15,10 @@ import * as notifyRoute from "@/app/api/admin/bookings/[code]/notify/route";
 import * as blocks from "@/app/api/admin/blocks/route";
 import * as block from "@/app/api/admin/blocks/[id]/route";
 import * as promos from "@/app/api/admin/promos/route";
+import * as users from "@/app/api/admin/users/route";
+import * as user from "@/app/api/admin/users/[id]/route";
+import * as userPassword from "@/app/api/admin/users/[id]/password/route";
+import * as myPassword from "@/app/api/admin/me/password/route";
 import * as promo from "@/app/api/admin/promos/[id]/route";
 import * as rooms from "@/app/api/admin/rooms/route";
 import * as room from "@/app/api/admin/rooms/[unit]/route";
@@ -62,7 +66,7 @@ beforeEach(async () => {
   await resetDb();
   await seedDatabase(db);
   await db.rate.updateMany({ data: { bookable: true } });
-  await createAdmin(db, "owner@sukavillage.com", "kata-sandi-panjang");
+  await createAdmin(db, { email: "owner@sukavillage.com", username: "owner", displayName: "Owner", password: "kata-sandi-panjang" });
   cookie = `${ADMIN_COOKIE}=${(await login("owner@sukavillage.com", "kata-sandi-panjang"))!.token}`;
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -99,6 +103,12 @@ describe("every admin route needs a session", () => {
     ["PUT", contentSection.PUT, "/x", { section: "facilities" }],
     ["GET", media.GET, "/x", {}],
     ["PUT", media.PUT, "/x", {}],
+    ["GET", users.GET, "/x", {}],
+    ["POST", users.POST, "/x", {}],
+    ["PATCH", user.PATCH, "/x", { id: "a" }],
+    ["DELETE", user.DELETE, "/x", { id: "a" }],
+    ["PUT", userPassword.PUT, "/x", { id: "a" }],
+    ["PUT", myPassword.PUT, "/x", {}],
   ];
   it.each(routes)("%s %s → 401", async (method, handler, path, params) => {
     expect((await call(handler, method, path, method === "GET" || method === "DELETE" ? undefined : {}, params, false)).status).toBe(401);
@@ -133,6 +143,18 @@ describe("bookings", () => {
     expect(r).toMatchObject({ status: "rejected", rejectReason: "Kamar diperbaiki" });
     const ev = await db.bookingEvent.findFirstOrThrow({ where: { bookingCode: b, event: { startsWith: "Pesanan ditolak" } } });
     expect(ev.adminId).toBeTruthy();
+  });
+
+  it("history names the admin who confirmed; a deleted admin's events show no name", async () => {
+    const code = await paidBooking();
+    await call(confirm.POST, "POST", "/x", {}, { code });
+    const named = await (await call(booking.GET, "GET", "/x", undefined, { code })).json();
+    expect(named.history.find((h: { event: string }) => h.event.startsWith("Pesanan diterima")).adminName).toBe("Owner");
+    await db.admin.deleteMany({});
+    await createAdmin(db, { email: "x@y.co", username: "xyz", displayName: "X", password: "kata-sandi-panjang" });
+    cookie = `${ADMIN_COOKIE}=${(await login("xyz", "kata-sandi-panjang"))!.token}`;
+    const gone = await (await call(booking.GET, "GET", "/x", undefined, { code })).json();
+    expect(gone.history.find((h: { event: string }) => h.event.startsWith("Pesanan diterima")).adminName).toBeUndefined();
   });
 
   it("status: check-in before the arrival day is refused", async () => {
@@ -258,5 +280,47 @@ describe("settings, content, media", () => {
   it("media alt text", async () => {
     await call(media.PUT, "PUT", "/x", { src: "/uploads/2027/a.jpg", meta: { name: "a.jpg", alt: { id: "Kolam", en: "Pool" } } });
     expect(await (await call(media.GET, "GET", "/x")).json()).toEqual({ "/uploads/2027/a.jpg": { name: "a.jpg", alt: { id: "Kolam", en: "Pool" } } });
+  });
+});
+
+describe("users", () => {
+  const me = async () => (await db.admin.findUniqueOrThrow({ where: { username: "owner" } })).id;
+
+  it("create, then the list shows it without any password hash; a taken username is 409", async () => {
+    const res = await call(users.POST, "POST", "/x", { email: "budi@x.co", username: "budi", displayName: "Budi", password: "kata-sandi-panjang" });
+    expect(res.status).toBe(200);
+    const list = await (await call(users.GET, "GET", "/x")).json();
+    expect(list.admins.map((a: { username: string }) => a.username)).toEqual(["owner", "budi"]);
+    expect(JSON.stringify(list)).not.toMatch(/passwordHash|argon2/);
+    const dup = await call(users.POST, "POST", "/x", { email: "c@x.co", username: "BUDI", displayName: "C", password: "kata-sandi-panjang" });
+    expect(dup.status).toBe(409);
+    expect(await dup.json()).toEqual({ ok: false, error: "exists" });
+  });
+
+  it("update; delete own account → 400 self; reset with a short password → 400 password", async () => {
+    const id = await me();
+    const upd = await (await call(user.PATCH, "PATCH", "/x", { email: "owner@sukavillage.com", username: "pemilik", displayName: "Pemilik" }, { id })).json();
+    expect(upd).toMatchObject({ ok: true, admin: { username: "pemilik" } });
+    const del = await call(user.DELETE, "DELETE", "/x", undefined, { id });
+    expect([del.status, await del.json()]).toEqual([400, { ok: false, error: "self" }]);
+    const reset = await call(userPassword.PUT, "PUT", "/x", { password: "sandi-baru-panjang" }, { id });
+    expect([reset.status, await reset.json()]).toEqual([400, { ok: false, error: "self" }]);
+    expect(await login("pemilik", "kata-sandi-panjang")).not.toBeNull();
+    await call(users.POST, "POST", "/x", { email: "budi@x.co", username: "budi", displayName: "Budi", password: "kata-sandi-panjang" });
+    const budi = (await db.admin.findUniqueOrThrow({ where: { username: "budi" } })).id;
+    const short = await call(userPassword.PUT, "PUT", "/x", { password: "pendek" }, { id: budi });
+    expect([short.status, await short.json()]).toEqual([400, { ok: false, error: "password" }]);
+    expect((await call(user.DELETE, "DELETE", "/x", undefined, { id: "nope" })).status).toBe(404);
+  });
+
+  it("change own password: wrong current → 400; right → 200, this session stays, the other one ends", async () => {
+    await login("owner", "kata-sandi-panjang");
+    expect(await db.session.count()).toBe(2);
+    const bad = await call(myPassword.PUT, "PUT", "/x", { current: "salah-salah-salah", next: "sandi-baru-panjang" });
+    expect([bad.status, await bad.json()]).toEqual([400, { ok: false, error: "current" }]);
+    expect((await call(myPassword.PUT, "PUT", "/x", { current: "kata-sandi-panjang", next: "sandi-baru-panjang" })).status).toBe(200);
+    expect((await call(users.GET, "GET", "/x")).status).toBe(200);
+    expect(await db.session.count()).toBe(1);
+    expect(await login("owner", "sandi-baru-panjang")).not.toBeNull();
   });
 });

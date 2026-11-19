@@ -62,7 +62,7 @@ describe("routes", () => {
   let cookie = "";
   beforeEach(async () => {
     await resetDb();
-    await createAdmin(db, "owner@sukavillage.com", "kata-sandi-panjang");
+    await createAdmin(db, { email: "owner@sukavillage.com", username: "owner", displayName: "Owner", password: "kata-sandi-panjang" });
     cookie = `${ADMIN_COOKIE}=${(await login("owner@sukavillage.com", "kata-sandi-panjang"))!.token}`;
   });
 

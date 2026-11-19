@@ -340,7 +340,7 @@ function Detail({ booking: b }: { booking: Booking }) {
                   <span>
                     {h.event}
                     <small>
-                      {h.by === "guest" ? "Tamu" : h.by === "admin" ? "Admin" : h.by === "gateway" ? "Payment gateway" : "Sistem"} · {fmtDateTime(h.at, "id")}
+                      {h.by === "guest" ? "Tamu" : h.by === "admin" ? (h.adminName ?? "Admin") : h.by === "gateway" ? "Payment gateway" : "Sistem"} · {fmtDateTime(h.at, "id")}
                     </small>
                   </span>
                 </li>

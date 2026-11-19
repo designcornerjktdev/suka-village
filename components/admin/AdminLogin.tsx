@@ -45,8 +45,8 @@ export default function AdminLogin() {
         <h1 className="ad-title">Masuk</h1>
 
         <div className="sv-input">
-          <label htmlFor="ad-email">Email</label>
-          <input id="ad-email" type="email" inputMode="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label htmlFor="ad-email">Email atau username</label>
+          <input id="ad-email" type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="sv-input">
           <label htmlFor="ad-pass">Kata sandi</label>
@@ -55,7 +55,7 @@ export default function AdminLogin() {
 
         {error ? (
           <p className="sv-bk-alert" role="alert">
-            {error === "empty" ? "Isi email dan kata sandi." : "Email atau kata sandi salah."}
+            {error === "empty" ? "Isi email atau username, dan kata sandi." : "Email/username atau kata sandi salah."}
           </p>
         ) : null}
 

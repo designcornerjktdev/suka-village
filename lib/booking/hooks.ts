@@ -206,19 +206,20 @@ export function useNow(interval = 1000) {
 
 /* Who is signed in, from GET /api/admin/me (the session cookie is httpOnly,
    so the browser cannot read it). undefined while asking, null when nobody
-   is, { email } when someone is. Asked again on "sv-admin-session" (login,
-   logout). */
-type AdminSession = { email: string } | null | undefined;
+   is, the admin when someone is. Asked again on "sv-admin-session" (login,
+   logout, own profile saved). */
+export type AdminSessionInfo = { id: string; email: string; username: string | null; displayName: string };
+type AdminSession = AdminSessionInfo | null | undefined;
 let session: AdminSession = undefined;
 const sessionListeners = new Set<() => void>();
 let asking: Promise<void> | null = null;
 
 function askSession() {
   asking ??= fetch("/api/admin/me", { cache: "no-store" })
-    .then(async (res) => (res.ok ? ((await res.json()) as { email: string }) : null))
+    .then(async (res) => (res.ok ? ((await res.json()) as AdminSessionInfo) : null))
     .catch(() => null)
     .then((s) => {
-      session = s ? { email: s.email } : null;
+      session = s ? { id: s.id, email: s.email, username: s.username ?? null, displayName: s.displayName || s.email } : null;
       asking = null;
       sessionListeners.forEach((l) => l());
     });
@@ -230,13 +231,17 @@ const onSessionChanged = () => {
   askSession();
 };
 
+/* Listened to for the life of the page, not only while the admin shell is
+   mounted: the login page has no shell, and a sign-in heard by nobody left the
+   remembered "signed out" in place, so the shell sent the admin straight back
+   to the login page. */
+if (typeof window !== "undefined") window.addEventListener("sv-admin-session", onSessionChanged);
+
 const subscribeSession = (listener: () => void) => {
   sessionListeners.add(listener);
-  if (sessionListeners.size === 1) window.addEventListener("sv-admin-session", onSessionChanged);
   if (session === undefined) askSession();
   return () => {
     sessionListeners.delete(listener);
-    if (!sessionListeners.size) window.removeEventListener("sv-admin-session", onSessionChanged);
   };
 };
 

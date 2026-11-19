@@ -178,6 +178,8 @@ export type HistoryEvent = {
   at: ISODateTime;
   by: "guest" | "admin" | "system" | "gateway";
   event: string;
+  /** Display name of the admin who did it (admin screens only; absent once that admin is deleted). */
+  adminName?: string;
 };
 
 export type Booking = {

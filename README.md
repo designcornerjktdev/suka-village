@@ -62,8 +62,7 @@ docker compose up -d          # MariaDB 10.11 di port 3307 (suka + suka_test), s
 cp .env.example .env          # lalu isi DOKU_* dan CRON_SECRET
 npm ci
 npx prisma migrate dev        # tabel
-npm run db:seed               # kamar, konten, pengaturan (sekali)
-npm run admin:create -- kamu@sukavillage.com
+npm run db:seed               # kamar, konten, pengaturan, admin pertama (kata sandi tampil sekali)
 npm run dev
 npm test                      # test backend (vitest, database suka_test)
 npm run doku:check -- va_bni  # cek koneksi sandbox DOKU

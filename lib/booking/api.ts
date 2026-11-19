@@ -106,14 +106,14 @@ export function cancelBooking(code: string, by: "guest" | "admin", reason?: stri
 /** Tells useAdminSession to ask the server again. */
 const sessionChanged = () => window.dispatchEvent(new Event("sv-admin-session"));
 
-/** POST /api/admin/login: the server sets an httpOnly session cookie. */
-export async function adminLogin(email: string, password: string) {
-  if (!email.trim() || !password) return false;
+/** POST /api/admin/login with an email or username: the server sets an httpOnly session cookie. */
+export async function adminLogin(login: string, password: string) {
+  if (!login.trim() || !password) return false;
   try {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ login, password }),
     });
     if (!res.ok) return false;
   } catch {

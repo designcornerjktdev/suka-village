@@ -1,11 +1,23 @@
 /**
  * Creates an admin account:  npm run admin:create -- owner@sukavillage.com
- * The password is asked for on the terminal and never passed as an argument,
- * so it does not end up in the shell history.
+ * Username, display name and password are asked for on the terminal; the
+ * password is never passed as an argument, so it does not end up in the shell
+ * history. Later accounts can be made in the admin under Pengguna.
  */
 import { createInterface } from "node:readline/promises";
 import { PrismaClient } from "@prisma/client";
-import { createAdmin, MIN_PASSWORD } from "@/lib/server/admins";
+import { type AdminError, createAdmin, MIN_PASSWORD } from "@/lib/server/admins";
+
+const MESSAGES: Record<AdminError, string> = {
+  email: "Email tidak valid.",
+  username: "Username 3–32 karakter: huruf kecil, angka, titik, garis bawah, tanda hubung.",
+  displayName: "Nama tampilan wajib diisi.",
+  password: `Kata sandi minimal ${MIN_PASSWORD} karakter.`,
+  exists: "Email atau username sudah dipakai admin lain.",
+  self: "Anda tidak bisa menghapus akun sendiri.",
+  notFound: "Admin tidak ditemukan.",
+  current: "Kata sandi saat ini salah.",
+};
 
 /* tsx runs scripts as CommonJS, which has no top-level await. */
 async function main() {
@@ -17,17 +29,18 @@ async function main() {
   }
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const username = await rl.question("Username: ");
+  const displayName = await rl.question("Nama tampilan: ");
   const password = await rl.question(`Kata sandi (minimal ${MIN_PASSWORD} karakter): `);
   rl.close();
 
   const db = new PrismaClient();
-  const result = await createAdmin(db, email, password);
+  const result = await createAdmin(db, { email, username, displayName, password });
   await db.$disconnect();
 
-  const messages = { email: "Email tidak valid.", password: `Kata sandi minimal ${MIN_PASSWORD} karakter.`, exists: "Admin dengan email ini sudah ada." };
-  if (result.ok) console.log(`Admin ${result.email} dibuat.`);
+  if (result.ok) console.log(`Admin ${result.admin.email} (${result.admin.username}) dibuat.`);
   else {
-    console.error(messages[result.error]);
+    console.error(MESSAGES[result.error]);
     process.exitCode = 1;
   }
 }

@@ -8,7 +8,11 @@ import { bookingInclude, toBooking } from "./mappers";
 /** The booking as the admin sees it (with the internal note), or null. */
 export async function adminBooking(code: string) {
   const row = await db.booking.findFirst({ where: { code: code.trim().toUpperCase(), deletedAt: null }, include: bookingInclude });
-  return row && row.payment ? toBooking(row) : null;
+  if (!row || !row.payment) return null;
+  /* No relation from events to admins (a deleted admin keeps the history): look the names up. */
+  const ids = [...new Set(row.events.flatMap((e) => (e.adminId ? [e.adminId] : [])))];
+  const admins = ids.length ? await db.admin.findMany({ where: { id: { in: ids } }, select: { id: true, displayName: true } }) : [];
+  return toBooking(row, new Map(admins.map((a) => [a.id, a.displayName])));
 }
 
 /**

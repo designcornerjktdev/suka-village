@@ -40,7 +40,8 @@ export const bookingInclude = {
 
 export type BookingWithRelations = Prisma.BookingGetPayload<{ include: typeof bookingInclude }>;
 
-export function toBooking(row: BookingWithRelations): Booking {
+/** `adminNames` (admin id → display name) names admin history events; only the admin screens pass it. */
+export function toBooking(row: BookingWithRelations, adminNames?: Map<string, string>): Booking {
   if (!row.payment) throw new Error(`Booking ${row.code} has no payment row`);
   const p = row.payment;
   const payment: Payment = {
@@ -69,7 +70,10 @@ export function toBooking(row: BookingWithRelations): Booking {
     notifications: row.notifications.map(
       (n): NotificationLog => ({ id: n.id, template: n.template as TemplateId, to: n.to, at: n.at.toISOString(), status: n.status as NotificationLog["status"] }),
     ),
-    history: row.events.map((e): HistoryEvent => ({ at: e.at.toISOString(), by: e.by as HistoryEvent["by"], event: e.event })),
+    history: row.events.map((e): HistoryEvent => {
+      const adminName = e.adminId ? adminNames?.get(e.adminId) : undefined;
+      return { at: e.at.toISOString(), by: e.by as HistoryEvent["by"], event: e.event, ...(adminName ? { adminName } : {}) };
+    }),
     internalNote: opt(row.internalNote),
     rejectReason: opt(row.rejectReason),
   };

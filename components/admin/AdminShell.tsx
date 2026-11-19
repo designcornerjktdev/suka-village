@@ -14,6 +14,7 @@ import {
   Menu,
   Settings,
   TicketPercent,
+  Users,
   X,
 } from "lucide-react";
 import Logo from "../Logo";
@@ -51,7 +52,10 @@ const NAV = [
   },
   {
     group: "Sistem",
-    items: [{ href: "/admin/settings", label: "Pengaturan", Icon: Settings }],
+    items: [
+      { href: "/admin/users", label: "Pengguna", Icon: Users },
+      { href: "/admin/settings", label: "Pengaturan", Icon: Settings },
+    ],
   },
 ];
 
@@ -108,7 +112,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         Lihat situs
         <ArrowUpRight size={14} strokeWidth={1.5} aria-hidden="true" />
       </Link>
-      <p className="ad-side-user">{session.email}</p>
+      <p className="ad-side-user" title={session.email}>{session.displayName}</p>
       <button
         type="button"
         className="ad-side-link"
