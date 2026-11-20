@@ -68,6 +68,19 @@ describe("sendTemplates", () => {
     expect(log).toMatchObject([{ template: "confirmed", to: "ana@example.com", status: "sent" }]);
   });
 
+  it("without SMTP_URL nothing is sent and the log says unsent, not sent", async () => {
+    const code = await booked();
+    const before = process.env.SMTP_URL;
+    delete process.env.SMTP_URL;
+    try {
+      await sendTemplates(code, ["awaiting_payment"]);
+    } finally {
+      if (before !== undefined) process.env.SMTP_URL = before;
+    }
+    const log = await db.notification.findMany({ where: { bookingCode: code } });
+    expect(log).toMatchObject([{ template: "awaiting_payment", status: "unsent" }]);
+  });
+
   it("the link in the email opens the order page", async () => {
     const code = await booked();
     const { transport, sent } = recorder();

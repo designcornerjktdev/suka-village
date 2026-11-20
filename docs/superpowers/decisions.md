@@ -125,7 +125,7 @@ alasannya dan akibatnya bila keputusan itu salah ("cost"). Urut sesuai waktu.
 - an amount-mismatch webhook writes a history event on every DOKU retry.
 - payment-method route reads pending then updates outside a status-guarded transaction (narrow race with a paid webhook).
 - handleTokenRequest does not check X-TIMESTAMP freshness (replay of a token request).
-- without SMTP_URL in production, mail is logged "sent" (should fail loudly).
+- ~~without SMTP_URL in production, mail is logged "sent"~~ fixed 20 Nov 2026: logged "unsent", shown in the booking detail as "tidak terkirim (SMTP belum diatur)".
 
 ## Hasil review akhir yang diperbaiki
 

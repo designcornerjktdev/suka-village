@@ -250,7 +250,7 @@ function Detail({ booking: b }: { booking: Booking }) {
                         ke {n.to} · {fmtDateTime(n.at, "id")}
                       </small>
                     </span>
-                    <span className="ad-tag">{n.status === "simulated" ? "simulasi" : n.status === "sent" ? "terkirim" : "gagal"}</span>
+                    <span className="ad-tag">{n.status === "simulated" ? "simulasi" : n.status === "sent" ? "terkirim" : n.status === "unsent" ? "tidak terkirim (SMTP belum diatur)" : "gagal"}</span>
                   </li>
                 ))}
               </ul>

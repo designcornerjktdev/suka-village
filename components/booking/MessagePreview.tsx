@@ -49,8 +49,19 @@ export default function MessagePreview({
           sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           style={{ height }}
           onLoad={(e) => {
+            const win = e.currentTarget.contentWindow;
             const body = e.currentTarget.contentDocument?.body;
-            if (body) setHeight(body.scrollHeight);
+            if (!win || !body) return;
+            /* Measured again whenever the email reflows, not only on load:
+               inside a closed <details> the frame loads at height 0, and the
+               email stayed hidden after the details were opened. */
+            const measure = () => {
+              if (body.scrollHeight > 0) setHeight(body.scrollHeight);
+            };
+            measure();
+            /* The frame's own ResizeObserver: the element lives in its document. */
+            const RO = (win as Window & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver ?? ResizeObserver;
+            new RO(measure).observe(body);
           }}
         />
       ) : null}

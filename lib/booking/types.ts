@@ -170,8 +170,8 @@ export type NotificationLog = {
   template: TemplateId;
   to: string;
   at: ISODateTime;
-  /** "simulated" only exists in the prototype. */
-  status: "sent" | "failed" | "simulated";
+  /** "unsent": SMTP_URL was not set, so nothing was delivered. "simulated" only exists in the prototype. */
+  status: "sent" | "failed" | "unsent" | "simulated";
 };
 
 export type HistoryEvent = {

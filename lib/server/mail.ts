@@ -32,12 +32,15 @@ export const siteOrigin = () => (process.env.SITE_URL || "http://localhost:3000"
 
 export async function sendTemplates(code: string, templates: TemplateId[], deps: { transport?: Transporter } = {}): Promise<void> {
   if (!templates.length) return;
+  /* No SMTP configured (local dev) and no transport given (tests): the email is
+     not delivered, and the log says so instead of "sent". */
+  const unsent = !deps.transport && !process.env.SMTP_URL;
   const transport = deps.transport ?? defaultTransport();
   for (const template of templates) {
     const booking = await findBooking(code);
     if (!booking?.guest.email) return;
     const to = booking.guest.email;
-    let status: "sent" | "failed" = "failed";
+    let status: "sent" | "failed" | "unsent" = "failed";
     try {
       const [settings, rooms, token] = await Promise.all([readSettings(), db.room.findMany({ select: { unit: true, name: true } }), issueAccessToken(code)]);
       const names = new Map(rooms.map((r) => [r.unit, r.name]));
@@ -52,7 +55,7 @@ export async function sendTemplates(code: string, templates: TemplateId[], deps:
       });
       const from = settings.contact.senderEmail ? `Suka Village <${settings.contact.senderEmail}>` : process.env.MAIL_FROM;
       await transport.sendMail({ from, to, subject: mail.subject, html: mail.html, text: mail.text });
-      status = "sent";
+      status = unsent ? "unsent" : "sent";
     } catch (e) {
       console.error(`[mail] ${template} to booking ${code} failed:`, e);
     }
