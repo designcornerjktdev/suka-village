@@ -51,19 +51,22 @@ export function fmtDate(s: ISODate, locale: Locale, style: "short" | "long" | "d
 /* Times are the property's (Sukabumi, WIB), not the machine's: the server runs
    on UTC, so without this an email said 08.11 for a 15.11 payment deadline. */
 const PROPERTY_TZ = "Asia/Jakarta";
+/* Labelled, so a guest in WITA or WIT does not read it as their own time. */
+const zoneLabel = (locale: Locale) => (locale === "id" ? " WIB" : " WIB (GMT+7)");
 
 export function fmtDateTime(s: string, locale: Locale) {
-  return new Date(s).toLocaleString(locale === "id" ? "id-ID" : "en-GB", {
+  const t = new Date(s).toLocaleString(locale === "id" ? "id-ID" : "en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
     timeZone: PROPERTY_TZ,
   });
+  return t + zoneLabel(locale);
 }
 
 export function fmtTime(s: string, locale: Locale) {
-  return new Date(s).toLocaleTimeString(locale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit", timeZone: PROPERTY_TZ });
+  return new Date(s).toLocaleTimeString(locale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit", timeZone: PROPERTY_TZ }) + zoneLabel(locale);
 }
 
 /* --- Contact details ----------------------------------------------------- */
