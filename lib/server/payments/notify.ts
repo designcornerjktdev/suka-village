@@ -25,7 +25,9 @@ export function handleTokenRequest(headers: Headers, now = new Date()): Reply {
   const clientId = headers.get("x-client-key") ?? "";
   const timestamp = headers.get("x-timestamp") ?? "";
   const signature = headers.get("x-signature") ?? "";
-  const why = !c.dokuPublicKey
+  const why = !c.privateKey
+    ? "merchant private key missing (DOKU_PRIVATE_KEY / DOKU_PRIVATE_KEY_PATH; needed for SNAP)"
+    : !c.dokuPublicKey
     ? "DOKU public key missing (DOKU_PUBLIC_KEY / DOKU_PUBLIC_KEY_PATH)"
     : clientId !== c.clientId
       ? `X-CLIENT-KEY does not match DOKU_CLIENT_ID (got ${clientId ? `${clientId.length} chars` : "none"})`
@@ -73,8 +75,8 @@ const fail = (status: number, code: string, message: string): Reply => ({ status
 export async function handlePaymentNotification(headers: Headers, raw: string, now = new Date()): Promise<Reply> {
   const c = dokuConfig();
   const bearer = (headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!verifyNotificationToken(c.merchantPublicKey, bearer, now)) {
-    console.warn(`[payments] notification rejected: ${bearer ? "token invalid or expired" : "no Bearer token"}`);
+  if (!c.merchantPublicKey || !verifyNotificationToken(c.merchantPublicKey, bearer, now)) {
+    console.warn(`[payments] notification rejected: ${!c.merchantPublicKey ? "SNAP needs DOKU_PRIVATE_KEY, none set" : bearer ? "token invalid or expired" : "no Bearer token"}`);
     return fail(401, "4012501", "Invalid Token (B2B)");
   }
 

@@ -33,8 +33,8 @@ Jangan pernah meng-commit `.env` atau folder `keys/`.
 | `CRON_SECRET` | String acak **minimal 16 karakter**. Kosong = semua cron ditolak |
 | `DOKU_ENV` | `production` (atau `sandbox` untuk staging) |
 | `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY` | Dashboard DOKU → Integration → API Keys |
-| `DOKU_PRIVATE_KEY_PATH` | Path kunci privat RSA merchant, misalnya `./keys/doku-private.pem` |
-| `DOKU_PUBLIC_KEY_PATH` | Path kunci publik **milik DOKU** (disalin dari dashboard) |
+| `DOKU_PRIVATE_KEY_PATH` | Path kunci privat RSA merchant, misalnya `./keys/doku-private.pem`. **Hanya untuk SNAP**: bila semua metode lewat Checkout (semua `DOKU_*_CHECKOUT=1`), boleh kosong |
+| `DOKU_PUBLIC_KEY_PATH` | Path kunci publik **milik DOKU** (disalin dari dashboard). Hanya untuk SNAP, sama seperti di atas |
 | `DOKU_VA_<BANK>` | Kolom **Merchant BIN** di tabel VA dashboard DOKU (misalnya `84923`), **bukan** kolom Partner Service ID atau Prefix Customer No: DOKU menolak keduanya (diuji di sandbox 18 Nov 2026). Bank yang tidak dipakai dibiarkan kosong |
 | `DOKU_VA_CHECKOUT` | `1` (keputusan 19 Nov 2026): VA dibuka lewat DOKU Checkout (Non-SNAP). Tamu tetap memilih bank di situs; nomor VA tampil di pop-up DOKU. Alasannya: notifikasi VA SNAP tidak pernah dikirim DOKU di akun sandbox, sedangkan Non-SNAP terkirim. Kosong = SNAP (nomor VA di halaman pesanan) |
 | `DOKU_QRIS_CHECKOUT` | `1`: QRIS lewat DOKU Checkout (Non-SNAP); kode QR tampil di pop-up DOKU, tanpa perlu merchant/terminal id QRIS. Kosong = QRIS SNAP, yang butuh tiga variabel di bawah |
@@ -56,6 +56,10 @@ terpisah. Bila hosting memakai lebih dari satu proxy di depan aplikasi,
 sesuaikan `clientIp` di `lib/server/http.ts`.
 
 ### Kunci RSA untuk DOKU (SNAP)
+
+Hanya dibutuhkan bila ada metode yang lewat SNAP. Pop-up DOKU Checkout cukup
+memakai `DOKU_CLIENT_ID` dan `DOKU_SECRET_KEY`. Tanpa kunci, permintaan SNAP
+gagal dengan pesan `DOKU_PRIVATE_KEY ... (needed for SNAP)` di log.
 
 Kunci di `keys/` di laptop developer adalah kunci **sandbox**. Untuk produksi
 buat pasangan baru di server:

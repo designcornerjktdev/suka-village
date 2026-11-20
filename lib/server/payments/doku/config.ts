@@ -41,6 +41,12 @@ export class DokuNotConfigured extends Error {
   }
 }
 
+/** The merchant private key, which only SNAP (VA, QRIS, e-wallet not through Checkout) needs. */
+export function snapPrivateKey(c: DokuConfig): string {
+  if (!c.privateKey) throw new DokuNotConfigured("DOKU_PRIVATE_KEY or DOKU_PRIVATE_KEY_PATH (needed for SNAP)");
+  return c.privateKey;
+}
+
 export function dokuConfig(): DokuConfig {
   const e = process.env;
   const clientId = e.DOKU_CLIENT_ID?.trim() ?? "";
@@ -48,13 +54,14 @@ export function dokuConfig(): DokuConfig {
   const privateKey = pem(e.DOKU_PRIVATE_KEY, e.DOKU_PRIVATE_KEY_PATH);
   if (!clientId) throw new DokuNotConfigured("DOKU_CLIENT_ID");
   if (!secretKey) throw new DokuNotConfigured("DOKU_SECRET_KEY");
-  if (!privateKey) throw new DokuNotConfigured("DOKU_PRIVATE_KEY or DOKU_PRIVATE_KEY_PATH");
+  /* No private key check here: Checkout (Non-SNAP) signs with the secret key
+     only. The SNAP paths ask for it through snapPrivateKey(). */
   return {
     baseUrl: e.DOKU_ENV === "production" ? "https://api.doku.com" : "https://api-sandbox.doku.com",
     clientId,
     secretKey,
     privateKey,
-    merchantPublicKey: createPublicKey(privateKey).export({ type: "spki", format: "pem" }).toString(),
+    merchantPublicKey: privateKey ? createPublicKey(privateKey).export({ type: "spki", format: "pem" }).toString() : "",
     dokuPublicKey: pem(e.DOKU_PUBLIC_KEY, e.DOKU_PUBLIC_KEY_PATH),
     va: {
       va_bca: bank(e.DOKU_VA_BCA),

@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { dokuConfig } from "./config";
+import { dokuConfig, snapPrivateKey } from "./config";
 import { signAsymmetric, signSymmetric, snapTimestamp } from "./snap";
 
 /**
@@ -35,7 +35,7 @@ async function accessToken(force = false): Promise<string> {
       "Content-Type": "application/json",
       "X-CLIENT-KEY": c.clientId,
       "X-TIMESTAMP": timestamp,
-      "X-SIGNATURE": signAsymmetric(c.privateKey, c.clientId, timestamp),
+      "X-SIGNATURE": signAsymmetric(snapPrivateKey(c), c.clientId, timestamp),
     },
     body: JSON.stringify({ grantType: "client_credentials" }),
   });
